@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+:root {
+  font-family: "Poppins", "Segoe UI", sans-serif;
+}
+
+@theme {
+  --color-brand-50: #f4f9ff;
+  --color-brand-100: #eaf3ff;
+  --color-brand-600: #1f5aa8;
+  --color-brand-700: #194b8d;
+  --color-brand-800: #153d72;
+  --color-brand-900: #0f2b4f;
+  --color-brand-950: #091a30;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
