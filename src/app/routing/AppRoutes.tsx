@@ -1,37 +1,43 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from '../layout/AppShell';
-import { DashboardPage } from '../../modules/dashboard/pages/DashboardPage';
-import { PropertiesPage } from '../../modules/properties/pages/PropertiesPage';
-import { LeadsPage } from '../../modules/leads/pages/LeadsPage';
-import { UsersPage } from '../../modules/users/pages/UsersPage';
-import { HrPage } from '../../modules/hr/pages/HrPage';
 import { LoginPage } from '../../modules/auth/pages/LoginPage';
 import { ProtectedRoute } from './ProtectedRoute';
+import { RoleHomeRedirect } from './RoleHomeRedirect';
+import { DashboardPage } from '../../modules/dashboard/pages/DashboardPage';
+import { ModulePage } from '../../modules/dashboard/pages/ModulePage';
+import { PropertiesPage } from '../../modules/properties/pages/PropertiesPage';
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
 
-      <Route element={<AppShell />}>
-        <Route element={<ProtectedRoute module="dashboard" />}>
-          <Route path="/" element={<DashboardPage />} />
-        </Route>
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route index element={<RoleHomeRedirect />} />
 
-        <Route element={<ProtectedRoute module="properties" />}>
-          <Route path="/propiedades" element={<PropertiesPage />} />
-        </Route>
+          <Route element={<ProtectedRoute module="dashboard" />}>
+            <Route path="dashboard" element={<DashboardPage />} />
+          </Route>
 
-        <Route element={<ProtectedRoute module="leads" />}>
-          <Route path="/registros" element={<LeadsPage />} />
-        </Route>
-
-        <Route element={<ProtectedRoute module="users" />}>
-          <Route path="/usuarios" element={<UsersPage />} />
-        </Route>
-
-        <Route element={<ProtectedRoute module="hr" />}>
-          <Route path="/rh" element={<HrPage />} />
+          <Route element={<ProtectedRoute module="properties" />}>
+            <Route path="modulos/properties" element={<PropertiesPage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="leads" />}>
+            <Route path="modulos/leads" element={<ModulePage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="users" />}>
+            <Route path="modulos/users" element={<ModulePage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="content" />}>
+            <Route path="modulos/content" element={<ModulePage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="system_roles" />}>
+            <Route path="modulos/system_roles" element={<ModulePage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="system_logs" />}>
+            <Route path="modulos/system_logs" element={<ModulePage />} />
+          </Route>
         </Route>
       </Route>
 
@@ -39,4 +45,3 @@ export function AppRoutes() {
     </Routes>
   );
 }
-

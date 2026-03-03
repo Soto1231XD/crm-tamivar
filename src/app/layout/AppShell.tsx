@@ -1,50 +1,102 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { MODULE_LABELS, canAccessModule } from '../../shared/constants/roles';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { MODULE_LABELS, ROLE_LABELS, getAvailableModules, getPrimaryRole, getUserDisplayName } from '../../shared/constants/roles';
 import { useAuth } from '../../shared/context/AuthContext';
 import type { ModuleKey } from '../../shared/types/rbac';
+import dashboardIcon from '../../assets/images/Dashboard.png';
+import propiedadesIcon from '../../assets/images/Propiedades.png';
+import registrosIcon from '../../assets/images/Registro.png';
+import contenidoIcon from '../../assets/images/Contenido.png';
+import usuariosIcon from '../../assets/images/Usuarios.png';
+import rolIcon from '../../assets/images/Rol.png';
+import logsIcon from '../../assets/images/Logs.png';
 
-const navItems: Array<{ to: string; module: ModuleKey }> = [
-  { to: '/', module: 'dashboard' },
-  { to: '/propiedades', module: 'properties' },
-  { to: '/registros', module: 'leads' },
-  { to: '/usuarios', module: 'users' },
-  { to: '/rh', module: 'hr' },
-];
+const MODULE_ICONS: Record<ModuleKey, string> = {
+  dashboard: dashboardIcon,
+  properties: propiedadesIcon,
+  leads: registrosIcon,
+  content: contenidoIcon,
+  users: usuariosIcon,
+  system_roles: rolIcon,
+  system_logs: logsIcon,
+};
 
 export function AppShell() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const roles = user?.roles ?? [];
+  const availableModules = getAvailableModules(roles);
+  const navItems: Array<{ to: string; label: string; icon: string }> = availableModules.map((module: ModuleKey) => ({
+    to: module === 'dashboard' ? '/dashboard' : `/modulos/${module}`,
+    label: MODULE_LABELS[module],
+    icon: MODULE_ICONS[module],
+  }));
+  const primaryRole = getPrimaryRole(roles);
+  const pageTitle = getPageTitle(location.pathname);
+  const displayName = getUserDisplayName(user);
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 md:grid-cols-[250px_1fr]">
-        <aside className="border-r border-slate-200 bg-white p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">CRM TAMIVAR</p>
-          <h2 className="mt-2 text-lg font-bold">Panel</h2>
+      <div className="grid min-h-screen w-full grid-cols-1 md:grid-cols-[250px_1fr]">
+        <aside className="border-r border-slate-800 bg-sidebar-900 p-6 text-slate-100">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-300">CRM TAMIVAR</p>
+          <h2 className="mt-2 text-lg font-bold text-white">Panel</h2>
 
           <nav className="mt-8 flex flex-col gap-2">
-            {navItems
-              .filter((item) => (user ? canAccessModule(user.roles, item.module) : false))
-              .map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    [
-                      'rounded-lg px-3 py-2 text-sm transition',
-                      isActive ? 'bg-brand-700 text-white' : 'text-slate-700 hover:bg-slate-100',
-                    ].join(' ')
-                  }
-                >
-                  {MODULE_LABELS[item.module]}
-                </NavLink>
-              ))}
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  [
+                    'rounded-lg px-3 py-2 text-sm transition',
+                    isActive ? 'bg-slate-700 text-white' : 'text-slate-200 hover:bg-slate-800',
+                  ].join(' ')
+                }
+              >
+                <span className="flex items-center gap-2">
+                  <img src={item.icon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+                  <span>{item.label}</span>
+                </span>
+              </NavLink>
+            ))}
           </nav>
+
+          <button
+            type="button"
+            onClick={logout}
+            className="mt-8 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          >
+            Cerrar sesion
+          </button>
         </aside>
 
-        <main className="p-6 md:p-10">
-          <Outlet />
-        </main>
+        <div className="flex min-h-screen flex-col">
+          <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
+            <div className="flex items-center justify-between gap-4">
+              <h1 className="text-xl font-bold text-slate-900">{pageTitle}</h1>
+              <div className="text-right">
+                <p className="text-sm font-semibold text-slate-900">{displayName}</p>
+                <p className="text-xs text-slate-600">{primaryRole ? ROLE_LABELS[primaryRole] : 'Sin rol asignado'}</p>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 p-6 md:p-8">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );
+}
+
+function getPageTitle(pathname: string): string {
+  if (pathname === '/dashboard') return 'Dashboard';
+
+  if (pathname.startsWith('/modulos/')) {
+    const rawModule = pathname.replace('/modulos/', '') as ModuleKey;
+    return MODULE_LABELS[rawModule] ?? 'Modulo';
+  }
+
+  return 'Dashboard';
 }

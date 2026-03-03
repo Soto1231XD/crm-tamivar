@@ -1,16 +1,18 @@
 # Arquitectura de carpetas
 
 ## Enfoque
-- `app/`: composicion global (rutas, layout, providers).
-- `modules/`: funcionalidad por dominio del CRM (auth, leads, propiedades, etc.).
-- `shared/`: piezas transversales reutilizables.
+- `app/`: composicion global (rutas, layout y providers).
+- `modules/`: funcionalidad por dominio activo del CRM.
+  - `auth/`: login y 2FA.
+  - `dashboard/`: dashboard + vista reutilizable de modulos.
+- `shared/`: piezas transversales del frontend.
+  - `constants/`: RBAC (roles, permisos por modulo y redireccion).
+  - `context/`: estado de autenticacion/sesion.
+  - `types/`: tipos base.
 - `styles/`: estilos globales y tokens base.
+- `assets/`: imagenes estaticas.
 
-## Escalabilidad por roles
-La autorizacion se define con:
-- `Role`
-- `ModuleKey`
-- `ROLE_MODULE_ACCESS`
-
-Esto permite que un usuario tenga varios roles y herede acceso a multiples modulos.
-
+## RBAC por modulos
+- Roles: `SUPER_ADMIN`, `ADMIN`, `MARKETING`, `RH`, `ASESOR_VENTAS`, `COORDINADOR_VENTAS`.
+- Cada rol define permisos por modulo (`view/create/edit/delete`).
+- Las vistas se reutilizan; lo que cambia es que acciones se habilitan segun permisos.

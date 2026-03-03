@@ -1,20 +1,25 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { canAccessModule } from '../../shared/constants/roles';
+import { canAccessModule, hasAnyRole } from '../../shared/constants/roles';
 import { useAuth } from '../../shared/context/AuthContext';
-import type { ModuleKey } from '../../shared/types/rbac';
+import type { ModuleKey, Role } from '../../shared/types/rbac';
 
 type ProtectedRouteProps = {
-  module: ModuleKey;
+  allowedRoles?: Role[];
+  module?: ModuleKey;
 };
 
-export function ProtectedRoute({ module }: ProtectedRouteProps) {
+export function ProtectedRoute({ allowedRoles, module }: ProtectedRouteProps) {
   const { user } = useAuth();
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!canAccessModule(user.roles, module)) {
+  if (allowedRoles && !hasAnyRole(user.roles, allowedRoles)) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (module && !canAccessModule(user.roles, module)) {
     return <Navigate to="/" replace />;
   }
 

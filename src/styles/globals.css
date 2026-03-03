@@ -12,6 +12,8 @@
   --color-brand-800: #153d72;
   --color-brand-900: #0f2b4f;
   --color-brand-950: #091a30;
+  --color-sidebar-900: #0f172a;
+  --color-welcome-800: #2e2a72;
 }
 
 html,
@@ -23,4 +25,3 @@ body,
 body {
   margin: 0;
 }
-
