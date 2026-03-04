@@ -6,6 +6,7 @@ import { RoleHomeRedirect } from './RoleHomeRedirect';
 import { DashboardPage } from '../../modules/dashboard/pages/DashboardPage';
 import { ModulePage } from '../../modules/dashboard/pages/ModulePage';
 import { PropertiesPage } from '../../modules/properties/pages/PropertiesPage';
+import { LeadsPage } from '../../modules/leads/pages/LeadsPage';
 
 export function AppRoutes() {
   return (
@@ -24,7 +25,7 @@ export function AppRoutes() {
             <Route path="modulos/properties" element={<PropertiesPage />} />
           </Route>
           <Route element={<ProtectedRoute module="leads" />}>
-            <Route path="modulos/leads" element={<ModulePage />} />
+            <Route path="modulos/leads" element={<LeadsPage />} />
           </Route>
           <Route element={<ProtectedRoute module="users" />}>
             <Route path="modulos/users" element={<ModulePage />} />

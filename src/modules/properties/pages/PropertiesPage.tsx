@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getProperties, type PropertyRecord } from '../services/properties.api';
+import { createProperty, getProperties, type CreatePropertyPayload, type PropertyRecord } from '../services/properties.api';
+import { CreatePropertyModal } from '../components/CreatePropertyModal';
+import { useAuth } from '../../../shared/context/AuthContext';
 import descInfIcon from '../../../assets/images/DescInf.png';
 import editarIcon from '../../../assets/images/Editar.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
@@ -26,11 +28,13 @@ const PROPERTY_STATUS_STYLES: Record<string, { backgroundColor: string; color: s
 };
 
 export function PropertiesPage() {
+  const { user, accessToken } = useAuth();
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>('Todos los estados');
   const [typeFilter, setTypeFilter] = useState<(typeof TYPE_OPTIONS)[number]>('Todos los tipos');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -72,6 +76,32 @@ export function PropertiesPage() {
     });
   }, [properties, search, statusFilter, typeFilter]);
 
+  function openCreateModal() {
+    setIsCreateModalOpen(true);
+  }
+
+  function closeCreateModal() {
+    setIsCreateModalOpen(false);
+  }
+
+  async function handleCreateProperty(payload: Omit<CreatePropertyPayload, 'creado_por_id'>): Promise<string | null> {
+    if (!user?.id) {
+      return 'No hay una sesion valida para asociar el creador.';
+    }
+
+    try {
+      const createdPayload: CreatePropertyPayload = {
+        ...payload,
+        creado_por_id: user.id,
+      };
+      const createdProperty = await createProperty(createdPayload, accessToken);
+      setProperties((prev) => [createdProperty, ...prev]);
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : 'No fue posible crear la propiedad.';
+    }
+  }
+
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -81,6 +111,7 @@ export function PropertiesPage() {
         </div>
         <button
           type="button"
+          onClick={openCreateModal}
           className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm"
         >
           <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
@@ -206,6 +237,8 @@ export function PropertiesPage() {
           </table>
         </div>
       </section>
+
+      <CreatePropertyModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreate={handleCreateProperty} />
     </div>
   );
 }
