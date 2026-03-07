@@ -6,6 +6,8 @@ import { RoleHomeRedirect } from './RoleHomeRedirect';
 import { DashboardPage } from '../../modules/dashboard/pages/DashboardPage';
 import { ModulePage } from '../../modules/dashboard/pages/ModulePage';
 import { PropertiesPage } from '../../modules/properties/pages/PropertiesPage';
+import { CreatePropertyPage } from '../../modules/properties/pages/CreatePropertyPage';
+import { EditPropertyPage } from '../../modules/properties/pages/EditPropertyPage';
 import { LeadsPage } from '../../modules/leads/pages/LeadsPage';
 
 export function AppRoutes() {
@@ -23,6 +25,8 @@ export function AppRoutes() {
 
           <Route element={<ProtectedRoute module="properties" />}>
             <Route path="modulos/properties" element={<PropertiesPage />} />
+            <Route path="modulos/properties/new" element={<CreatePropertyPage />} />
+            <Route path="modulos/properties/:propertyId/edit" element={<EditPropertyPage />} />
           </Route>
           <Route element={<ProtectedRoute module="leads" />}>
             <Route path="modulos/leads" element={<LeadsPage />} />

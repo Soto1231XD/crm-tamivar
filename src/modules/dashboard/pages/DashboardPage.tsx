@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ROLE_LABELS, getPrimaryRole, getUserDisplayName } from '../../../shared/constants/roles';
 import { useAuth } from '../../../shared/context/AuthContext';
 import { getDashboardSummary, getRecentPropertiesFallback } from '../services/dashboard.api';
+import { getProperties } from '../../properties/services/properties.api';
 
 const superAdminCards = [
   'Propiedades Disponibles',
@@ -59,7 +60,8 @@ export function DashboardPage() {
       nombres: string;
       apellido_paterno: string;
       correo_electronico: string;
-      rol: string;
+      rol?: string;
+      roles?: string[];
     }>,
     misPublicaciones: [] as Array<{
       titulo: string;
@@ -79,13 +81,16 @@ export function DashboardPage() {
     setIsLoadingSummary(true);
     setSummaryError('');
 
-    getDashboardSummary(accessToken)
-      .then(async (data) => {
+    Promise.all([getDashboardSummary(accessToken), getProperties()])
+      .then(async ([data, properties]) => {
         if (!isActive) return;
 
         const propiedadesRecientes = Array.isArray(data.propiedades_recientes)
           ? data.propiedades_recientes
           : [];
+        const propiedadesDisponiblesActivas = Array.isArray(properties)
+          ? properties.filter((property) => property.activo === true).length
+          : 0;
 
         const propiedadesRecientesFinal =
           propiedadesRecientes.length > 0 ? propiedadesRecientes : await getRecentPropertiesFallback();
@@ -93,7 +98,7 @@ export function DashboardPage() {
         if (!isActive) return;
 
         setSummary({
-          propiedadesDisponibles: data.propiedades_disponibles,
+          propiedadesDisponibles: propiedadesDisponiblesActivas,
           registros: data.registros,
           usuariosSistema: data.usuarios_sistema,
           registrosRecientes: Array.isArray(data.registros_recientes) ? data.registros_recientes : [],
@@ -104,7 +109,7 @@ export function DashboardPage() {
       })
       .catch((error: unknown) => {
         if (!isActive) return;
-        setSummaryError(error instanceof Error ? error.message : 'No fue posible cargar estadisticas.');
+        setSummaryError(error instanceof Error ? error.message : 'No fue posible cargar estadísticas.');
       })
       .finally(() => {
         if (!isActive) return;
@@ -230,7 +235,7 @@ export function DashboardPage() {
                                   className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
                                   style={{ backgroundColor: '#DBEAFE', color: '#1480F0' }}
                                 >
-                                  {usuario.rol}
+                                  {getUserRoleLabel(usuario)}
                                 </span>
                               </div>
                             </li>
@@ -297,7 +302,7 @@ function formatDireccion(direccion: { calle: string; municipio: string; fraccion
   const parts = [direccion.calle, direccion.municipio, direccion.fraccionamiento]
     .map((part) => part.trim())
     .filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : 'Sin direccion';
+  return parts.length > 0 ? parts.join(', ') : 'Sin dirección';
 }
 
 function renderPrice(value: string) {
@@ -339,4 +344,17 @@ function formatDate(value: string): string {
     month: '2-digit',
     day: '2-digit',
   }).format(date);
+}
+
+function getUserRoleLabel(usuario: { rol?: string; roles?: string[] }): string {
+  if (typeof usuario.rol === 'string' && usuario.rol.trim()) {
+    return usuario.rol.trim();
+  }
+
+  if (Array.isArray(usuario.roles) && usuario.roles.length > 0) {
+    const firstRole = usuario.roles.find((role) => typeof role === 'string' && role.trim().length > 0);
+    if (firstRole) return firstRole.trim();
+  }
+
+  return 'Sin rol';
 }

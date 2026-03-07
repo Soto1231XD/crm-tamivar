@@ -11,6 +11,7 @@ type BackendLoginSuccess = {
     apellido_paterno?: string;
     apellido_materno?: string;
     correo_electronico: string;
+    roles?: string[];
     rol?: {
       rol?: string;
     };
@@ -58,13 +59,14 @@ async function postJson<TResponse>(path: string, body: unknown): Promise<TRespon
 }
 
 function mapBackendUserToAppUser(user: BackendLoginSuccess['user']): AppUser {
-  const roleName = user.rol?.rol ?? '';
-  const normalizedRole = normalizeBackendRole(roleName);
+  const backendRoles = user.roles?.length ? user.roles : user.rol?.rol ? [user.rol.rol] : [];
+  const normalizedRoles = backendRoles
+    .map((roleName) => normalizeBackendRole(roleName))
+    .filter((role): role is Role => Boolean(role));
   const fullName = [user.nombres, user.apellido_paterno]
     .filter(Boolean)
     .join(' ')
     .trim();
-  const roles: Role[] = normalizedRole ? [normalizedRole] : [];
 
   return {
     id: user.id,
@@ -72,7 +74,7 @@ function mapBackendUserToAppUser(user: BackendLoginSuccess['user']): AppUser {
     nombres: user.nombres,
     apellidoPaterno: user.apellido_paterno,
     email: user.correo_electronico,
-    roles,
+    roles: normalizedRoles,
   };
 }
 
@@ -98,9 +100,11 @@ export async function verifyTwoFaApi(challengeId: string, codigo: string): Promi
   accessToken: string;
   user: AppUser;
 }> {
+  const sanitizedCode = codigo.trim();
+
   const data = await postJson<BackendLoginSuccess>('/auth/verify-2fa', {
-    challenge_id: challengeId,
-    codigo,
+    challenge_id: challengeId.trim(),
+    codigo: sanitizedCode,
   });
 
   return {

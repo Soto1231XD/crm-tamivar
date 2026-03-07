@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import desArcIcon from '../../../assets/images/DesArc.png';
 import editarIcon from '../../../assets/images/Editar.png';
@@ -29,8 +29,24 @@ const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> 
   cerrado: { backgroundColor: '#C3B28A', color: '#050505' },
 };
 
+const PRIORITY_STYLES: Record<string, { backgroundColor: string; color: string }> = {
+  urgente: { backgroundColor: '#FEF3C7', color: '#CA5874' },
+  normal: { backgroundColor: '#DBFCE7', color: '#4D8236' },
+  'bajo interes': { backgroundColor: '#8E8E93', color: '#000000' },
+};
+
 const ALL_STATES = 'Todos los estados';
-const ALL_PROPERTIES = 'Propiedad';
+const ALL_PRIORITIES = 'Todas las prioridades';
+const LEAD_STATUS_OPTIONS = [
+  'Contactado',
+  'En seguimiento',
+  'Cancelado',
+  'Cita agendada',
+  'En espera',
+  'En proceso',
+  'Cerrado',
+] as const;
+const LEAD_PRIORITY_OPTIONS = ['Urgente', 'Normal', 'Bajo Interes'] as const;
 
 export function LeadsPage() {
   const { user, accessToken } = useAuth();
@@ -39,7 +55,8 @@ export function LeadsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_STATES);
-  const [propertyFilter, setPropertyFilter] = useState(ALL_PROPERTIES);
+  const [priorityFilter, setPriorityFilter] = useState(ALL_PRIORITIES);
+  const [updatingLeadId, setUpdatingLeadId] = useState<number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadRecord | null>(null);
   const [deletingLead, setDeletingLead] = useState<LeadRecord | null>(null);
@@ -85,14 +102,13 @@ export function LeadsPage() {
     return [ALL_STATES, ...Array.from(values)];
   }, [leads]);
 
-  const propertyOptions = useMemo(() => {
-    const values = new Set<string>();
-    leads.forEach((lead) => {
-      const value = formatPropertyAddress(lead.propiedad).trim();
-      if (value && value !== 'Sin ubicacion') values.add(value);
-    });
-    return [ALL_PROPERTIES, ...Array.from(values)];
-  }, [leads]);
+  const propertyTitleById = useMemo(
+    () =>
+      new Map(
+        properties.map((property) => [property.id, property.titulo?.trim() || 'Sin titulo'] as const),
+      ),
+    [properties],
+  );
 
   const filteredLeads = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -101,22 +117,23 @@ export function LeadsPage() {
       const fullName = `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim().toLowerCase();
       const email = (lead.correo_electronico ?? '').toLowerCase();
       const phone = formatPhone(lead.lada, lead.telefono).toLowerCase();
-      const address = formatPropertyAddress(lead.propiedad);
+      const priority = normalizePriority(lead.prioridad ?? '');
 
       const matchesSearch =
         query.length === 0 || fullName.includes(query) || email.includes(query) || phone.includes(query);
       const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;
-      const matchesProperty = propertyFilter === ALL_PROPERTIES || address === propertyFilter;
+      const matchesPriority =
+        priorityFilter === ALL_PRIORITIES || priority === normalizePriority(priorityFilter);
 
-      return matchesSearch && matchesStatus && matchesProperty;
+      return matchesSearch && matchesStatus && matchesPriority;
     });
-  }, [leads, search, statusFilter, propertyFilter]);
+  }, [leads, search, statusFilter, priorityFilter]);
 
   const propertyChoices = useMemo(
     () =>
       properties.map((property) => ({
         id: property.id,
-        label: formatPropertyAddress({ direccion: property.direccion }),
+        label: property.titulo?.trim() || 'Sin titulo',
       })),
     [properties],
   );
@@ -160,6 +177,12 @@ export function LeadsPage() {
       const selectedProperty = properties.find((property) => property.id === payload.propiedad_id);
       const leadForList: LeadRecord = {
         ...createdLead,
+        creador:
+          createdLead.creador ?? {
+            id: user.id,
+            nombres: user.nombres ?? undefined,
+            apellido_paterno: user.apellidoPaterno ?? undefined,
+          },
         propiedad:
           createdLead.propiedad ??
           (selectedProperty
@@ -179,7 +202,9 @@ export function LeadsPage() {
   async function handleEditLead(leadId: number, payload: UpdateLeadPayload): Promise<string | null> {
     try {
       const updatedLead = await updateLead(leadId, payload, accessToken);
-      const selectedProperty = properties.find((property) => property.id === (payload.propiedad_id ?? updatedLead.propiedad_id));
+      const selectedProperty = properties.find(
+        (property) => property.id === (payload.propiedad_id ?? updatedLead.propiedad_id),
+      );
 
       const leadForList: LeadRecord = {
         ...updatedLead,
@@ -209,8 +234,35 @@ export function LeadsPage() {
     }
   }
 
+  function handleDownloadLead(lead: LeadRecord) {
+    downloadLeadAsExcel(lead, propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo');
+  }
+
+  async function handleQuickLeadChange(
+    leadId: number,
+    field: 'estado' | 'prioridad',
+    value: string,
+  ) {
+    const targetLead = leads.find((lead) => lead.id === leadId);
+    if (!targetLead || targetLead[field] === value) return;
+
+    const previousValue = targetLead[field];
+    setUpdatingLeadId(leadId);
+    setLeads((prev) => prev.map((lead) => (lead.id === leadId ? { ...lead, [field]: value } : lead)));
+
+    try {
+      await updateLead(leadId, { [field]: value }, accessToken);
+    } catch {
+      setLeads((prev) =>
+        prev.map((lead) => (lead.id === leadId ? { ...lead, [field]: previousValue } : lead)),
+      );
+    } finally {
+      setUpdatingLeadId(null);
+    }
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Registros</h2>
@@ -249,11 +301,11 @@ export function LeadsPage() {
           </select>
 
           <select
-            value={propertyFilter}
-            onChange={(event) => setPropertyFilter(event.target.value)}
+            value={priorityFilter}
+            onChange={(event) => setPriorityFilter(event.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
           >
-            {propertyOptions.map((option) => (
+            {[ALL_PRIORITIES, ...LEAD_PRIORITY_OPTIONS].map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -270,9 +322,9 @@ export function LeadsPage() {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="w-full overflow-x-auto">
-          <table className="min-w-full w-max text-left">
+      <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="w-full min-w-0 overflow-x-auto">
+          <table className="w-max min-w-[1400px] text-left">
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Cliente</th>
@@ -282,6 +334,8 @@ export function LeadsPage() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Telefono</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Propiedad</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Estados</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Prioridad</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Creado por</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
                   Fecha de creacion
                 </th>
@@ -292,13 +346,13 @@ export function LeadsPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-sm text-slate-600">
+                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-slate-600">
                     Cargando registros...
                   </td>
                 </tr>
               ) : filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-sm text-slate-600">
+                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-slate-600">
                     No se encontraron registros
                   </td>
                 </tr>
@@ -310,15 +364,40 @@ export function LeadsPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{lead.correo_electronico || 'Sin correo'}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{formatPhone(lead.lada, lead.telefono)}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{formatPropertyAddress(lead.propiedad)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo'}
+                    </td>
                     <td className="px-4 py-3">
-                      <span
-                        className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                      <select
+                        value={lead.estado || LEAD_STATUS_OPTIONS[0]}
+                        onChange={(event) => handleQuickLeadChange(lead.id, 'estado', event.target.value)}
+                        disabled={updatingLeadId === lead.id}
+                        className="min-w-32 rounded-full border-0 px-3 py-1 text-xs font-semibold outline-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
                         style={getStatusStyles(lead.estado ?? '')}
                       >
-                        {lead.estado || 'Sin estado'}
-                      </span>
+                        {LEAD_STATUS_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
                     </td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={lead.prioridad || LEAD_PRIORITY_OPTIONS[1]}
+                        onChange={(event) => handleQuickLeadChange(lead.id, 'prioridad', event.target.value)}
+                        disabled={updatingLeadId === lead.id}
+                        className="min-w-32 rounded-full border-0 px-3 py-1 text-xs font-semibold outline-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        style={getPriorityStyles(lead.prioridad ?? '')}
+                      >
+                        {LEAD_PRIORITY_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">{formatCreatorName(lead.creador)}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{formatDate(lead.creado_en)}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{lead.comentarios || 'Sin comentarios'}</td>
                     <td className="px-4 py-3">
@@ -337,6 +416,7 @@ export function LeadsPage() {
                           aria-label="Descargar"
                           title="Descargar"
                           className="rounded-md border border-slate-300 p-1.5 text-slate-700"
+                          onClick={() => handleDownloadLead(lead)}
                         >
                           <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />
                         </button>
@@ -387,17 +467,22 @@ function getStatusStyles(estado: string): { backgroundColor: string; color: stri
   return STATUS_STYLES[normalizedEstado] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
 }
 
+function getPriorityStyles(prioridad: string): { backgroundColor: string; color: string } {
+  const normalizedPrioridad = normalizePriority(prioridad);
+  return PRIORITY_STYLES[normalizedPrioridad] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
+}
+
+function normalizePriority(prioridad: string): string {
+  return prioridad
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 function formatPhone(lada?: string | null, telefono?: string | number): string {
   const parts = [lada ?? '', telefono != null ? String(telefono) : ''].map((part) => part.trim()).filter(Boolean);
   return parts.length ? parts.join(' ') : 'Sin telefono';
-}
-
-function formatPropertyAddress(propiedad?: { direccion?: { calle?: string; municipio?: string; fraccionamiento?: string } } | null): string {
-  const direccion = propiedad?.direccion ?? {};
-  const parts = [direccion.calle, direccion.municipio, direccion.fraccionamiento]
-    .map((part) => (typeof part === 'string' ? part.trim() : ''))
-    .filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : 'Sin ubicacion';
 }
 
 function formatDate(value?: string): string {
@@ -409,4 +494,96 @@ function formatDate(value?: string): string {
     month: '2-digit',
     day: '2-digit',
   }).format(date);
+}
+
+function formatCreatorName(
+  creador?: { nombres?: string | null; apellido_paterno?: string | null } | null,
+): string {
+  const parts = [creador?.nombres, creador?.apellido_paterno]
+    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+    .filter(Boolean);
+  return parts.length > 0 ? parts.join(' ') : 'Sin asignar';
+}
+
+function downloadLeadAsExcel(lead: LeadRecord, propertyTitle: string) {
+  const rows = [
+    ['Campo', 'Valor'],
+    ['ID', String(lead.id ?? '')],
+    ['Cliente', `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'],
+    ['Correo electronico', lead.correo_electronico?.trim() || 'Sin correo'],
+    ['Telefono', formatPhone(lead.lada, lead.telefono)],
+    ['Propiedad', propertyTitle],
+    ['Estado', lead.estado?.trim() || 'Sin estado'],
+    ['Prioridad', lead.prioridad?.trim() || 'Sin prioridad'],
+    ['Creado por', formatCreatorName(lead.creador)],
+    ['Fecha de creacion', formatDate(lead.creado_en)],
+    ['Comentarios', lead.comentarios?.trim() || 'Sin comentarios'],
+  ];
+
+  const tableRows = rows
+    .map(
+      ([label, value], index) => `
+        <tr>
+          <td style="${index === 0 ? HEADER_CELL_STYLE : LABEL_CELL_STYLE}">${escapeHtml(label)}</td>
+          <td style="${index === 0 ? HEADER_CELL_STYLE : VALUE_CELL_STYLE}">${escapeHtml(value)}</td>
+        </tr>`,
+    )
+    .join('');
+
+  const excelContent = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+      <head>
+        <meta charset="UTF-8" />
+        <!--[if gte mso 9]>
+          <xml>
+            <x:ExcelWorkbook>
+              <x:ExcelWorksheets>
+                <x:ExcelWorksheet>
+                  <x:Name>Registro</x:Name>
+                  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+                </x:ExcelWorksheet>
+              </x:ExcelWorksheets>
+            </x:ExcelWorkbook>
+          </xml>
+        <![endif]-->
+      </head>
+      <body>
+        <table border="1" cellspacing="0" cellpadding="0">
+          ${tableRows}
+        </table>
+      </body>
+    </html>`;
+
+  const blob = new Blob([`\ufeff${excelContent}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${sanitizeFileName(`${lead.nombres ?? ''}-${lead.apellidos ?? ''}` || `registro-${lead.id}`)}.xls`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+const HEADER_CELL_STYLE =
+  'background:#E2E8F0;font-weight:700;color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
+const LABEL_CELL_STYLE =
+  'background:#F8FAFC;font-weight:600;color:#334155;padding:8px 12px;border:1px solid #CBD5E1;';
+const VALUE_CELL_STYLE = 'color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
+
+function sanitizeFileName(value: string): string {
+  return value
+    .trim()
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }

@@ -9,8 +9,14 @@ export type LeadRecord = {
   correo_electronico?: string | null;
   comentarios?: string | null;
   estado?: string | null;
+  prioridad?: string | null;
   creado_en?: string;
   propiedad_id: number;
+  creador?: {
+    id: number;
+    nombres?: string | null;
+    apellido_paterno?: string | null;
+  } | null;
   propiedad?: {
     direccion?: {
       calle?: string;
@@ -23,24 +29,26 @@ export type LeadRecord = {
 export type CreateLeadPayload = {
   nombres: string;
   apellidos: string;
-  telefono: number;
+  telefono: string;
   propiedad_id: number;
   creado_por_id: number;
   lada?: string;
   correo_electronico?: string;
   comentarios?: string;
   estado?: string;
+  prioridad: string;
 };
 
 export type UpdateLeadPayload = {
   nombres?: string;
   apellidos?: string;
-  telefono?: number;
+  telefono?: string;
   propiedad_id?: number;
   lada?: string;
   correo_electronico?: string;
   comentarios?: string;
   estado?: string;
+  prioridad?: string;
 };
 
 export async function getLeads(): Promise<LeadRecord[]> {

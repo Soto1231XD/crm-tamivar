@@ -29,6 +29,7 @@ type SessionState = {
 };
 
 const STORAGE_KEY = 'crm_tamivar_session';
+const TWO_FA_CHALLENGE_KEY = 'crm_tamivar_2fa_challenge';
 
 function loadInitialSession(): SessionState {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -64,20 +65,27 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const result = await loginApi(credentials);
 
         if (result.status === 'requires_2fa') {
+          sessionStorage.setItem(TWO_FA_CHALLENGE_KEY, result.challengeId);
           return result;
         }
 
         setAuthenticatedSession(result.user, result.accessToken);
+        sessionStorage.removeItem(TWO_FA_CHALLENGE_KEY);
         return { status: 'authenticated', user: result.user };
       },
       verifyTwoFa: async (challengeId, codigo) => {
-        const result = await verifyTwoFaApi(challengeId, codigo);
+        const effectiveChallengeId =
+          challengeId || sessionStorage.getItem(TWO_FA_CHALLENGE_KEY) || '';
+
+        const result = await verifyTwoFaApi(effectiveChallengeId, codigo);
         setAuthenticatedSession(result.user, result.accessToken);
+        sessionStorage.removeItem(TWO_FA_CHALLENGE_KEY);
         return result.user;
       },
       logout: () => {
         setSession({ user: null, accessToken: null });
         localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(TWO_FA_CHALLENGE_KEY);
       },
     }),
     [session.accessToken, session.user],

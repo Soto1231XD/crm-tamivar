@@ -22,7 +22,8 @@ export type DashboardSummary = {
     nombres: string;
     apellido_paterno: string;
     correo_electronico: string;
-    rol: string;
+    rol?: string;
+    roles?: string[];
   }>;
   mis_publicaciones: Array<{
     titulo: string;

@@ -117,10 +117,18 @@ export function getAvailableModules(userRoles: Role[]): ModuleKey[] {
 }
 
 export function normalizeBackendRole(roleName: string): Role | null {
-  const normalized = roleName.trim().toLowerCase();
+  const normalized = roleName
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
   if (normalized === 'super admin' || normalized === 'super_admin') return 'SUPER_ADMIN';
+  if (normalized === 'super administrador' || normalized === 'super_administrador') {
+    return 'SUPER_ADMIN';
+  }
   if (normalized === 'admin') return 'ADMIN';
+  if (normalized === 'administrador') return 'ADMIN';
   if (normalized === 'marketing') return 'MARKETING';
   if (normalized === 'marketins') return 'MARKETING';
   if (normalized === 'rh' || normalized === 'recursos humanos') return 'RH';

@@ -15,6 +15,8 @@ const LEAD_STATUS_OPTIONS = [
   'Cerrado',
 ] as const;
 
+const LEAD_PRIORITY_OPTIONS = ['Urgente', 'Normal', 'Bajo Interés'] as const;
+
 const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/;
 const LADA_REGEX = /^\+?[0-9]+$/;
 
@@ -39,6 +41,7 @@ const INITIAL_FORM = {
   correo_electronico: '',
   comentarios: '',
   estado: 'Contactado',
+  prioridad: 'Normal',
 };
 
 const createLeadSchema = z.object({
@@ -52,19 +55,23 @@ const createLeadSchema = z.object({
     .trim()
     .min(1, 'Apellidos es obligatorio.')
     .regex(NAME_REGEX, 'Apellidos solo permite letras y espacios.'),
-  telefono: z.coerce.number().int().positive('Telefono es obligatorio.'),
+  telefono: z
+    .string()
+    .trim()
+    .regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos numéricos.'),
   propiedad_id: z.coerce.number().int().positive('Propiedad es obligatoria.'),
   lada: z
     .string()
     .trim()
     .max(6, 'Lada no puede exceder 6 caracteres.')
-    .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no valida.')
+    .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no válida.')
     .optional(),
   correo_electronico: z
-    .union([z.literal(''), z.string().email('Correo electronico no valido.')])
+    .union([z.literal(''), z.string().email('Correo electrónico no válido.')])
     .optional(),
   comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
   estado: z.string().optional(),
+  prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
 });
 
 type CreateLeadFormInput = z.input<typeof createLeadSchema>;
@@ -90,7 +97,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
   }
 
   function sanitizePhone(value: string): string {
-    return value.replace(/\D/g, '').slice(0, 12);
+    return value.replace(/\D/g, '').slice(0, 10);
   }
 
   function sanitizeLada(value: string): string {
@@ -119,6 +126,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
       correo_electronico: values.correo_electronico?.trim() || undefined,
       comentarios: values.comentarios?.trim() || undefined,
       estado: values.estado?.trim() || undefined,
+      prioridad: values.prioridad.trim(),
     };
 
     setIsSubmitting(true);
@@ -150,10 +158,16 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
             </button>
           </div>
 
+          <p className="mb-4 text-sm text-slate-600">
+            <span className="font-semibold text-red-600">*</span> Campo obligatorio
+          </p>
+
           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 space-y-4 overflow-y-auto pr-1">
             <div className="grid gap-3 md:grid-cols-2">
               <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Nombres
+                <span>
+                  Nombres<span className="ml-0.5 font-semibold text-red-600">*</span>
+                </span>
                 <input
                   type="text"
                   {...register('nombres', {
@@ -167,7 +181,9 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Apellidos
+                <span>
+                  Apellidos<span className="ml-0.5 font-semibold text-red-600">*</span>
+                </span>
                 <input
                   type="text"
                   {...register('apellidos', {
@@ -195,9 +211,11 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Telefono
+                <span>
+                  Teléfono<span className="ml-0.5 font-semibold text-red-600">*</span>
+                </span>
                 <input
-                  type="number"
+                  type="text"
                   inputMode="numeric"
                   {...register('telefono', {
                     onChange: (event) => {
@@ -205,12 +223,14 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
                     },
                   })}
                   className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+                  maxLength={10}
+                  placeholder="9981144249"
                 />
                 {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700 md:col-span-2">
-                Correo electronico
+                Correo electrónico
                 <input
                   type="email"
                   {...register('correo_electronico')}
@@ -223,7 +243,9 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Propiedad
+                <span>
+                  Propiedad<span className="ml-0.5 font-semibold text-red-600">*</span>
+                </span>
                 <select
                   {...register('propiedad_id')}
                   className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
@@ -250,6 +272,23 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
                     </option>
                   ))}
                 </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                <span>
+                  Prioridad<span className="ml-0.5 font-semibold text-red-600">*</span>
+                </span>
+                <select
+                  {...register('prioridad')}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+                >
+                  {LEAD_PRIORITY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                {errors.prioridad ? <span className="text-xs text-red-600">{errors.prioridad.message}</span> : null}
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700 md:col-span-2">

@@ -44,12 +44,12 @@ export function LoginPage() {
 
       if (result.status === 'requires_2fa') {
         setChallengeId(result.challengeId);
-        setInfo(result.message || 'Codigo de verificacion enviado a tu correo.');
+        setInfo(result.message || 'Código de verificación enviado a tu correo.');
       } else {
         navigate(getDefaultDashboardPath(result.user.roles), { replace: true });
       }
     } catch (currentError) {
-      setError(currentError instanceof Error ? currentError.message : 'Error al iniciar sesion.');
+      setError(currentError instanceof Error ? currentError.message : 'Error al iniciar sesión.');
     } finally {
       setIsLoading(false);
     }
@@ -62,14 +62,20 @@ export function LoginPage() {
       return;
     }
 
+    const sanitizedCode = codigo.replace(/\D/g, '').trim();
+    if (sanitizedCode.length !== 6) {
+      setError('El código debe contener 6 dígitos.');
+      return;
+    }
+
     setError('');
     setIsLoading(true);
 
     try {
-      const user = await verifyTwoFa(challengeId, codigo);
+      const user = await verifyTwoFa(challengeId, sanitizedCode);
       navigate(getDefaultDashboardPath(user.roles), { replace: true });
     } catch (currentError) {
-      setError(currentError instanceof Error ? currentError.message : 'Error validando codigo 2FA.');
+      setError(currentError instanceof Error ? currentError.message : 'Error al validar el código 2FA.');
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +102,7 @@ export function LoginPage() {
             Plataforma central para operar equipos y ventas.
           </h2>
           <p className="mt-2 max-w-md text-xs text-slate-200/90 sm:text-sm">
-            Accede con tus credenciales y continua con tu flujo de trabajo segun tu rol.
+            Accede con tus credenciales y continúa con tu flujo de trabajo según tu rol.
           </p>
         </div>
       </aside>
@@ -104,13 +110,13 @@ export function LoginPage() {
       <section className="relative flex h-[60vh] items-center justify-center overflow-hidden bg-white px-5 py-6 sm:px-7 sm:py-8 lg:h-screen lg:items-center lg:py-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(25,75,141,0.10),transparent_55%)]" />
         <div className="relative w-full max-w-sm">
-          <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Iniciar sesion</h1>
+          <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Iniciar sesión</h1>
           <p className="mt-1.5 text-sm text-slate-600">Ingresa para acceder al CRM TAMIVAR.</p>
 
           {!challengeId ? (
             <form className="mt-6 space-y-4" onSubmit={handleLogin}>
               <label className="block">
-                <span className="mb-1.5 block text-sm font-semibold text-slate-700">Correo electronico</span>
+                <span className="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</span>
                 <input
                   type="email"
                   required
@@ -142,14 +148,14 @@ export function LoginPage() {
           ) : (
             <form className="mt-6 space-y-4" onSubmit={handleVerifyTwoFa}>
               <label className="block">
-                <span className="mb-1.5 block text-sm font-semibold text-slate-700">Codigo 2FA</span>
+                <span className="mb-1.5 block text-sm font-semibold text-slate-700">Código 2FA</span>
                 <input
                   type="text"
                   required
                   minLength={6}
                   maxLength={6}
                   value={codigo}
-                  onChange={(event) => setCodigo(event.target.value)}
+                  onChange={(event) => setCodigo(event.target.value.replace(/\D/g, '').slice(0, 6))}
                   className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
                 />
               </label>
@@ -159,7 +165,7 @@ export function LoginPage() {
                 disabled={isLoading}
                 className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-60"
               >
-                {isLoading ? 'Validando...' : 'Validar codigo'}
+                {isLoading ? 'Validando...' : 'Validar código'}
               </button>
             </form>
           )}

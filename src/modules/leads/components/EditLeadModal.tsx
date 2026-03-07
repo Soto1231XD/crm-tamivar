@@ -15,6 +15,8 @@ const LEAD_STATUS_OPTIONS = [
   'Cerrado',
 ] as const;
 
+const LEAD_PRIORITY_OPTIONS = ['Urgente', 'Normal', 'Bajo Interés'] as const;
+
 const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/;
 const LADA_REGEX = /^\+?[0-9]+$/;
 
@@ -42,19 +44,23 @@ const editLeadSchema = z.object({
     .trim()
     .min(1, 'Apellidos es obligatorio.')
     .regex(NAME_REGEX, 'Apellidos solo permite letras y espacios.'),
-  telefono: z.coerce.number().int().positive('Telefono es obligatorio.'),
+  telefono: z
+    .string()
+    .trim()
+    .regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos numéricos.'),
   propiedad_id: z.coerce.number().int().positive('Propiedad es obligatoria.'),
   lada: z
     .string()
     .trim()
     .max(6, 'Lada no puede exceder 6 caracteres.')
-    .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no valida.')
+    .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no válida.')
     .optional(),
   correo_electronico: z
-    .union([z.literal(''), z.string().email('Correo electronico no valido.')])
+    .union([z.literal(''), z.string().email('Correo electrónico no válido.')])
     .optional(),
   comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
   estado: z.string().optional(),
+  prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
 });
 
 type EditLeadFormInput = z.input<typeof editLeadSchema>;
@@ -65,7 +71,7 @@ function sanitizeName(value: string): string {
 }
 
 function sanitizePhone(value: string): string {
-  return value.replace(/\D/g, '').slice(0, 12);
+  return value.replace(/\D/g, '').slice(0, 10);
 }
 
 function sanitizeLada(value: string): string {
@@ -86,6 +92,7 @@ function toDefaultValues(lead: LeadRecord | null): EditLeadFormInput {
     correo_electronico: lead?.correo_electronico ?? '',
     comentarios: lead?.comentarios ?? '',
     estado: lead?.estado ?? 'Contactado',
+    prioridad: lead?.prioridad ?? 'Normal',
   };
 }
 
@@ -132,6 +139,7 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
       correo_electronico: values.correo_electronico?.trim() || undefined,
       comentarios: values.comentarios?.trim() || undefined,
       estado: values.estado?.trim() || undefined,
+      prioridad: values.prioridad.trim(),
     };
 
     const error = await onEdit(lead.id, payload);
@@ -207,9 +215,9 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Telefono
+                Teléfono
                 <input
-                  type="number"
+                  type="text"
                   inputMode="numeric"
                   {...register('telefono', {
                     onChange: (event) => {
@@ -217,12 +225,14 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
                     },
                   })}
                   className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+                  maxLength={10}
+                  placeholder="9981144249"
                 />
                 {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700 md:col-span-2">
-                Correo electronico
+                Correo electrónico
                 <input
                   type="email"
                   {...register('correo_electronico')}
@@ -262,6 +272,21 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
                     </option>
                   ))}
                 </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                Prioridad
+                <select
+                  {...register('prioridad')}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+                >
+                  {LEAD_PRIORITY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                {errors.prioridad ? <span className="text-xs text-red-600">{errors.prioridad.message}</span> : null}
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700 md:col-span-2">
