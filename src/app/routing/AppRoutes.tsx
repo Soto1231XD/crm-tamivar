@@ -9,6 +9,8 @@ import { PropertiesPage } from '../../modules/properties/pages/PropertiesPage';
 import { CreatePropertyPage } from '../../modules/properties/pages/CreatePropertyPage';
 import { EditPropertyPage } from '../../modules/properties/pages/EditPropertyPage';
 import { LeadsPage } from '../../modules/leads/pages/LeadsPage';
+import { UsersPage } from '../../modules/users/pages/UsersPage';
+import { SystemRolesPage } from '../../modules/systemRoles/pages/SystemRolesPage';
 
 export function AppRoutes() {
   return (
@@ -32,13 +34,13 @@ export function AppRoutes() {
             <Route path="modulos/leads" element={<LeadsPage />} />
           </Route>
           <Route element={<ProtectedRoute module="users" />}>
-            <Route path="modulos/users" element={<ModulePage />} />
+            <Route path="modulos/users" element={<UsersPage />} />
           </Route>
           <Route element={<ProtectedRoute module="content" />}>
             <Route path="modulos/content" element={<ModulePage />} />
           </Route>
           <Route element={<ProtectedRoute module="system_roles" />}>
-            <Route path="modulos/system_roles" element={<ModulePage />} />
+            <Route path="modulos/system_roles" element={<SystemRolesPage />} />
           </Route>
           <Route element={<ProtectedRoute module="system_logs" />}>
             <Route path="modulos/system_logs" element={<ModulePage />} />

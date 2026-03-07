@@ -90,6 +90,23 @@ export function AppShell() {
               </NavLink>
             ))}
           </nav>
+
+          <div className="mt-8">
+            <button
+              type="button"
+              onClick={logout}
+              className={[
+                'inline-flex rounded-lg border border-red-700 bg-red-600 font-semibold text-white transition hover:bg-red-700',
+                isSidebarCollapsed
+                  ? 'h-10 w-full items-center justify-center text-sm'
+                  : 'w-full items-center justify-center px-3 py-2 text-sm',
+              ].join(' ')}
+              aria-label="Cerrar sesion"
+              title="Cerrar sesion"
+            >
+              {isSidebarCollapsed ? 'X' : 'Cerrar sesion'}
+            </button>
+          </div>
         </aside>
 
         <div className="flex min-h-screen min-w-0 flex-col">
@@ -112,13 +129,6 @@ export function AppShell() {
                   <p className="text-sm font-semibold text-slate-900">{displayName}</p>
                   <p className="text-xs text-slate-600">{primaryRole ? ROLE_LABELS[primaryRole] : 'Sin rol asignado'}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                >
-                  Cerrar sesión
-                </button>
               </div>
             </div>
           </header>
@@ -137,7 +147,7 @@ function getPageTitle(pathname: string): string {
 
   if (pathname.startsWith('/modulos/')) {
     const rawModule = pathname.replace('/modulos/', '') as ModuleKey;
-    return MODULE_LABELS[rawModule] ?? 'Módulo';
+    return MODULE_LABELS[rawModule] ?? 'Modulo';
   }
 
   return 'Dashboard';
