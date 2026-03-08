@@ -3,7 +3,8 @@ import agregarIcon from '../../../assets/images/Agregar.png';
 import { useAuth } from '../../../shared/context/AuthContext';
 import { getUsers, type UserRecord } from '../../users/services/users.api';
 import { AssignedModulesModal } from '../components/AssignedModulesModal';
-import { getSystemRoles, type SystemRoleRecord } from '../services/systemRoles.api';
+import { CreateRoleModal } from '../components/CreateRoleModal';
+import { createSystemRole, type PermissionRecord, getSystemRoles, type SystemRoleRecord } from '../services/systemRoles.api';
 
 export function SystemRolesPage() {
   const { accessToken } = useAuth();
@@ -12,6 +13,7 @@ export function SystemRolesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState<SystemRoleRecord | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -38,6 +40,23 @@ export function SystemRolesPage() {
     return roles.filter((role) => query.length === 0 || normalizeText(role.rol).includes(query));
   }, [roles, search]);
 
+  const availablePermissions = useMemo(() => {
+    const permissionsMap = new Map<number, PermissionRecord>();
+
+    roles.forEach((role) => {
+      (role.permisos ?? []).forEach((permissionEntry) => {
+        const permission = permissionEntry?.permiso;
+        if (!permission || typeof permission.id !== 'number') return;
+        permissionsMap.set(permission.id, permission);
+      });
+    });
+
+    return Array.from(permissionsMap.values()).sort((left, right) => {
+      const moduleCompare = left.modulo.localeCompare(right.modulo);
+      return moduleCompare !== 0 ? moduleCompare : left.accion.localeCompare(right.accion);
+    });
+  }, [roles]);
+
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -47,6 +66,7 @@ export function SystemRolesPage() {
         </div>
         <button
           type="button"
+          onClick={() => setIsCreateModalOpen(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm"
         >
           <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
@@ -106,8 +126,24 @@ export function SystemRolesPage() {
         role={selectedRole}
         onClose={() => setSelectedRole(null)}
       />
+      <CreateRoleModal
+        isOpen={isCreateModalOpen}
+        permissions={availablePermissions}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreateRole}
+      />
     </div>
   );
+
+  async function handleCreateRole(payload: { rol: string; permisosIds: number[] }): Promise<string | null> {
+    try {
+      const createdRole = await createSystemRole(payload, accessToken);
+      setRoles((prev) => [createdRole, ...prev]);
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : 'No fue posible crear el rol.';
+    }
+  }
 }
 
 function InfoBlock({ label, value }: { label: string; value: string }) {

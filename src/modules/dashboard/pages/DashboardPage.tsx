@@ -13,6 +13,8 @@ const superAdminCards = [
 ] as const;
 
 const superAdminSections = ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Mis publicaciones'] as const;
+const marketingCards = ['Propiedades Disponibles', 'Blogs', 'Propiedades vendidas'] as const;
+const marketingSections = ['Mis publicaciones', 'Propiedades Recientes'] as const;
 
 const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
   contactado: { backgroundColor: '#DBEAFE', color: '#1480F0' },
@@ -38,7 +40,9 @@ export function DashboardPage() {
   const displayName = getUserDisplayName(user);
   const [summary, setSummary] = useState({
     propiedadesDisponibles: 0,
+    propiedadesVendidas: 0,
     registros: 0,
+    blogs: 0,
     usuariosSistema: 0,
     registrosRecientes: [] as Array<{
       nombre: string;
@@ -73,7 +77,7 @@ export function DashboardPage() {
   const [summaryError, setSummaryError] = useState('');
 
   useEffect(() => {
-    if (primaryRole !== 'SUPER_ADMIN' || !accessToken) {
+    if (!accessToken || (primaryRole !== 'SUPER_ADMIN' && primaryRole !== 'MARKETING')) {
       return;
     }
 
@@ -91,6 +95,14 @@ export function DashboardPage() {
         const propiedadesDisponiblesActivas = Array.isArray(properties)
           ? properties.filter((property) => property.activo === true).length
           : 0;
+        const propiedadesVendidas = Array.isArray(properties)
+          ? properties.filter(
+              (property) =>
+                property.activo === true &&
+                typeof property.estatus === 'string' &&
+                property.estatus.trim().toLowerCase() === 'vendido',
+            ).length
+          : 0;
 
         const propiedadesRecientesFinal =
           propiedadesRecientes.length > 0 ? propiedadesRecientes : await getRecentPropertiesFallback();
@@ -99,7 +111,9 @@ export function DashboardPage() {
 
         setSummary({
           propiedadesDisponibles: propiedadesDisponiblesActivas,
+          propiedadesVendidas,
           registros: data.registros,
+          blogs: Array.isArray(data.mis_publicaciones) ? data.mis_publicaciones.length : 0,
           usuariosSistema: data.usuarios_sistema,
           registrosRecientes: Array.isArray(data.registros_recientes) ? data.registros_recientes : [],
           propiedadesRecientes: propiedadesRecientesFinal,
@@ -125,16 +139,23 @@ export function DashboardPage() {
     () => ({
       'Propiedades Disponibles': summary.propiedadesDisponibles,
       Registros: summary.registros,
-      'Propiedades vendidas': '-',
-      Blogs: '-',
+      'Propiedades vendidas': summary.propiedadesVendidas,
+      Blogs: summary.blogs,
       'Usuarios del sistema': summary.usuariosSistema,
     }),
-    [summary.propiedadesDisponibles, summary.registros, summary.usuariosSistema],
+    [summary.blogs, summary.propiedadesDisponibles, summary.propiedadesVendidas, summary.registros, summary.usuariosSistema],
   );
   const registrosRecientes = Array.isArray(summary.registrosRecientes) ? summary.registrosRecientes : [];
   const propiedadesRecientes = Array.isArray(summary.propiedadesRecientes) ? summary.propiedadesRecientes : [];
   const usuariosRecientes = Array.isArray(summary.usuariosRecientes) ? summary.usuariosRecientes : [];
   const misPublicaciones = Array.isArray(summary.misPublicaciones) ? summary.misPublicaciones : [];
+  const dashboardCards = primaryRole === 'MARKETING' ? marketingCards : primaryRole === 'SUPER_ADMIN' ? superAdminCards : [];
+  const dashboardSections =
+    primaryRole === 'MARKETING'
+      ? marketingSections
+      : primaryRole === 'SUPER_ADMIN'
+        ? superAdminSections
+        : [];
 
   return (
     <div className="space-y-5">
@@ -143,11 +164,11 @@ export function DashboardPage() {
         <p className="mt-2 text-sm text-slate-200">{primaryRole ? ROLE_LABELS[primaryRole] : 'Sin rol asignado'}</p>
       </section>
 
-      {primaryRole === 'SUPER_ADMIN' ? (
+      {primaryRole === 'SUPER_ADMIN' || primaryRole === 'MARKETING' ? (
         <section className="space-y-3">
           {summaryError ? <p className="text-sm text-red-600">{summaryError}</p> : null}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {superAdminCards.map((title) => (
+            {dashboardCards.map((title) => (
               <article key={title} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-sm font-semibold text-slate-700">{title}</p>
                 <p className="mt-3 text-3xl font-black text-slate-900">
@@ -158,7 +179,7 @@ export function DashboardPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            {superAdminSections.map((sectionTitle) => (
+            {dashboardSections.map((sectionTitle) => (
               <article key={sectionTitle} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 className="text-base font-bold text-slate-900">{sectionTitle}</h3>
                 <ul className="mt-4 space-y-2">

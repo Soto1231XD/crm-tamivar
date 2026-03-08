@@ -37,6 +37,7 @@ const PRIORITY_STYLES: Record<string, { backgroundColor: string; color: string }
 
 const ALL_STATES = 'Todos los estados';
 const ALL_PRIORITIES = 'Todas las prioridades';
+const ALL_PROPERTIES = 'Todas las propiedades';
 const LEAD_STATUS_OPTIONS = [
   'Contactado',
   'En seguimiento',
@@ -56,6 +57,7 @@ export function LeadsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_STATES);
   const [priorityFilter, setPriorityFilter] = useState(ALL_PRIORITIES);
+  const [propertyFilter, setPropertyFilter] = useState(ALL_PROPERTIES);
   const [updatingLeadId, setUpdatingLeadId] = useState<number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadRecord | null>(null);
@@ -110,6 +112,11 @@ export function LeadsPage() {
     [properties],
   );
 
+  const propertyFilterOptions = useMemo(
+    () => [ALL_PROPERTIES, ...Array.from(new Set(properties.map((property) => property.titulo?.trim() || 'Sin titulo')))],
+    [properties],
+  );
+
   const filteredLeads = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -118,16 +125,18 @@ export function LeadsPage() {
       const email = (lead.correo_electronico ?? '').toLowerCase();
       const phone = formatPhone(lead.lada, lead.telefono).toLowerCase();
       const priority = normalizePriority(lead.prioridad ?? '');
+      const propertyTitle = propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo';
 
       const matchesSearch =
         query.length === 0 || fullName.includes(query) || email.includes(query) || phone.includes(query);
       const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;
       const matchesPriority =
         priorityFilter === ALL_PRIORITIES || priority === normalizePriority(priorityFilter);
+      const matchesProperty = propertyFilter === ALL_PROPERTIES || propertyTitle === propertyFilter;
 
-      return matchesSearch && matchesStatus && matchesPriority;
+      return matchesSearch && matchesStatus && matchesPriority && matchesProperty;
     });
-  }, [leads, search, statusFilter, priorityFilter]);
+  }, [leads, search, statusFilter, priorityFilter, propertyFilter, propertyTitleById]);
 
   const propertyChoices = useMemo(
     () =>
@@ -238,6 +247,13 @@ export function LeadsPage() {
     downloadLeadAsExcel(lead, propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo');
   }
 
+  function handleDownloadFilteredLeads() {
+    downloadLeadsAsExcel(
+      filteredLeads,
+      filteredLeads.map((lead) => propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo'),
+    );
+  }
+
   async function handleQuickLeadChange(
     leadId: number,
     field: 'estado' | 'prioridad',
@@ -279,7 +295,7 @@ export function LeadsPage() {
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
+        <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
           <input
             type="text"
             placeholder="Buscar por nombre, email o telefono"
@@ -312,8 +328,22 @@ export function LeadsPage() {
             ))}
           </select>
 
+          <select
+            value={propertyFilter}
+            onChange={(event) => setPropertyFilter(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+          >
+            {propertyFilterOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+
           <button
             type="button"
+            onClick={handleDownloadFilteredLeads}
+            disabled={filteredLeads.length === 0}
             className="inline-flex items-center gap-2 rounded-lg bg-[#16A34A] px-4 py-2 text-sm font-semibold text-white shadow-sm"
           >
             <img src={desArcIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
@@ -559,6 +589,83 @@ function downloadLeadAsExcel(lead: LeadRecord, propertyTitle: string) {
   const link = document.createElement('a');
   link.href = url;
   link.download = `${sanitizeFileName(`${lead.nombres ?? ''}-${lead.apellidos ?? ''}` || `registro-${lead.id}`)}.xls`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string[]) {
+  const rows = [
+    [
+      'ID',
+      'Cliente',
+      'Correo electronico',
+      'Telefono',
+      'Propiedad',
+      'Estado',
+      'Prioridad',
+      'Creado por',
+      'Fecha de creacion',
+      'Comentarios',
+    ],
+    ...leads.map((lead, index) => [
+      String(lead.id ?? ''),
+      `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre',
+      lead.correo_electronico?.trim() || 'Sin correo',
+      formatPhone(lead.lada, lead.telefono),
+      propertyTitles[index] ?? 'Sin titulo',
+      lead.estado?.trim() || 'Sin estado',
+      lead.prioridad?.trim() || 'Sin prioridad',
+      formatCreatorName(lead.creador),
+      formatDate(lead.creado_en),
+      lead.comentarios?.trim() || 'Sin comentarios',
+    ]),
+  ];
+
+  const tableRows = rows
+    .map(
+      (columns, rowIndex) => `
+        <tr>
+          ${columns
+            .map(
+              (column) =>
+                `<td style="${rowIndex === 0 ? HEADER_CELL_STYLE : VALUE_CELL_STYLE}">${escapeHtml(column)}</td>`,
+            )
+            .join('')}
+        </tr>`,
+    )
+    .join('');
+
+  const excelContent = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+      <head>
+        <meta charset="UTF-8" />
+        <!--[if gte mso 9]>
+          <xml>
+            <x:ExcelWorkbook>
+              <x:ExcelWorksheets>
+                <x:ExcelWorksheet>
+                  <x:Name>Registros</x:Name>
+                  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+                </x:ExcelWorksheet>
+              </x:ExcelWorksheets>
+            </x:ExcelWorkbook>
+          </xml>
+        <![endif]-->
+      </head>
+      <body>
+        <table border="1" cellspacing="0" cellpadding="0">
+          ${tableRows}
+        </table>
+      </body>
+    </html>`;
+
+  const blob = new Blob([`\ufeff${excelContent}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'registros-filtrados.xls';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

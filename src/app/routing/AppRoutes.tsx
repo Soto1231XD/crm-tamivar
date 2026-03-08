@@ -11,6 +11,7 @@ import { EditPropertyPage } from '../../modules/properties/pages/EditPropertyPag
 import { LeadsPage } from '../../modules/leads/pages/LeadsPage';
 import { UsersPage } from '../../modules/users/pages/UsersPage';
 import { SystemRolesPage } from '../../modules/systemRoles/pages/SystemRolesPage';
+import { ContentPage } from '../../modules/content/pages/ContentPage';
 
 export function AppRoutes() {
   return (
@@ -37,7 +38,7 @@ export function AppRoutes() {
             <Route path="modulos/users" element={<UsersPage />} />
           </Route>
           <Route element={<ProtectedRoute module="content" />}>
-            <Route path="modulos/content" element={<ModulePage />} />
+            <Route path="modulos/content" element={<ContentPage />} />
           </Route>
           <Route element={<ProtectedRoute module="system_roles" />}>
             <Route path="modulos/system_roles" element={<SystemRolesPage />} />

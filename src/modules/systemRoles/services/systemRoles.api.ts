@@ -16,6 +16,11 @@ export type SystemRoleRecord = {
   permisos?: RolePermissionRecord[];
 };
 
+export type CreateSystemRolePayload = {
+  rol: string;
+  permisosIds: number[];
+};
+
 export async function getSystemRoles(accessToken?: string | null): Promise<SystemRoleRecord[]> {
   const response = await fetch(`${API_URL}/roles`, {
     method: 'GET',
@@ -31,4 +36,34 @@ export async function getSystemRoles(accessToken?: string | null): Promise<Syste
   }
 
   return data;
+}
+
+export async function createSystemRole(
+  payload: CreateSystemRolePayload,
+  accessToken?: string | null,
+): Promise<SystemRoleRecord> {
+  const response = await fetch(`${API_URL}/roles`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = (await response.json().catch(() => null)) as
+    | SystemRoleRecord
+    | { message?: string | string[] }
+    | null;
+
+  if (!response.ok || !data || Array.isArray(data)) {
+    const message = Array.isArray((data as { message?: string | string[] } | null)?.message)
+      ? ((data as { message: string[] }).message[0] ?? 'No fue posible crear el rol.')
+      : typeof (data as { message?: string | string[] } | null)?.message === 'string'
+        ? (data as { message: string }).message
+        : 'No fue posible crear el rol.';
+    throw new Error(message);
+  }
+
+  return data as SystemRoleRecord;
 }
