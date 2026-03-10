@@ -18,6 +18,7 @@ import { EditLeadModal } from '../components/EditLeadModal';
 import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
 import { getProperties, type PropertyRecord } from '../../properties/services/properties.api';
 import { useAuth } from '../../../shared/context/AuthContext';
+import { getModulePermissions, getPrimaryRole } from '../../../shared/constants/roles';
 
 const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
   contactado: { backgroundColor: '#DBEAFE', color: '#1480F0' },
@@ -51,6 +52,8 @@ const LEAD_PRIORITY_OPTIONS = ['Urgente', 'Normal', 'Bajo Interes'] as const;
 
 export function LeadsPage() {
   const { user, accessToken } = useAuth();
+  const primaryRole = getPrimaryRole(user?.roles ?? []);
+  const leadPermissions = getModulePermissions(user?.roles ?? [], 'leads');
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,8 +122,12 @@ export function LeadsPage() {
 
   const filteredLeads = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const visibleLeads =
+      primaryRole === 'ASESOR_VENTAS' && user?.id
+        ? leads.filter((lead) => lead.creador?.id === user.id)
+        : leads;
 
-    return leads.filter((lead) => {
+    return visibleLeads.filter((lead) => {
       const fullName = `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim().toLowerCase();
       const email = (lead.correo_electronico ?? '').toLowerCase();
       const phone = formatPhone(lead.lada, lead.telefono).toLowerCase();
@@ -136,7 +143,7 @@ export function LeadsPage() {
 
       return matchesSearch && matchesStatus && matchesPriority && matchesProperty;
     });
-  }, [leads, search, statusFilter, priorityFilter, propertyFilter, propertyTitleById]);
+  }, [leads, search, statusFilter, priorityFilter, propertyFilter, propertyTitleById, primaryRole, user?.id]);
 
   const propertyChoices = useMemo(
     () =>
@@ -286,8 +293,9 @@ export function LeadsPage() {
         </div>
         <button
           type="button"
+          disabled={!leadPermissions.create}
           onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
           <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
           <span>Nuevo registro</span>
@@ -432,15 +440,17 @@ export function LeadsPage() {
                     <td className="px-4 py-3 text-sm text-slate-700">{lead.comentarios || 'Sin comentarios'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          aria-label="Editar"
-                          title="Editar"
-                          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                          onClick={() => openEditModal(lead)}
-                        >
-                          <img src={editarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                        </button>
+                        {leadPermissions.edit ? (
+                          <button
+                            type="button"
+                            aria-label="Editar"
+                            title="Editar"
+                            className="rounded-md border border-slate-300 p-1.5 text-slate-700"
+                            onClick={() => openEditModal(lead)}
+                          >
+                            <img src={editarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           aria-label="Descargar"
@@ -450,15 +460,17 @@ export function LeadsPage() {
                         >
                           <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />
                         </button>
-                        <button
-                          type="button"
-                          aria-label="Eliminar"
-                          title="Eliminar"
-                          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                          onClick={() => openDeleteModal(lead)}
-                        >
-                          <img src={borrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                        </button>
+                        {leadPermissions.delete ? (
+                          <button
+                            type="button"
+                            aria-label="Eliminar"
+                            title="Eliminar"
+                            className="rounded-md border border-slate-300 p-1.5 text-slate-700"
+                            onClick={() => openDeleteModal(lead)}
+                          >
+                            <img src={borrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -469,25 +481,31 @@ export function LeadsPage() {
         </div>
       </section>
 
-      <CreateLeadModal
-        isOpen={isCreateModalOpen}
-        onClose={closeCreateModal}
-        onCreate={handleCreateLead}
-        propertyOptions={propertyChoices}
-      />
-      <EditLeadModal
-        isOpen={Boolean(editingLead)}
-        lead={editingLead}
-        onClose={closeEditModal}
-        onEdit={handleEditLead}
-        propertyOptions={propertyChoices}
-      />
-      <DeleteLeadConfirmModal
-        isOpen={Boolean(deletingLead)}
-        lead={deletingLead}
-        onClose={closeDeleteModal}
-        onConfirm={handleDeleteLead}
-      />
+      {leadPermissions.create ? (
+        <CreateLeadModal
+          isOpen={isCreateModalOpen}
+          onClose={closeCreateModal}
+          onCreate={handleCreateLead}
+          propertyOptions={propertyChoices}
+        />
+      ) : null}
+      {leadPermissions.edit ? (
+        <EditLeadModal
+          isOpen={Boolean(editingLead)}
+          lead={editingLead}
+          onClose={closeEditModal}
+          onEdit={handleEditLead}
+          propertyOptions={propertyChoices}
+        />
+      ) : null}
+      {leadPermissions.delete ? (
+        <DeleteLeadConfirmModal
+          isOpen={Boolean(deletingLead)}
+          lead={deletingLead}
+          onClose={closeDeleteModal}
+          onConfirm={handleDeleteLead}
+        />
+      ) : null}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getProperties, updateProperty, updatePropertyStatus, type PropertyRecord } from '../services/properties.api';
 import { DeletePropertyConfirmModal } from '../components/DeletePropertyConfirmModal';
 import { useAuth } from '../../../shared/context/AuthContext';
+import { getModulePermissions } from '../../../shared/constants/roles';
 import descInfIcon from '../../../assets/images/DescInf.png';
 import editarIcon from '../../../assets/images/Editar.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
@@ -30,7 +31,8 @@ const PROPERTY_STATUS_STYLES: Record<string, { backgroundColor: string; color: s
 
 export function PropertiesPage() {
   const navigate = useNavigate();
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
+  const propertyPermissions = getModulePermissions(user?.roles ?? [], 'properties');
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>('Todos los estados');
@@ -134,8 +136,9 @@ export function PropertiesPage() {
         </div>
         <button
           type="button"
+          disabled={!propertyPermissions.create}
           onClick={() => navigate('/modulos/properties/new')}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
           <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
           <span>Nueva propiedad</span>
@@ -223,7 +226,7 @@ export function PropertiesPage() {
                       <select
                         value={property.estatus}
                         onChange={(event) => handleQuickStatusChange(property.id, event.target.value)}
-                        disabled={updatingStatusId === property.id}
+                        disabled={updatingStatusId === property.id || !propertyPermissions.edit}
                         className="min-w-32 rounded-full border-0 px-3 py-1 text-xs font-semibold outline-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
                         style={getPropertyStatusStyles(property.estatus)}
                       >
@@ -236,15 +239,17 @@ export function PropertiesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          aria-label="Editar"
-                          title="Editar"
-                          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                          onClick={() => navigate(`/modulos/properties/${property.id}/edit`)}
-                        >
-                          <img src={editarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                        </button>
+                        {propertyPermissions.edit ? (
+                          <button
+                            type="button"
+                            aria-label="Editar"
+                            title="Editar"
+                            className="rounded-md border border-slate-300 p-1.5 text-slate-700"
+                            onClick={() => navigate(`/modulos/properties/${property.id}/edit`)}
+                          >
+                            <img src={editarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           aria-label="Descargar"
@@ -254,15 +259,17 @@ export function PropertiesPage() {
                         >
                           <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />
                         </button>
-                        <button
-                          type="button"
-                          aria-label="Eliminar"
-                          title="Eliminar"
-                          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                          onClick={() => openDeleteModal(property)}
-                        >
-                          <img src={borrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                        </button>
+                        {propertyPermissions.delete ? (
+                          <button
+                            type="button"
+                            aria-label="Eliminar"
+                            title="Eliminar"
+                            className="rounded-md border border-slate-300 p-1.5 text-slate-700"
+                            onClick={() => openDeleteModal(property)}
+                          >
+                            <img src={borrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -273,12 +280,14 @@ export function PropertiesPage() {
         </div>
       </section>
 
-      <DeletePropertyConfirmModal
-        isOpen={Boolean(deletingProperty)}
-        property={deletingProperty}
-        onClose={closeDeleteModal}
-        onConfirm={handleDeleteProperty}
-      />
+      {propertyPermissions.delete ? (
+        <DeletePropertyConfirmModal
+          isOpen={Boolean(deletingProperty)}
+          property={deletingProperty}
+          onClose={closeDeleteModal}
+          onConfirm={handleDeleteProperty}
+        />
+      ) : null}
     </div>
   );
 }

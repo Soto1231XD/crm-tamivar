@@ -1,83 +1,61 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ROLE_LABELS, getPrimaryRole, getUserDisplayName } from '../../../shared/constants/roles';
 import { useAuth } from '../../../shared/context/AuthContext';
-import { getDashboardSummary, getRecentPropertiesFallback } from '../services/dashboard.api';
+import { getLeads } from '../../leads/services/leads.api';
 import { getProperties } from '../../properties/services/properties.api';
+import { getSystemRoles } from '../../systemRoles/services/systemRoles.api';
+import { DashboardSectionCard } from '../components/DashboardSectionCard';
+import { DashboardSummaryCards } from '../components/DashboardSummaryCards';
+import { DASHBOARD_CARD_TITLES, DASHBOARD_ENABLED_ROLES, DASHBOARD_SECTION_TITLES } from '../dashboard.config';
+import {
+  type RecentLeadItem,
+  type RecentPropertyItem,
+  type RecentPublicationItem,
+  type RecentUserItem,
+  getSectionEmptyMessage,
+  getSectionItemsCount,
+  renderSectionItems,
+} from '../dashboard.utils';
+import { getDashboardSummary, getRecentPropertiesFallback } from '../services/dashboard.api';
 
-const superAdminCards = [
-  'Propiedades Disponibles',
-  'Registros',
-  'Propiedades vendidas',
-  'Blogs',
-  'Usuarios del sistema',
-] as const;
-
-const superAdminSections = ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Mis publicaciones'] as const;
-const marketingCards = ['Propiedades Disponibles', 'Blogs', 'Propiedades vendidas'] as const;
-const marketingSections = ['Mis publicaciones', 'Propiedades Recientes'] as const;
-
-const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
-  contactado: { backgroundColor: '#DBEAFE', color: '#1480F0' },
-  'en seguimiento': { backgroundColor: '#F3E8FF', color: '#C455DB' },
-  cancelado: { backgroundColor: '#FEF3C7', color: '#CA5874' },
-  'cita agendada': { backgroundColor: '#CD8774', color: '#2F0905' },
-  'en espera': { backgroundColor: '#DBFCE7', color: '#4D8236' },
-  'en proceso': { backgroundColor: '#C455DB', color: '#F3E8FF' },
-  cerrado: { backgroundColor: '#C3B28A', color: '#050505' },
+type DashboardSummaryState = {
+  propiedadesDisponibles: number;
+  propiedadesVendidas: number;
+  registros: number;
+  blogs: number;
+  rolesSistema: number;
+  usuariosSistema: number;
+  registrosRecientes: RecentLeadItem[];
+  misRegistrosRecientes: RecentLeadItem[];
+  propiedadesRecientes: RecentPropertyItem[];
+  usuariosRecientes: RecentUserItem[];
+  misPublicaciones: RecentPublicationItem[];
 };
 
-const PROPERTY_STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
-  disponible: { backgroundColor: '#D0FAE5', color: '#4D8236' },
-  apartado: { backgroundColor: '#FEF9C2', color: '#E4AE1F' },
-  vendido: { backgroundColor: '#B3B3B5', color: '#000000' },
-  preventa: { backgroundColor: '#DBEAFE', color: '#1480F0' },
-  baja: { backgroundColor: '#FEF3C7', color: '#CA5874' },
+const INITIAL_SUMMARY: DashboardSummaryState = {
+  propiedadesDisponibles: 0,
+  propiedadesVendidas: 0,
+  registros: 0,
+  blogs: 0,
+  rolesSistema: 0,
+  usuariosSistema: 0,
+  registrosRecientes: [],
+  misRegistrosRecientes: [],
+  propiedadesRecientes: [],
+  usuariosRecientes: [],
+  misPublicaciones: [],
 };
 
 export function DashboardPage() {
   const { user, accessToken } = useAuth();
   const primaryRole = getPrimaryRole(user?.roles ?? []);
   const displayName = getUserDisplayName(user);
-  const [summary, setSummary] = useState({
-    propiedadesDisponibles: 0,
-    propiedadesVendidas: 0,
-    registros: 0,
-    blogs: 0,
-    usuariosSistema: 0,
-    registrosRecientes: [] as Array<{
-      nombre: string;
-      apellido: string;
-      correo: string;
-      estado: string;
-    }>,
-    propiedadesRecientes: [] as Array<{
-      tipo_inmueble: string;
-      direccion: {
-        calle: string;
-        municipio: string;
-        fraccionamiento: string;
-      };
-      estatus: string;
-      precio: string;
-    }>,
-    usuariosRecientes: [] as Array<{
-      nombres: string;
-      apellido_paterno: string;
-      correo_electronico: string;
-      rol?: string;
-      roles?: string[];
-    }>,
-    misPublicaciones: [] as Array<{
-      titulo: string;
-      fecha_creacion: string;
-      publicado: boolean;
-    }>,
-  });
+  const [summary, setSummary] = useState<DashboardSummaryState>(INITIAL_SUMMARY);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState('');
 
   useEffect(() => {
-    if (!accessToken || (primaryRole !== 'SUPER_ADMIN' && primaryRole !== 'MARKETING')) {
+    if (!accessToken || !primaryRole || !DASHBOARD_ENABLED_ROLES.includes(primaryRole)) {
       return;
     }
 
@@ -85,13 +63,11 @@ export function DashboardPage() {
     setIsLoadingSummary(true);
     setSummaryError('');
 
-    Promise.all([getDashboardSummary(accessToken), getProperties()])
-      .then(async ([data, properties]) => {
+    Promise.all([getDashboardSummary(accessToken), getProperties(), getSystemRoles(accessToken), getLeads()])
+      .then(async ([data, properties, roles, leads]) => {
         if (!isActive) return;
 
-        const propiedadesRecientes = Array.isArray(data.propiedades_recientes)
-          ? data.propiedades_recientes
-          : [];
+        const propiedadesRecientes = Array.isArray(data.propiedades_recientes) ? data.propiedades_recientes : [];
         const propiedadesDisponiblesActivas = Array.isArray(properties)
           ? properties.filter((property) => property.activo === true).length
           : 0;
@@ -109,13 +85,35 @@ export function DashboardPage() {
 
         if (!isActive) return;
 
+        const ownLeads =
+          primaryRole === 'ASESOR_VENTAS' && user?.id
+            ? leads.filter((lead) => lead.creador?.id === user.id)
+            : [];
+
+        const ownRecentLeads = ownLeads
+          .slice()
+          .sort((left, right) => {
+            const leftDate = left.creado_en ? new Date(left.creado_en).getTime() : 0;
+            const rightDate = right.creado_en ? new Date(right.creado_en).getTime() : 0;
+            return rightDate - leftDate;
+          })
+          .slice(0, 5)
+          .map((lead) => ({
+            nombre: lead.nombres,
+            apellido: lead.apellidos,
+            correo: lead.correo_electronico ?? 'Sin correo',
+            estado: lead.estado ?? 'Sin estado',
+          }));
+
         setSummary({
           propiedadesDisponibles: propiedadesDisponiblesActivas,
           propiedadesVendidas,
-          registros: data.registros,
+          registros: primaryRole === 'ASESOR_VENTAS' ? ownLeads.length : data.registros,
           blogs: Array.isArray(data.mis_publicaciones) ? data.mis_publicaciones.length : 0,
+          rolesSistema: Array.isArray(roles) ? roles.length : 0,
           usuariosSistema: data.usuarios_sistema,
           registrosRecientes: Array.isArray(data.registros_recientes) ? data.registros_recientes : [],
+          misRegistrosRecientes: ownRecentLeads,
           propiedadesRecientes: propiedadesRecientesFinal,
           usuariosRecientes: Array.isArray(data.usuarios_recientes) ? data.usuarios_recientes : [],
           misPublicaciones: Array.isArray(data.mis_publicaciones) ? data.mis_publicaciones : [],
@@ -133,7 +131,7 @@ export function DashboardPage() {
     return () => {
       isActive = false;
     };
-  }, [accessToken, primaryRole]);
+  }, [accessToken, primaryRole, user?.id]);
 
   const cardValues = useMemo(
     () => ({
@@ -141,21 +139,39 @@ export function DashboardPage() {
       Registros: summary.registros,
       'Propiedades vendidas': summary.propiedadesVendidas,
       Blogs: summary.blogs,
+      'Roles del sistema': summary.rolesSistema,
       'Usuarios del sistema': summary.usuariosSistema,
     }),
-    [summary.blogs, summary.propiedadesDisponibles, summary.propiedadesVendidas, summary.registros, summary.usuariosSistema],
+    [
+      summary.blogs,
+      summary.propiedadesDisponibles,
+      summary.propiedadesVendidas,
+      summary.registros,
+      summary.rolesSistema,
+      summary.usuariosSistema,
+    ],
   );
-  const registrosRecientes = Array.isArray(summary.registrosRecientes) ? summary.registrosRecientes : [];
-  const propiedadesRecientes = Array.isArray(summary.propiedadesRecientes) ? summary.propiedadesRecientes : [];
-  const usuariosRecientes = Array.isArray(summary.usuariosRecientes) ? summary.usuariosRecientes : [];
-  const misPublicaciones = Array.isArray(summary.misPublicaciones) ? summary.misPublicaciones : [];
-  const dashboardCards = primaryRole === 'MARKETING' ? marketingCards : primaryRole === 'SUPER_ADMIN' ? superAdminCards : [];
-  const dashboardSections =
-    primaryRole === 'MARKETING'
-      ? marketingSections
-      : primaryRole === 'SUPER_ADMIN'
-        ? superAdminSections
-        : [];
+
+  const sectionData = useMemo(
+    () => ({
+      registrosRecientes: primaryRole === 'ASESOR_VENTAS' ? summary.misRegistrosRecientes : summary.registrosRecientes,
+      propiedadesRecientes: summary.propiedadesRecientes,
+      usuariosRecientes: summary.usuariosRecientes,
+      misPublicaciones: summary.misPublicaciones,
+    }),
+    [
+      primaryRole,
+      summary.misPublicaciones,
+      summary.misRegistrosRecientes,
+      summary.propiedadesRecientes,
+      summary.registrosRecientes,
+      summary.usuariosRecientes,
+    ],
+  );
+
+  const dashboardCards = primaryRole ? DASHBOARD_CARD_TITLES[primaryRole] ?? [] : [];
+  const dashboardSections = primaryRole ? DASHBOARD_SECTION_TITLES[primaryRole] ?? [] : [];
+  const canViewDashboard = primaryRole ? DASHBOARD_ENABLED_ROLES.includes(primaryRole) : false;
 
   return (
     <div className="space-y-5">
@@ -164,218 +180,25 @@ export function DashboardPage() {
         <p className="mt-2 text-sm text-slate-200">{primaryRole ? ROLE_LABELS[primaryRole] : 'Sin rol asignado'}</p>
       </section>
 
-      {primaryRole === 'SUPER_ADMIN' || primaryRole === 'MARKETING' ? (
+      {canViewDashboard ? (
         <section className="space-y-3">
           {summaryError ? <p className="text-sm text-red-600">{summaryError}</p> : null}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {dashboardCards.map((title) => (
-              <article key={title} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold text-slate-700">{title}</p>
-                <p className="mt-3 text-3xl font-black text-slate-900">
-                  {isLoadingSummary ? '...' : cardValues[title]}
-                </p>
-              </article>
-            ))}
-          </div>
+          <DashboardSummaryCards titles={dashboardCards} values={cardValues} isLoading={isLoadingSummary} />
 
           <div className="grid gap-4 lg:grid-cols-2">
             {dashboardSections.map((sectionTitle) => (
-              <article key={sectionTitle} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 className="text-base font-bold text-slate-900">{sectionTitle}</h3>
-                <ul className="mt-4 space-y-2">
-                  {sectionTitle === 'Registros Recientes'
-                    ? registrosRecientes.length > 0
-                      ? registrosRecientes.map((registro) => (
-                          <li
-                            key={`${registro.correo}-${registro.nombre}-${registro.apellido}`}
-                            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
-                          >
-                            <p className="text-sm font-semibold text-slate-800">
-                              {registro.nombre} {registro.apellido}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-600">{registro.correo}</p>
-                            <div className="mt-2">
-                              <span
-                                className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                                style={getStatusStyles(registro.estado)}
-                              >
-                                {registro.estado}
-                              </span>
-                            </div>
-                          </li>
-                        ))
-                      : [
-                          <li
-                            key="sin-registros"
-                            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
-                          >
-                            Sin registros recientes
-                          </li>,
-                        ]
-                    : sectionTitle === 'Propiedades Recientes'
-                      ? propiedadesRecientes.length > 0
-                        ? propiedadesRecientes.map((propiedad, index) => (
-                            <li
-                              key={`${propiedad.tipo_inmueble}-${propiedad.precio}-${index}`}
-                              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
-                            >
-                              <p className="text-sm font-semibold text-slate-800">{propiedad.tipo_inmueble}</p>
-                              <p className="mt-1 text-xs text-slate-600">{formatDireccion(propiedad.direccion)}</p>
-                              <div className="mt-2 flex items-center justify-between gap-2">
-                                <span
-                                  className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                                  style={getPropertyStatusStyles(propiedad.estatus)}
-                                >
-                                  {propiedad.estatus}
-                                </span>
-                                {renderPrice(propiedad.precio)}
-                              </div>
-                            </li>
-                          ))
-                        : [
-                            <li
-                              key="sin-propiedades"
-                              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
-                            >
-                              Sin propiedades recientes
-                            </li>,
-                          ]
-                    : sectionTitle === 'Usuarios'
-                      ? usuariosRecientes.length > 0
-                        ? usuariosRecientes.map((usuario) => (
-                            <li
-                              key={usuario.correo_electronico}
-                              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
-                            >
-                              <p className="text-sm font-semibold text-slate-800">
-                                {usuario.nombres} {usuario.apellido_paterno}
-                              </p>
-                              <p className="mt-1 text-xs text-slate-600">{usuario.correo_electronico}</p>
-                              <div className="mt-2">
-                                <span
-                                  className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                                  style={{ backgroundColor: '#DBEAFE', color: '#1480F0' }}
-                                >
-                                  {getUserRoleLabel(usuario)}
-                                </span>
-                              </div>
-                            </li>
-                          ))
-                        : [
-                            <li
-                              key="sin-usuarios"
-                              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
-                            >
-                              Sin usuarios recientes
-                            </li>,
-                          ]
-                    : sectionTitle === 'Mis publicaciones'
-                      ? misPublicaciones.length > 0
-                        ? misPublicaciones.map((publicacion, index) => (
-                            <li
-                              key={`${publicacion.titulo}-${publicacion.fecha_creacion}-${index}`}
-                              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
-                            >
-                              <p className="text-sm font-semibold text-slate-800">{publicacion.titulo}</p>
-                              <p className="mt-1 text-xs text-slate-600">
-                                {formatDate(publicacion.fecha_creacion)}
-                              </p>
-                              <div className="mt-2">
-                                <span
-                                  className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                                  style={getPublicationStatusStyles(publicacion.publicado)}
-                                >
-                                  {publicacion.publicado ? 'Publicado' : 'Borrador'}
-                                </span>
-                              </div>
-                            </li>
-                          ))
-                        : [
-                            <li
-                              key="sin-publicaciones"
-                              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
-                            >
-                              Sin publicaciones recientes
-                            </li>,
-                          ]
-                    : null}
-                </ul>
-              </article>
+              <DashboardSectionCard
+                key={sectionTitle}
+                title={sectionTitle}
+                hasItems={getSectionItemsCount(sectionTitle, sectionData) > 0}
+                emptyMessage={getSectionEmptyMessage(sectionTitle)}
+              >
+                {renderSectionItems(sectionTitle, sectionData)}
+              </DashboardSectionCard>
             ))}
           </div>
         </section>
       ) : null}
     </div>
   );
-}
-
-function getStatusStyles(estado: string): { backgroundColor: string; color: string } {
-  const normalizedEstado = estado.trim().toLowerCase();
-  return STATUS_STYLES[normalizedEstado] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
-}
-
-function getPropertyStatusStyles(estatus: string): { backgroundColor: string; color: string } {
-  const normalizedStatus = estatus.trim().toLowerCase();
-  return PROPERTY_STATUS_STYLES[normalizedStatus] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
-}
-
-function formatDireccion(direccion: { calle: string; municipio: string; fraccionamiento: string }): string {
-  const parts = [direccion.calle, direccion.municipio, direccion.fraccionamiento]
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : 'Sin dirección';
-}
-
-function renderPrice(value: string) {
-  const parsedValue = Number(value);
-  if (Number.isNaN(parsedValue)) {
-    return <span className="text-xs font-semibold text-[#4F5EF8]">$0.00</span>;
-  }
-
-  const formatter = new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    maximumFractionDigits: 2,
-  });
-  const parts = formatter.formatToParts(parsedValue);
-
-  return (
-    <span className="text-xs font-semibold">
-      {parts.map((part, index) => (
-        <span key={`${part.type}-${index}`} className={part.type === 'currency' ? 'text-slate-700' : 'text-[#4F5EF8]'}>
-          {part.value}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-function getPublicationStatusStyles(publicado: boolean): { backgroundColor: string; color: string } {
-  if (publicado) {
-    return { backgroundColor: '#DBFCE7', color: '#4D8236' };
-  }
-  return { backgroundColor: '#E0E7F4', color: '#000000' };
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('es-MX', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
-
-function getUserRoleLabel(usuario: { rol?: string; roles?: string[] }): string {
-  if (typeof usuario.rol === 'string' && usuario.rol.trim()) {
-    return usuario.rol.trim();
-  }
-
-  if (Array.isArray(usuario.roles) && usuario.roles.length > 0) {
-    const firstRole = usuario.roles.find((role) => typeof role === 'string' && role.trim().length > 0);
-    if (firstRole) return firstRole.trim();
-  }
-
-  return 'Sin rol';
 }
