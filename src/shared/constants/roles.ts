@@ -68,8 +68,8 @@ export const ROLE_MODULE_PERMISSIONS: Record<Role, Record<ModuleKey, ModulePermi
   ASESOR_VENTAS: {
     ...BASE_MODULES,
     dashboard: { ...VIEW_ONLY },
-    properties: { view: true, create: true, edit: true, delete: false },
-    leads: { view: true, create: true, edit: true, delete: false },
+    properties: { view: true, create: true, edit: false, delete: false },
+    leads: { ...MANAGE },
   },
   COORDINADOR_VENTAS: {
     ...BASE_MODULES,
@@ -132,8 +132,18 @@ export function normalizeBackendRole(roleName: string): Role | null {
   if (normalized === 'marketing') return 'MARKETING';
   if (normalized === 'marketins') return 'MARKETING';
   if (normalized === 'rh' || normalized === 'recursos humanos') return 'RH';
-  if (normalized === 'asesor ventas' || normalized === 'asesor_ventas') return 'ASESOR_VENTAS';
-  if (normalized === 'coordinador ventas' || normalized === 'coordinador_ventas') {
+  if (
+    normalized === 'asesor ventas' ||
+    normalized === 'asesor_ventas' ||
+    normalized === 'asesor de ventas'
+  ) {
+    return 'ASESOR_VENTAS';
+  }
+  if (
+    normalized === 'coordinador ventas' ||
+    normalized === 'coordinador_ventas' ||
+    normalized === 'coordinador de ventas'
+  ) {
     return 'COORDINADOR_VENTAS';
   }
 
