@@ -1,34 +1,48 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { PropertyForm } from '../components/PropertyForm';
-import { createProperty, type CreatePropertyPayload } from '../services/properties.api';
-import { useAuth } from '../../../shared/context/AuthContext';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { PropertyForm } from "../components/PropertyForm";
+import { usePropertiesStore } from "../store/usePropertiesStore";
+import type { CreatePropertyPayload } from "@/interfaces/property.interface";
 
 export function CreatePropertyPage() {
   const navigate = useNavigate();
-  const { user, accessToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Extraemos la acción addProperty del store de propiedades
+  const addProperty = usePropertiesStore((state) => state.addProperty);
+
   function handleCancel() {
-    navigate('/modulos/properties');
+    navigate("/modulos/properties");
   }
 
-  async function handleCreateProperty(payload: Omit<CreatePropertyPayload, 'creado_por_id'>): Promise<string | null> {
-    if (!user?.id) {
-      return 'No hay una sesión válida para asociar el creador.';
-    }
-
+  async function handleCreateProperty({
+    payload,
+    files,
+  }: {
+    payload: Omit<CreatePropertyPayload, "creado_por_id">;
+    files: File[];
+  }): Promise<string | null> {
     try {
       setIsSubmitting(true);
-      const createdPayload: CreatePropertyPayload = {
+
+      const payloadConId = {
         ...payload,
-        creado_por_id: user.id,
+        creado_por_id: 2,
       };
-      await createProperty(createdPayload, accessToken);
-      navigate('/modulos/properties');
+
+      // Llamamos a la acción del Store de Zustand
+      await addProperty(payloadConId as CreatePropertyPayload, files);
+
+      // Si la petición es exitosa, navegamos a la lista
+      navigate("/modulos/properties");
       return null;
-    } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible crear la propiedad.';
+    } catch (error: any) {
+      console.error("Error al registrar propiedad:", error);
+      return (
+        error?.response?.data?.message ||
+        error.message ||
+        "No fue posible crear la propiedad."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -37,7 +51,7 @@ export function CreatePropertyPage() {
   return (
     <PropertyForm
       title="Registrar nueva propiedad"
-      submitLabel="Crear"
+      submitLabel="Registrar"
       isSubmitting={isSubmitting}
       onCancel={handleCancel}
       onSubmit={handleCreateProperty}

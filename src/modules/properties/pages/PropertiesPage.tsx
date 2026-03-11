@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProperties, updateProperty, updatePropertyStatus, type PropertyRecord } from '../services/properties.api';
+import { getProperties, updateProperty } from '../services/properties.api';
+import type { PropertyRecord } from '@/interfaces/property.interface';
 import { DeletePropertyConfirmModal } from '../components/DeletePropertyConfirmModal';
 import { useAuth } from '../../../shared/context/AuthContext';
 import descInfIcon from '../../../assets/images/DescInf.png';
