@@ -4,9 +4,6 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // Interceptor: Inyecta el token de seguridad en cada petición
@@ -15,6 +12,15 @@ api.interceptors.request.use((config) => {
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Detección automática del tipo de contenido
+  if (config.data instanceof FormData) {
+    config.headers["Content-Type"] = "multipart/form-data";
+  } else {
+    // Si es un objeto normal, usa JSON
+    config.headers["Content-Type"] = "application/json";
+  }
+
   return config;
 });
 
