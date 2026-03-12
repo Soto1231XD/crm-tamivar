@@ -4,14 +4,9 @@ import borrarIcon from '../../../assets/images/Borrar.png';
 import editarDosIcon from '../../../assets/images/editar2.png';
 import { useAuth } from '../../../shared/context/AuthContext';
 import { UserModal } from '../components/UserModal';
+import { useUsersStore } from '../store/useUsersStore';
 import {
-  createUser,
-  getRoles,
-  getUsers,
-  toggleUserStatus,
-  updateUser,
   type CreateUserPayload,
-  type RoleOptionRecord,
   type UpdateUserPayload,
   type UserRecord,
   type UserRoleRecord,
@@ -20,46 +15,29 @@ import {
 const ALL_USER_STATES = 'Todos los estados';
 
 export function UsersPage() {
-  const { accessToken, user: sessionUser } = useAuth();
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [rolesCatalog, setRolesCatalog] = useState<RoleOptionRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { user: sessionUser } = useAuth();
+  const {
+    users,
+    rolesCatalog,
+    isLoading,
+    fetchUsers,
+    fetchRolesCatalog,
+    addUser,
+    editUser,
+    toggleStatus,
+  } = useUsersStore();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_USER_STATES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
 
   useEffect(() => {
-    let active = true;
-    setIsLoading(true);
-
-    getUsers(accessToken)
-      .then((data) => {
-        if (!active) return;
-        setUsers(data);
-      })
-      .finally(() => {
-        if (!active) return;
-        setIsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [accessToken]);
+    void fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
-    let active = true;
-
-    getRoles(accessToken).then((data) => {
-      if (!active) return;
-      setRolesCatalog(data);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [accessToken]);
+    void fetchRolesCatalog();
+  }, [fetchRolesCatalog]);
 
   const filteredUsers = useMemo(() => {
     const query = normalizeText(search);
@@ -219,14 +197,12 @@ export function UsersPage() {
 
   async function handleCreateUser(payload: CreateUserPayload | UpdateUserPayload): Promise<string | null> {
     try {
-      const createdUser = await createUser(
+      await addUser(
         {
           ...(payload as CreateUserPayload),
           creado_por_id: sessionUser?.id,
         },
-        accessToken,
       );
-      setUsers((prev) => [createdUser, ...prev]);
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible crear el usuario.';
@@ -235,8 +211,7 @@ export function UsersPage() {
 
   async function handleEditUser(userId: number, payload: UpdateUserPayload): Promise<string | null> {
     try {
-      const updatedUser = await updateUser(userId, payload, accessToken);
-      setUsers((prev) => prev.map((currentUser) => (currentUser.id === userId ? updatedUser : currentUser)));
+      await editUser(userId, payload);
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible actualizar el usuario.';
@@ -245,12 +220,7 @@ export function UsersPage() {
 
   async function handleToggleUserStatus(targetUser: UserRecord) {
     try {
-      const response = await toggleUserStatus(targetUser.id, accessToken);
-      setUsers((prev) =>
-        prev.map((currentUser) =>
-          currentUser.id === targetUser.id ? { ...currentUser, activo: response.activo } : currentUser,
-        ),
-      );
+      await toggleStatus(targetUser.id);
     } catch {
       // noop
     }
