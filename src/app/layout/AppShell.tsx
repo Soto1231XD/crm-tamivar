@@ -37,16 +37,16 @@ export function AppShell() {
   const displayName = getUserDisplayName(user);
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
+    <div className="h-screen overflow-hidden bg-slate-100 text-slate-900">
       <div
         className={[
-          'grid min-h-screen w-full transition-[grid-template-columns] duration-300',
+          'grid h-full w-full transition-[grid-template-columns] duration-300',
           isSidebarCollapsed ? 'grid-cols-[88px_1fr]' : 'grid-cols-[250px_1fr]',
         ].join(' ')}
       >
         <aside
           className={[
-            'border-r border-slate-800 bg-sidebar-900 p-4 text-slate-100 transition-all duration-300',
+            'h-screen overflow-y-auto border-r border-slate-800 bg-sidebar-900 p-4 text-slate-100 transition-all duration-300',
             isSidebarCollapsed ? 'md:px-3' : 'md:p-6',
           ].join(' ')}
         >
@@ -109,7 +109,7 @@ export function AppShell() {
           </div>
         </aside>
 
-        <div className="flex min-h-screen min-w-0 flex-col">
+        <div className="flex h-screen min-w-0 min-h-0 flex-col overflow-hidden">
           <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -133,7 +133,9 @@ export function AppShell() {
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 overflow-x-hidden bg-slate-100 p-6 md:p-8">
+          <main
+            className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6 md:p-8"
+          >
             <Outlet />
           </main>
         </div>

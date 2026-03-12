@@ -12,7 +12,7 @@ type DashboardSectionTitle =
   | 'Registros Recientes'
   | 'Propiedades Recientes'
   | 'Usuarios'
-  | 'Mis publicaciones';
+  | 'Publicaciones';
 
 export const DASHBOARD_ENABLED_ROLES: Role[] = [
   'SUPER_ADMIN',
@@ -30,6 +30,7 @@ export const DASHBOARD_CARD_TITLES: Partial<Record<Role, readonly DashboardCardT
     'Propiedades vendidas',
     'Blogs',
     'Usuarios del sistema',
+    'Roles del sistema',
   ],
   ADMIN: ['Propiedades Disponibles', 'Registros', 'Propiedades vendidas', 'Blogs', 'Usuarios del sistema'],
   MARKETING: ['Propiedades Disponibles', 'Blogs', 'Propiedades vendidas'],
@@ -39,9 +40,9 @@ export const DASHBOARD_CARD_TITLES: Partial<Record<Role, readonly DashboardCardT
 };
 
 export const DASHBOARD_SECTION_TITLES: Partial<Record<Role, readonly DashboardSectionTitle[]>> = {
-  SUPER_ADMIN: ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Mis publicaciones'],
-  ADMIN: ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Mis publicaciones'],
-  MARKETING: ['Mis publicaciones', 'Propiedades Recientes'],
+  SUPER_ADMIN: ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Publicaciones'],
+  ADMIN: ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Publicaciones'],
+  MARKETING: ['Publicaciones', 'Propiedades Recientes'],
   RH: ['Propiedades Recientes', 'Usuarios'],
   COORDINADOR_VENTAS: ['Registros Recientes', 'Propiedades Recientes'],
   ASESOR_VENTAS: ['Registros Recientes', 'Propiedades Recientes'],

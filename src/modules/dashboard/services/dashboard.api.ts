@@ -30,7 +30,13 @@ export type DashboardSummary = {
   mis_publicaciones: Array<{
     titulo: string;
     fecha_creacion: string;
+    fechaPublico?: string | null;
     publicado: boolean;
+    imagenes?: Array<{
+      url?: string;
+      titulo?: string;
+      principal?: boolean;
+    }> | null;
   }>;
 };
 

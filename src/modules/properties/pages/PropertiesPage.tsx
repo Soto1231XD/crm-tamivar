@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProperties, updateProperty, updatePropertyStatus } from '../services/properties.api';
+import { deleteProperty, getProperties, updateProperty } from '../services/properties.api';
 import type { PropertyRecord } from '@/interfaces/property.interface';
 import { DeletePropertyConfirmModal } from '../components/DeletePropertyConfirmModal';
 import { useAuth } from '../../../shared/context/AuthContext';
 import { getModulePermissions } from '../../../shared/constants/roles';
+import { TablePagination } from '../../../shared/components/TablePagination';
 import descInfIcon from '../../../assets/images/DescInf.png';
 import editarIcon from '../../../assets/images/Editar.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
@@ -29,6 +30,7 @@ const PROPERTY_STATUS_STYLES: Record<string, { backgroundColor: string; color: s
   preventa: { backgroundColor: '#DBEAFE', color: '#1480F0' },
   baja: { backgroundColor: '#FEF3C7', color: '#CA5874' },
 };
+const PAGE_SIZE = 10;
 
 export function PropertiesPage() {
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ export function PropertiesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
   const [deletingProperty, setDeletingProperty] = useState<PropertyRecord | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -48,7 +51,7 @@ export function PropertiesPage() {
     getProperties()
       .then((data) => {
         if (!active) return;
-        setProperties(data.filter((property) => property.activo !== false));
+        setProperties(data);
       })
       .finally(() => {
         if (!active) return;
@@ -62,8 +65,6 @@ export function PropertiesPage() {
 
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
-      if (property.activo === false) return false;
-
       const matchesStatus =
         statusFilter === 'Todos los estados' ||
         property.estatus.trim().toLowerCase() === statusFilter.trim().toLowerCase();
@@ -84,6 +85,21 @@ export function PropertiesPage() {
       return matchesStatus && matchesType && matchesSearch;
     });
   }, [properties, search, statusFilter, typeFilter]);
+  const totalPages = Math.max(1, Math.ceil(filteredProperties.length / PAGE_SIZE));
+  const paginatedProperties = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredProperties.slice(start, start + PAGE_SIZE);
+  }, [currentPage, filteredProperties]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, typeFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   function openDeleteModal(property: PropertyRecord) {
     setDeletingProperty(property);
@@ -95,11 +111,11 @@ export function PropertiesPage() {
 
   async function handleDeleteProperty(propertyId: number): Promise<string | null> {
     try {
-      await updatePropertyStatus(propertyId, { activo: false });
+      await deleteProperty(propertyId);
       setProperties((prev) => prev.filter((property) => property.id !== propertyId));
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible desactivar la propiedad.';
+      return error instanceof Error ? error.message : 'No fue posible eliminar la propiedad.';
     }
   }
 
@@ -217,7 +233,7 @@ export function PropertiesPage() {
                   </td>
                 </tr>
               ) : (
-                filteredProperties.map((property) => (
+                paginatedProperties.map((property) => (
                   <tr key={property.id} className="border-b border-slate-100">
                     <td className="px-4 py-3 text-sm font-medium text-slate-800">{property.titulo || 'Sin título'}</td>
                     <td className="px-4 py-3 text-sm font-medium text-slate-800">{property.tipo_inmueble}</td>
@@ -279,6 +295,14 @@ export function PropertiesPage() {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredProperties.length}
+          pageSize={PAGE_SIZE}
+          itemLabel="propiedades"
+          onPageChange={setCurrentPage}
+        />
       </section>
 
       {propertyPermissions.delete ? (

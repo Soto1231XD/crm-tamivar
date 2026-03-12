@@ -10,6 +10,7 @@ export type LeadRecord = {
   comentarios?: string | null;
   estado?: string | null;
   prioridad?: string | null;
+  fecha_cita?: string | null;
   creado_en?: string;
   propiedad_id: number;
   creador?: {
@@ -37,6 +38,7 @@ export type CreateLeadPayload = {
   comentarios?: string;
   estado?: string;
   prioridad: string;
+  fecha_cita?: string;
 };
 
 export type UpdateLeadPayload = {
@@ -49,6 +51,7 @@ export type UpdateLeadPayload = {
   comentarios?: string;
   estado?: string;
   prioridad?: string;
+  fecha_cita?: string;
 };
 
 export async function getLeads(): Promise<LeadRecord[]> {

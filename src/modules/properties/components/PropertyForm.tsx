@@ -102,6 +102,13 @@ export function PropertyForm({
                 onChange={handleInputChange}
                 className="md:col-span-2"
               />
+              <FieldTextarea
+                label="Etiquetas"
+                name="etiquetas"
+                value={form.etiquetas}
+                onChange={handleInputChange}
+                className="md:col-span-2"
+              />
             </div>
           </section>
 

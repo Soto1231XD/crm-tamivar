@@ -12,11 +12,9 @@ function ImagePreview({
   const [previewUrl, setPreviewUrl] = useState<string>("");
 
   useEffect(() => {
-    // Generamos una URL temporal para que el tag <img> pueda mostrar el archivo físico
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
 
-    // Limpiamos la memoria cuando el componente se destruye
     return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
 
@@ -53,13 +51,19 @@ function ImagePreview({
   );
 }
 
-// Props del componente principal
+type ExistingImage = {
+  url?: string;
+  titulo?: string;
+  principal?: boolean;
+};
+
 type ImageGridUploaderProps = {
   images: File[];
-  existingImages?: any[];
+  existingImages?: ExistingImage[];
   onRemoveExistingImage?: (index: number) => void;
   onAddImages: (e: ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: (index: number) => void;
+  label?: string;
 };
 
 export function ImageGridUploader({
@@ -67,13 +71,13 @@ export function ImageGridUploader({
   onAddImages,
   onRemoveImage,
   existingImages = [],
-  onRemoveExistingImage
+  onRemoveExistingImage,
+  label = "Imágenes de la propiedad",
 }: ImageGridUploaderProps) {
   return (
     <div className="md:col-span-2 flex flex-col gap-3 text-sm text-slate-700">
       <label className="font-medium">
-        Imágenes de la propiedad{" "}
-        <span className="font-semibold text-red-600">*</span>
+        {label} <span className="font-semibold text-red-600">*</span>
       </label>
 
       <div className="flex w-full items-center justify-center">
@@ -111,15 +115,15 @@ export function ImageGridUploader({
         </label>
       </div>
 
-      {/* Cuadrícula de previsualización (5 por fila en pantallas md) */}
       {(existingImages.length > 0 || images.length > 0) && (
         <div className="mt-3 grid grid-cols-3 gap-4 sm:grid-cols-5 md:grid-cols-8">
-          
           {existingImages.map((img, index) => (
             <ExistingImagePreview
               key={`existing-${index}`}
               image={img}
-              onRemove={() => onRemoveExistingImage && onRemoveExistingImage(index)}
+              onRemove={() =>
+                onRemoveExistingImage && onRemoveExistingImage(index)
+              }
             />
           ))}
 
@@ -136,12 +140,11 @@ export function ImageGridUploader({
   );
 }
 
-// Subcomponente para imágenes que ya existen en la BD
 function ExistingImagePreview({
   image,
   onRemove,
 }: {
-  image: any;
+  image: ExistingImage;
   onRemove: () => void;
 }) {
   const imageUrl = image.url?.startsWith("http")

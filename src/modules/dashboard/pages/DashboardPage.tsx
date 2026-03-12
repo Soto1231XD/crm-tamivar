@@ -69,15 +69,10 @@ export function DashboardPage() {
 
         const propiedadesRecientes = Array.isArray(data.propiedades_recientes) ? data.propiedades_recientes : [];
         const propiedadesDisponiblesActivas = Array.isArray(properties)
-          ? properties.filter((property) => property.activo === true).length
+          ? properties.filter((property) => normalizePropertyStatus(property.estatus) === 'disponible').length
           : 0;
         const propiedadesVendidas = Array.isArray(properties)
-          ? properties.filter(
-              (property) =>
-                property.activo === true &&
-                typeof property.estatus === 'string' &&
-                property.estatus.trim().toLowerCase() === 'vendido',
-            ).length
+          ? properties.filter((property) => normalizePropertyStatus(property.estatus) === 'vendido').length
           : 0;
 
         const propiedadesRecientesFinal =
@@ -201,4 +196,8 @@ export function DashboardPage() {
       ) : null}
     </div>
   );
+}
+
+function normalizePropertyStatus(status?: string | null): string {
+  return typeof status === 'string' ? status.trim().toLowerCase() : '';
 }
