@@ -16,7 +16,8 @@ import {
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { EditLeadModal } from '../components/EditLeadModal';
 import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
-import { getProperties, type PropertyRecord } from '../../properties/services/properties.api';
+import { getProperties } from '../../properties/services/properties.api';
+import type { PropertyRecord } from '@/interfaces/property.interface';
 import { useAuth } from '../../../shared/context/AuthContext';
 import { getModulePermissions, getPrimaryRole } from '../../../shared/constants/roles';
 

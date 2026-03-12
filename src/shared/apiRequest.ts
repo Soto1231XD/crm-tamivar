@@ -1,42 +1,42 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError } from 'axios';
 
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+const SESSION_STORAGE_KEY = 'crm_tamivar_session';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
 });
 
-// Interceptor: Inyecta el token de seguridad en cada petición
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const rawSession = localStorage.getItem(SESSION_STORAGE_KEY);
+  const token = rawSession ? (JSON.parse(rawSession) as { accessToken?: string | null }).accessToken : null;
+
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Detección automática del tipo de contenido
   if (config.data instanceof FormData) {
-    config.headers["Content-Type"] = "multipart/form-data";
-  } else {
-    // Si es un objeto normal, usa JSON
-    config.headers["Content-Type"] = "application/json";
+    delete config.headers?.['Content-Type'];
+    return config;
   }
 
+  config.headers['Content-Type'] = 'application/json';
   return config;
 });
 
-// Función genérica reutilizable para todos los servicios
 export async function apiRequest<T>(
   endpoint: string,
   {
-    method = "GET",
+    method = 'GET',
     data,
     headers,
     params,
   }: {
     method?: HttpMethod;
-    data?: any;
+    data?: unknown;
     headers?: Record<string, string>;
-    params?: Record<string, any>;
+    params?: Record<string, unknown>;
   } = {},
 ): Promise<T> {
   try {
@@ -50,41 +50,36 @@ export async function apiRequest<T>(
 
     return response.data;
   } catch (error) {
-    const err = error as AxiosError<any>;
-
-    // Extraemos el mensaje real que viene del backend si existe
+    const err = error as AxiosError<{ message?: string | string[] }>;
     const serverMessage = err.response?.data?.message;
-    const finalMessage = Array.isArray(serverMessage)
-      ? serverMessage[0]
-      : serverMessage;
+    const finalMessage = Array.isArray(serverMessage) ? serverMessage[0] : serverMessage;
 
     console.error(`[API Error] ${method} ${endpoint}:`, {
       status: err.response?.status,
       message: finalMessage,
     });
 
-    // Manejo de errores por códigos de estado
     if (err.response?.status === 401) {
-      throw new Error("Sesión expirada o no autorizada.");
+      throw new Error('Sesión expirada o no autorizada.');
     }
 
     if (err.response?.status === 403) {
-      throw new Error("No tienes permisos para realizar esta acción.");
+      throw new Error('No tienes permisos para realizar esta acción.');
     }
 
     if (err.response?.status === 400) {
-      throw new Error(finalMessage || "Datos de solicitud inválidos.");
+      throw new Error(finalMessage || 'Datos de solicitud inválidos.');
     }
 
     if (err.response?.status === 404) {
-      throw new Error("El recurso solicitado no existe.");
+      throw new Error('El recurso solicitado no existe.');
     }
 
     if (err.response?.status && err.response.status >= 500) {
-      throw new Error("Error en el servidor. Inténtalo más tarde.");
+      throw new Error('Error en el servidor. Inténtalo más tarde.');
     }
 
-    throw new Error(finalMessage || "Error de conexión con el servidor.");
+    throw new Error(finalMessage || 'Error de conexión con el servidor.');
   }
 }
 

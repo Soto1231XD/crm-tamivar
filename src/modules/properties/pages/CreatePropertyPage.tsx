@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
-import { usePropertiesStore } from "../store/usePropertiesStore";
+import { usePropertiesStore, type PropertiesState } from "../store/usePropertiesStore";
 import type { CreatePropertyPayload } from "@/interfaces/property.interface";
 
 export function CreatePropertyPage() {
@@ -9,7 +9,7 @@ export function CreatePropertyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Extraemos la acción addProperty del store de propiedades
-  const addProperty = usePropertiesStore((state) => state.addProperty);
+  const addProperty = usePropertiesStore((state: PropertiesState) => state.addProperty);
 
   function handleCancel() {
     navigate("/modulos/properties");

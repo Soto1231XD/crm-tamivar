@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProperties, updateProperty } from '../services/properties.api';
+import { getProperties, updateProperty, updatePropertyStatus } from '../services/properties.api';
 import type { PropertyRecord } from '@/interfaces/property.interface';
 import { DeletePropertyConfirmModal } from '../components/DeletePropertyConfirmModal';
 import { useAuth } from '../../../shared/context/AuthContext';
@@ -32,7 +32,7 @@ const PROPERTY_STATUS_STYLES: Record<string, { backgroundColor: string; color: s
 
 export function PropertiesPage() {
   const navigate = useNavigate();
-  const { accessToken, user } = useAuth();
+  const { user } = useAuth();
   const propertyPermissions = getModulePermissions(user?.roles ?? [], 'properties');
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [search, setSearch] = useState('');
@@ -95,7 +95,7 @@ export function PropertiesPage() {
 
   async function handleDeleteProperty(propertyId: number): Promise<string | null> {
     try {
-      await updatePropertyStatus(propertyId, { activo: false }, accessToken);
+      await updatePropertyStatus(propertyId, { activo: false });
       setProperties((prev) => prev.filter((property) => property.id !== propertyId));
       return null;
     } catch (error) {
@@ -118,7 +118,7 @@ export function PropertiesPage() {
     );
 
     try {
-      await updateProperty(propertyId, { estatus: nextStatus }, accessToken);
+      await updateProperty(propertyId, { estatus: nextStatus });
     } catch {
       setProperties((prev) =>
         prev.map((property) => (property.id === propertyId ? { ...property, estatus: previousStatus } : property)),

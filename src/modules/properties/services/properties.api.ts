@@ -59,6 +59,16 @@ export async function updateProperty(
   });
 }
 
+export async function updatePropertyStatus(
+  id: number,
+  payload: Pick<PropertyRecord, "activo">,
+): Promise<PropertyRecord> {
+  return apiRequest<PropertyRecord>(`${PATH}/${id}/status`, {
+    method: "PATCH",
+    data: payload,
+  });
+}
+
 // Eliminar propiedad
 export async function deleteProperty(id: number): Promise<void> {
   return apiRequest<void>(`${PATH}/${id}`, {

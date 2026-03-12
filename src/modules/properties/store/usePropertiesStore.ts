@@ -12,7 +12,7 @@ import type {
   UpdatePropertyPayload 
 } from '@/interfaces/property.interface'
 
-interface PropertiesState {
+export interface PropertiesState {
   // Estado
   properties: PropertyRecord[];
   currentProperty: PropertyRecord | null;
@@ -28,7 +28,7 @@ interface PropertiesState {
   clearCurrentProperty: () => void;
 }
 
-export const usePropertiesStore = create<PropertiesState>((set, get) => ({
+export const usePropertiesStore = create<PropertiesState>((set) => ({
   properties: [],
   currentProperty: null,
   isLoading: false,

@@ -22,6 +22,7 @@ export interface PropertyRecord {
   imagenes: Imagen[];
   creado_en: string;
   creado_por_id: number;
+  activo?: boolean;
 }
 
 // Sub-interfaces

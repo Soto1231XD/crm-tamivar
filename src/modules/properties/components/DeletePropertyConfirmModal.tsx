@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import cerrarIcon from '../../../assets/images/Cerrar.png';
-import type { PropertyRecord } from '../services/properties.api';
+import type { PropertyRecord } from '@/interfaces/property.interface';
 
 type DeletePropertyConfirmModalProps = {
   isOpen: boolean;
