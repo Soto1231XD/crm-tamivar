@@ -1,7 +1,6 @@
+import { apiRequest } from '../../../shared/apiRequest';
 import { normalizeBackendRole } from '../../../shared/constants/roles';
 import type { AppUser, LoginCredentials, Role } from '../../../shared/types/rbac';
-
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
 
 type BackendLoginSuccess = {
   access_token: string;
@@ -36,37 +35,12 @@ export type LoginApiResult =
       message: string;
     };
 
-async function postJson<TResponse>(path: string, body: unknown): Promise<TResponse> {
-  const response = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-
-  const data = (await response.json().catch(() => null)) as { message?: string } | null;
-
-  if (!response.ok) {
-    const message =
-      typeof data?.message === 'string'
-        ? data.message
-        : 'No fue posible procesar la solicitud de autenticacion.';
-    throw new Error(message);
-  }
-
-  return data as TResponse;
-}
-
 function mapBackendUserToAppUser(user: BackendLoginSuccess['user']): AppUser {
   const backendRoles = user.roles?.length ? user.roles : user.rol?.rol ? [user.rol.rol] : [];
   const normalizedRoles = backendRoles
     .map((roleName) => normalizeBackendRole(roleName))
     .filter((role): role is Role => Boolean(role));
-  const fullName = [user.nombres, user.apellido_paterno]
-    .filter(Boolean)
-    .join(' ')
-    .trim();
+  const fullName = [user.nombres, user.apellido_paterno].filter(Boolean).join(' ').trim();
 
   return {
     id: user.id,
@@ -79,7 +53,10 @@ function mapBackendUserToAppUser(user: BackendLoginSuccess['user']): AppUser {
 }
 
 export async function loginApi(credentials: LoginCredentials): Promise<LoginApiResult> {
-  const data = await postJson<BackendLoginSuccess | BackendLoginChallenge>('/auth/login', credentials);
+  const data = await apiRequest<BackendLoginSuccess | BackendLoginChallenge>('/auth/login', {
+    method: 'POST',
+    data: credentials,
+  });
 
   if ('requires_2fa' in data) {
     return {
@@ -100,11 +77,12 @@ export async function verifyTwoFaApi(challengeId: string, codigo: string): Promi
   accessToken: string;
   user: AppUser;
 }> {
-  const sanitizedCode = codigo.trim();
-
-  const data = await postJson<BackendLoginSuccess>('/auth/verify-2fa', {
-    challenge_id: challengeId.trim(),
-    codigo: sanitizedCode,
+  const data = await apiRequest<BackendLoginSuccess>('/auth/verify-2fa', {
+    method: 'POST',
+    data: {
+      challenge_id: challengeId.trim(),
+      codigo: codigo.trim(),
+    },
   });
 
   return {

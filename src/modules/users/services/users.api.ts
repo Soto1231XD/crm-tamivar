@@ -1,4 +1,4 @@
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+import { apiRequest } from '../../../shared/apiRequest';
 
 export type RoleOptionRecord = {
   id: number;
@@ -54,64 +54,23 @@ export type ToggleUserStatusResponse = {
 };
 
 export async function getUsers(accessToken?: string | null): Promise<UserRecord[]> {
-  const response = await fetch(`${API_URL}/users`, {
-    method: 'GET',
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-  });
-
-  const data = (await response.json().catch(() => null)) as UserRecord[] | null;
-
-  if (!response.ok || !Array.isArray(data)) {
-    return [];
-  }
-
-  return data;
+  void accessToken;
+  const data = await apiRequest<UserRecord[]>('/users');
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getRoles(accessToken?: string | null): Promise<RoleOptionRecord[]> {
-  const response = await fetch(`${API_URL}/roles`, {
-    method: 'GET',
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-  });
-
-  const data = (await response.json().catch(() => null)) as RoleOptionRecord[] | null;
-
-  if (!response.ok || !Array.isArray(data)) {
-    return [];
-  }
-
-  return data;
+  void accessToken;
+  const data = await apiRequest<RoleOptionRecord[]>('/roles');
+  return Array.isArray(data) ? data : [];
 }
 
-export async function createUser(
-  payload: CreateUserPayload,
-  accessToken?: string | null,
-): Promise<UserRecord> {
-  const response = await fetch(`${API_URL}/users`, {
+export async function createUser(payload: CreateUserPayload, accessToken?: string | null): Promise<UserRecord> {
+  void accessToken;
+  return apiRequest<UserRecord>('/users', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    body: JSON.stringify(payload),
+    data: payload,
   });
-
-  const data = (await response.json().catch(() => null)) as UserRecord | { message?: string | string[] } | null;
-
-  if (!response.ok || !data || Array.isArray(data)) {
-    const message = Array.isArray((data as { message?: string | string[] } | null)?.message)
-      ? ((data as { message: string[] }).message[0] ?? 'No fue posible crear el usuario.')
-      : typeof (data as { message?: string | string[] } | null)?.message === 'string'
-        ? (data as { message: string }).message
-        : 'No fue posible crear el usuario.';
-    throw new Error(message);
-  }
-
-  return data as UserRecord;
 }
 
 export async function updateUser(
@@ -119,50 +78,19 @@ export async function updateUser(
   payload: UpdateUserPayload,
   accessToken?: string | null,
 ): Promise<UserRecord> {
-  const response = await fetch(`${API_URL}/users/${id}`, {
+  void accessToken;
+  return apiRequest<UserRecord>(`/users/${id}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    body: JSON.stringify(payload),
+    data: payload,
   });
-
-  const data = (await response.json().catch(() => null)) as UserRecord | { message?: string | string[] } | null;
-
-  if (!response.ok || !data || Array.isArray(data)) {
-    const message = Array.isArray((data as { message?: string | string[] } | null)?.message)
-      ? ((data as { message: string[] }).message[0] ?? 'No fue posible actualizar el usuario.')
-      : typeof (data as { message?: string | string[] } | null)?.message === 'string'
-        ? (data as { message: string }).message
-        : 'No fue posible actualizar el usuario.';
-    throw new Error(message);
-  }
-
-  return data as UserRecord;
 }
 
 export async function toggleUserStatus(
   id: number,
   accessToken?: string | null,
 ): Promise<ToggleUserStatusResponse> {
-  const response = await fetch(`${API_URL}/users/${id}`, {
+  void accessToken;
+  return apiRequest<ToggleUserStatusResponse>(`/users/${id}`, {
     method: 'DELETE',
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
   });
-
-  const data = (await response.json().catch(() => null)) as ToggleUserStatusResponse | { message?: string | string[] } | null;
-
-  if (!response.ok || !data || Array.isArray(data)) {
-    const message = Array.isArray((data as { message?: string | string[] } | null)?.message)
-      ? ((data as { message: string[] }).message[0] ?? 'No fue posible cambiar el estado del usuario.')
-      : typeof (data as { message?: string | string[] } | null)?.message === 'string'
-        ? (data as { message: string }).message
-        : 'No fue posible cambiar el estado del usuario.';
-    throw new Error(message);
-  }
-
-  return data as ToggleUserStatusResponse;
 }

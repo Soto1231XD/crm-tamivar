@@ -4,21 +4,16 @@ import desArcIcon from '../../../assets/images/DesArc.png';
 import editarIcon from '../../../assets/images/Editar.png';
 import descInfIcon from '../../../assets/images/DescInf.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
-import {
-  createLead,
-  deleteLead,
-  getLeads,
-  updateLead,
-  type CreateLeadPayload,
-  type LeadRecord,
-  type UpdateLeadPayload,
-} from '../services/leads.api';
+import { type CreateLeadPayload, type LeadRecord, type UpdateLeadPayload } from '../services/leads.api';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { EditLeadModal } from '../components/EditLeadModal';
 import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
-import { getProperties, type PropertyRecord } from '../../properties/services/properties.api';
+import { getProperties } from '../../properties/services/properties.api';
+import type { PropertyRecord } from '@/interfaces/property.interface';
 import { useAuth } from '../../../shared/context/AuthContext';
 import { getModulePermissions, getPrimaryRole } from '../../../shared/constants/roles';
+import { TablePagination } from '../../../shared/components/TablePagination';
+import { useLeadsStore } from '../store/useLeadsStore';
 
 const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
   contactado: { backgroundColor: '#DBEAFE', color: '#1480F0' },
@@ -49,14 +44,14 @@ const LEAD_STATUS_OPTIONS = [
   'Cerrado',
 ] as const;
 const LEAD_PRIORITY_OPTIONS = ['Urgente', 'Normal', 'Bajo Interes'] as const;
+const PAGE_SIZE = 10;
 
 export function LeadsPage() {
-  const { user, accessToken } = useAuth();
+  const { user } = useAuth();
   const primaryRole = getPrimaryRole(user?.roles ?? []);
   const leadPermissions = getModulePermissions(user?.roles ?? [], 'leads');
-  const [leads, setLeads] = useState<LeadRecord[]>([]);
+  const { leads, isLoading, fetchLeads, addLead, editLead, removeLead } = useLeadsStore();
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_STATES);
   const [priorityFilter, setPriorityFilter] = useState(ALL_PRIORITIES);
@@ -65,25 +60,11 @@ export function LeadsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadRecord | null>(null);
   const [deletingLead, setDeletingLead] = useState<LeadRecord | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    let active = true;
-    setIsLoading(true);
-
-    getLeads()
-      .then((data) => {
-        if (!active) return;
-        setLeads(data);
-      })
-      .finally(() => {
-        if (!active) return;
-        setIsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    void fetchLeads();
+  }, [fetchLeads]);
 
   useEffect(() => {
     let active = true;
@@ -144,6 +125,11 @@ export function LeadsPage() {
       return matchesSearch && matchesStatus && matchesPriority && matchesProperty;
     });
   }, [leads, search, statusFilter, priorityFilter, propertyFilter, propertyTitleById, primaryRole, user?.id]);
+  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
+  const paginatedLeads = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredLeads.slice(start, start + PAGE_SIZE);
+  }, [currentPage, filteredLeads]);
 
   const propertyChoices = useMemo(
     () =>
@@ -153,6 +139,16 @@ export function LeadsPage() {
       })),
     [properties],
   );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, priorityFilter, propertyFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   function openCreateModal() {
     setIsCreateModalOpen(true);
@@ -188,27 +184,7 @@ export function LeadsPage() {
         ...payload,
         creado_por_id: user.id,
       };
-      const createdLead = await createLead(createdPayload, accessToken);
-
-      const selectedProperty = properties.find((property) => property.id === payload.propiedad_id);
-      const leadForList: LeadRecord = {
-        ...createdLead,
-        creador:
-          createdLead.creador ?? {
-            id: user.id,
-            nombres: user.nombres ?? undefined,
-            apellido_paterno: user.apellidoPaterno ?? undefined,
-          },
-        propiedad:
-          createdLead.propiedad ??
-          (selectedProperty
-            ? {
-                direccion: selectedProperty.direccion,
-              }
-            : undefined),
-      };
-
-      setLeads((prev) => [leadForList, ...prev]);
+      await addLead(createdPayload);
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible crear el registro.';
@@ -217,23 +193,7 @@ export function LeadsPage() {
 
   async function handleEditLead(leadId: number, payload: UpdateLeadPayload): Promise<string | null> {
     try {
-      const updatedLead = await updateLead(leadId, payload, accessToken);
-      const selectedProperty = properties.find(
-        (property) => property.id === (payload.propiedad_id ?? updatedLead.propiedad_id),
-      );
-
-      const leadForList: LeadRecord = {
-        ...updatedLead,
-        propiedad:
-          updatedLead.propiedad ??
-          (selectedProperty
-            ? {
-                direccion: selectedProperty.direccion,
-              }
-            : undefined),
-      };
-
-      setLeads((prev) => prev.map((lead) => (lead.id === leadId ? { ...lead, ...leadForList } : lead)));
+      await editLead(leadId, payload);
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible actualizar el registro.';
@@ -242,8 +202,7 @@ export function LeadsPage() {
 
   async function handleDeleteLead(leadId: number): Promise<string | null> {
     try {
-      await deleteLead(leadId, accessToken);
-      setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
+      await removeLead(leadId);
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible eliminar el registro.';
@@ -270,15 +229,18 @@ export function LeadsPage() {
     if (!targetLead || targetLead[field] === value) return;
 
     const previousValue = targetLead[field];
+    const previousLeads = leads;
     setUpdatingLeadId(leadId);
-    setLeads((prev) => prev.map((lead) => (lead.id === leadId ? { ...lead, [field]: value } : lead)));
+    useLeadsStore.setState({
+      leads: previousLeads.map((lead) => (lead.id === leadId ? { ...lead, [field]: value } : lead)),
+    });
 
     try {
-      await updateLead(leadId, { [field]: value }, accessToken);
+      await editLead(leadId, { [field]: value });
     } catch {
-      setLeads((prev) =>
-        prev.map((lead) => (lead.id === leadId ? { ...lead, [field]: previousValue } : lead)),
-      );
+      useLeadsStore.setState({
+        leads: previousLeads.map((lead) => (lead.id === leadId ? { ...lead, [field]: previousValue } : lead)),
+      });
     } finally {
       setUpdatingLeadId(null);
     }
@@ -377,6 +339,9 @@ export function LeadsPage() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
                   Fecha de creacion
                 </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  Fecha de cita
+                </th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Comentarios</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Acciones</th>
               </tr>
@@ -384,18 +349,18 @@ export function LeadsPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-slate-600">
+                  <td colSpan={11} className="px-4 py-6 text-center text-sm text-slate-600">
                     Cargando registros...
                   </td>
                 </tr>
               ) : filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-slate-600">
+                  <td colSpan={11} className="px-4 py-6 text-center text-sm text-slate-600">
                     No se encontraron registros
                   </td>
                 </tr>
               ) : (
-                filteredLeads.map((lead) => (
+                paginatedLeads.map((lead) => (
                   <tr key={lead.id} className="border-b border-slate-100">
                     <td className="px-4 py-3 text-sm font-medium text-slate-800">
                       {`${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'}
@@ -437,6 +402,7 @@ export function LeadsPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{formatCreatorName(lead.creador)}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{formatDate(lead.creado_en)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">{formatDateTime(lead.fecha_cita)}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{lead.comentarios || 'Sin comentarios'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -479,6 +445,14 @@ export function LeadsPage() {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredLeads.length}
+          pageSize={PAGE_SIZE}
+          itemLabel="registros"
+          onPageChange={setCurrentPage}
+        />
       </section>
 
       {leadPermissions.create ? (
@@ -544,6 +518,19 @@ function formatDate(value?: string): string {
   }).format(date);
 }
 
+function formatDateTime(value?: string | null): string {
+  if (!value) return 'Sin fecha';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('es-MX', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
 function formatCreatorName(
   creador?: { nombres?: string | null; apellido_paterno?: string | null } | null,
 ): string {
@@ -565,6 +552,7 @@ function downloadLeadAsExcel(lead: LeadRecord, propertyTitle: string) {
     ['Prioridad', lead.prioridad?.trim() || 'Sin prioridad'],
     ['Creado por', formatCreatorName(lead.creador)],
     ['Fecha de creacion', formatDate(lead.creado_en)],
+    ['Fecha de cita', formatDateTime(lead.fecha_cita)],
     ['Comentarios', lead.comentarios?.trim() || 'Sin comentarios'],
   ];
 
@@ -625,6 +613,7 @@ function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string[]) {
       'Prioridad',
       'Creado por',
       'Fecha de creacion',
+      'Fecha de cita',
       'Comentarios',
     ],
     ...leads.map((lead, index) => [
@@ -637,6 +626,7 @@ function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string[]) {
       lead.prioridad?.trim() || 'Sin prioridad',
       formatCreatorName(lead.creador),
       formatDate(lead.creado_en),
+      formatDateTime(lead.fecha_cita),
       lead.comentarios?.trim() || 'Sin comentarios',
     ]),
   ];

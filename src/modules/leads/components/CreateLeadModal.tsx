@@ -42,6 +42,7 @@ const INITIAL_FORM = {
   comentarios: '',
   estado: 'Contactado',
   prioridad: 'Normal',
+  fecha_cita: '',
 };
 
 const createLeadSchema = z.object({
@@ -72,6 +73,7 @@ const createLeadSchema = z.object({
   comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
   estado: z.string().optional(),
   prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
+  fecha_cita: z.string().optional(),
 });
 
 type CreateLeadFormInput = z.input<typeof createLeadSchema>;
@@ -127,6 +129,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
       comentarios: values.comentarios?.trim() || undefined,
       estado: values.estado?.trim() || undefined,
       prioridad: values.prioridad.trim(),
+      fecha_cita: values.fecha_cita?.trim() || undefined,
     };
 
     setIsSubmitting(true);
@@ -272,6 +275,15 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
                     </option>
                   ))}
                 </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                Fecha de cita
+                <input
+                  type="datetime-local"
+                  {...register('fecha_cita')}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+                />
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-slate-700">

@@ -19,13 +19,12 @@ export function DeletePropertyConfirmModal({
   const [submitError, setSubmitError] = useState('');
 
   if (!isOpen || !property) return null;
+  const selectedProperty = property;
 
   async function handleConfirm() {
-    if (!property) return;
-
     setSubmitError('');
     setIsSubmitting(true);
-    const error = await onConfirm(property.id);
+    const error = await onConfirm(selectedProperty.id);
     setIsSubmitting(false);
 
     if (error) {
@@ -40,7 +39,7 @@ export function DeletePropertyConfirmModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-900">Confirmar desactivación</h3>
+          <h3 className="text-lg font-bold text-slate-900">Confirmar eliminación</h3>
           <button
             type="button"
             onClick={onClose}
@@ -53,8 +52,8 @@ export function DeletePropertyConfirmModal({
         </div>
 
         <p className="text-sm text-slate-700">
-          ¿Estás seguro de que quieres desactivar la propiedad{' '}
-          <span className="font-semibold text-slate-900">{property.titulo || 'Sin título'}</span>?
+          ¿Estás seguro de que quieres eliminar la propiedad{' '}
+          <span className="font-semibold text-slate-900">{selectedProperty.titulo || 'Sin título'}</span>?
         </p>
 
         {submitError ? <p className="mt-3 text-sm font-medium text-red-600">{submitError}</p> : null}
@@ -73,7 +72,7 @@ export function DeletePropertyConfirmModal({
             disabled={isSubmitting}
             className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isSubmitting ? 'Desactivando...' : 'Desactivar'}
+            {isSubmitting ? 'Eliminando...' : 'Eliminar'}
           </button>
         </div>
       </div>

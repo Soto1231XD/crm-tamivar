@@ -1,4 +1,4 @@
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+import { apiRequest } from '../../../shared/apiRequest';
 
 export type LeadRecord = {
   id: number;
@@ -10,6 +10,7 @@ export type LeadRecord = {
   comentarios?: string | null;
   estado?: string | null;
   prioridad?: string | null;
+  fecha_cita?: string | null;
   creado_en?: string;
   propiedad_id: number;
   creador?: {
@@ -37,6 +38,7 @@ export type CreateLeadPayload = {
   comentarios?: string;
   estado?: string;
   prioridad: string;
+  fecha_cita?: string;
 };
 
 export type UpdateLeadPayload = {
@@ -49,47 +51,20 @@ export type UpdateLeadPayload = {
   comentarios?: string;
   estado?: string;
   prioridad?: string;
+  fecha_cita?: string;
 };
 
 export async function getLeads(): Promise<LeadRecord[]> {
-  const response = await fetch(`${API_URL}/registros`, { method: 'GET' });
-  const data = (await response.json().catch(() => null)) as LeadRecord[] | null;
-
-  if (!response.ok || !Array.isArray(data)) {
-    return [];
-  }
-
-  return data;
+  const data = await apiRequest<LeadRecord[]>('/registros');
+  return Array.isArray(data) ? data : [];
 }
 
-export async function createLead(
-  payload: CreateLeadPayload,
-  accessToken?: string | null,
-): Promise<LeadRecord> {
-  const response = await fetch(`${API_URL}/registros`, {
+export async function createLead(payload: CreateLeadPayload, accessToken?: string | null): Promise<LeadRecord> {
+  void accessToken;
+  return apiRequest<LeadRecord>('/registros', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    body: JSON.stringify(payload),
+    data: payload,
   });
-
-  const data = (await response.json().catch(() => null)) as
-    | LeadRecord
-    | { message?: string | string[] }
-    | null;
-
-  if (!response.ok || !data || Array.isArray(data)) {
-    const message = Array.isArray((data as { message?: string | string[] } | null)?.message)
-      ? ((data as { message: string[] }).message[0] ?? 'No fue posible crear el registro.')
-      : typeof (data as { message?: string | string[] } | null)?.message === 'string'
-        ? ((data as { message: string }).message)
-        : 'No fue posible crear el registro.';
-    throw new Error(message);
-  }
-
-  return data as LeadRecord;
 }
 
 export async function updateLead(
@@ -97,48 +72,16 @@ export async function updateLead(
   payload: UpdateLeadPayload,
   accessToken?: string | null,
 ): Promise<LeadRecord> {
-  const response = await fetch(`${API_URL}/registros/${id}`, {
+  void accessToken;
+  return apiRequest<LeadRecord>(`/registros/${id}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    body: JSON.stringify(payload),
+    data: payload,
   });
-
-  const data = (await response.json().catch(() => null)) as
-    | LeadRecord
-    | { message?: string | string[] }
-    | null;
-
-  if (!response.ok || !data || Array.isArray(data)) {
-    const message = Array.isArray((data as { message?: string | string[] } | null)?.message)
-      ? ((data as { message: string[] }).message[0] ?? 'No fue posible actualizar el registro.')
-      : typeof (data as { message?: string | string[] } | null)?.message === 'string'
-        ? ((data as { message: string }).message)
-        : 'No fue posible actualizar el registro.';
-    throw new Error(message);
-  }
-
-  return data as LeadRecord;
 }
 
 export async function deleteLead(id: number, accessToken?: string | null): Promise<void> {
-  const response = await fetch(`${API_URL}/registros/${id}`, {
+  void accessToken;
+  await apiRequest<void>(`/registros/${id}`, {
     method: 'DELETE',
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
   });
-
-  const data = (await response.json().catch(() => null)) as { message?: string | string[] } | null;
-
-  if (!response.ok) {
-    const message = Array.isArray(data?.message)
-      ? (data?.message[0] ?? 'No fue posible eliminar el registro.')
-      : typeof data?.message === 'string'
-        ? data.message
-        : 'No fue posible eliminar el registro.';
-    throw new Error(message);
-  }
 }

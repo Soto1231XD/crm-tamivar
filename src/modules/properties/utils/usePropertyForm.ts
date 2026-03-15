@@ -47,6 +47,7 @@ const INITIAL_FORM_STATE: FormState = {
   precio_condicionado_monto: "",
   tipos_pago: [],
   estatus: "Disponible",
+  etiquetas: "",
   cp: "",
   fraccionamiento: "",
   smz: "",
@@ -104,6 +105,7 @@ function toFormState(property?: PropertyRecord | null): FormState {
         : "",
     tipos_pago: Array.isArray(property.tipos_pago) ? property.tipos_pago : [],
     estatus: property.estatus ?? "Disponible",
+    etiquetas: Array.isArray(property.etiquetas) ? property.etiquetas.join(', ') : "",
     cp: property.direccion?.cp != null ? String(property.direccion.cp) : "",
     fraccionamiento: property.direccion?.fraccionamiento ?? "",
     smz: property.direccion?.smz != null ? String(property.direccion.smz) : "",
@@ -315,7 +317,10 @@ export function usePropertyForm(
       tipos_pago: form.tipos_pago,
       estatus: form.estatus.trim(),
       tiene_gravamen: form.tiene_gravamen,
-      etiquetas: [],
+      etiquetas: form.etiquetas
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
       cuota_mantenimiento: form.cuota_mantenimiento
         ? parseFormattedNumber(form.cuota_mantenimiento)
         : undefined,

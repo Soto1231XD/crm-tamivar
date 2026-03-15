@@ -8,6 +8,7 @@ export type FormState = {
   precio_condicionado_monto: string;
   tipos_pago: string[];
   estatus: string;
+  etiquetas: string;
   cp: string;
   fraccionamiento: string;
   smz: string;

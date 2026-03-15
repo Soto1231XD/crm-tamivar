@@ -1,39 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import agregarIcon from '../../../assets/images/Agregar.png';
-import { useAuth } from '../../../shared/context/AuthContext';
-import { getUsers, type UserRecord } from '../../users/services/users.api';
+import type { UserRecord } from '../../users/services/users.api';
 import { AssignedModulesModal } from '../components/AssignedModulesModal';
 import { CreateRoleModal } from '../components/CreateRoleModal';
-import { createSystemRole, type PermissionRecord, getSystemRoles, type SystemRoleRecord } from '../services/systemRoles.api';
+import { useSystemRolesStore } from '../store/useSystemRolesStore';
+import { type PermissionRecord, type SystemRoleRecord } from '../services/systemRoles.api';
 
 export function SystemRolesPage() {
-  const { accessToken } = useAuth();
-  const [roles, setRoles] = useState<SystemRoleRecord[]>([]);
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { roles, users, isLoading, fetchData, addRole } = useSystemRolesStore();
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState<SystemRoleRecord | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    setIsLoading(true);
-
-    Promise.all([getSystemRoles(accessToken), getUsers(accessToken)])
-      .then(([rolesData, usersData]) => {
-        if (!active) return;
-        setRoles(rolesData);
-        setUsers(usersData);
-      })
-      .finally(() => {
-        if (!active) return;
-        setIsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [accessToken]);
+    void fetchData();
+  }, [fetchData]);
 
   const filteredRoles = useMemo(() => {
     const query = normalizeText(search);
@@ -137,8 +118,7 @@ export function SystemRolesPage() {
 
   async function handleCreateRole(payload: { rol: string; permisosIds: number[] }): Promise<string | null> {
     try {
-      const createdRole = await createSystemRole(payload, accessToken);
-      setRoles((prev) => [createdRole, ...prev]);
+      await addRole(payload);
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible crear el rol.';

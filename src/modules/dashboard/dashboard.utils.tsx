@@ -29,8 +29,16 @@ export type RecentUserItem = {
 export type RecentPublicationItem = {
   titulo: string;
   fecha_creacion: string;
+  fechaPublico?: string | null;
   publicado: boolean;
+  imagenes?: Array<{
+    url?: string;
+    titulo?: string;
+    principal?: boolean;
+  }> | null;
 };
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
   contactado: { backgroundColor: '#DBEAFE', color: '#1480F0' },
@@ -130,7 +138,7 @@ export function getSectionItemsCount(sectionTitle: string, data: DashboardSectio
   if (sectionTitle === 'Registros Recientes') return data.registrosRecientes.length;
   if (sectionTitle === 'Propiedades Recientes') return data.propiedadesRecientes.length;
   if (sectionTitle === 'Usuarios') return data.usuariosRecientes.length;
-  if (sectionTitle === 'Mis publicaciones') return data.misPublicaciones.length;
+  if (sectionTitle === 'Publicaciones') return data.misPublicaciones.length;
   return 0;
 }
 
@@ -138,7 +146,7 @@ export function getSectionEmptyMessage(sectionTitle: string): string {
   if (sectionTitle === 'Registros Recientes') return 'Sin registros recientes';
   if (sectionTitle === 'Propiedades Recientes') return 'Sin propiedades recientes';
   if (sectionTitle === 'Usuarios') return 'Sin usuarios recientes';
-  if (sectionTitle === 'Mis publicaciones') return 'Sin publicaciones recientes';
+  if (sectionTitle === 'Publicaciones') return 'Sin publicaciones recientes';
   return 'Sin información';
 }
 
@@ -205,25 +213,56 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     ));
   }
 
-  if (sectionTitle === 'Mis publicaciones') {
+  if (sectionTitle === 'Publicaciones') {
     return data.misPublicaciones.map((publicacion, index) => (
       <li
         key={`${publicacion.titulo}-${publicacion.fecha_creacion}-${index}`}
         className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
       >
-        <p className="text-sm font-semibold text-slate-800">{publicacion.titulo}</p>
-        <p className="mt-1 text-xs text-slate-600">{formatDate(publicacion.fecha_creacion)}</p>
-        <div className="mt-2">
-          <span
-            className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-            style={getPublicationStatusStyles(publicacion.publicado)}
-          >
-            {publicacion.publicado ? 'Publicado' : 'Borrador'}
-          </span>
+        <div className="flex items-start gap-3">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-200">
+            {getPublicationImageUrl(publicacion.imagenes) ? (
+              <img
+                src={getPublicationImageUrl(publicacion.imagenes) ?? ''}
+                alt={publicacion.titulo}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-[10px] font-medium text-slate-500">
+                Sin imagen
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm font-semibold text-slate-800">{publicacion.titulo}</p>
+            <p className="mt-1 text-xs text-slate-600">
+              {formatDate(publicacion.fechaPublico || publicacion.fecha_creacion)}
+            </p>
+            <div className="mt-2">
+              <span
+                className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                style={getPublicationStatusStyles(publicacion.publicado)}
+              >
+                {publicacion.publicado ? 'Publicado' : 'Borrador'}
+              </span>
+            </div>
+          </div>
         </div>
       </li>
     ));
   }
 
   return null;
+}
+
+function getPublicationImageUrl(images?: RecentPublicationItem['imagenes']): string | null {
+  if (!Array.isArray(images) || images.length === 0) return null;
+
+  const principalImage = images.find((image) => image?.principal) ?? images[0];
+  if (!principalImage?.url) return null;
+
+  return principalImage.url.startsWith('http')
+    ? principalImage.url
+    : `${API_URL}/${principalImage.url}`;
 }
