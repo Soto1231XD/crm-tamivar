@@ -1,105 +1,131 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { deleteProperty, getProperties, updateProperty } from '../services/properties.api';
-import type { PropertyRecord } from '@/interfaces/property.interface';
-import { DeletePropertyConfirmModal } from '../components/DeletePropertyConfirmModal';
-import { useAuth } from '../../../shared/context/AuthContext';
-import { getModulePermissions } from '../../../shared/constants/roles';
-import { TablePagination } from '../../../shared/components/TablePagination';
-import descInfIcon from '../../../assets/images/DescInf.png';
-import editarIcon from '../../../assets/images/Editar.png';
-import borrarIcon from '../../../assets/images/Borrar.png';
-import agregarIcon from '../../../assets/images/Agregar.png';
-import desArcIcon from '../../../assets/images/DesArc.png';
-
-const STATUS_OPTIONS = ['Todos los estados', 'Disponible', 'Apartado', 'Vendido', 'Preventa', 'Baja'] as const;
-const TYPE_OPTIONS = [
-  'Todos los tipos',
-  'Casa',
-  'Departamento',
-  'Desarrollo',
-  'Terreno',
-  'Local comercial',
-  'Edificio comercial',
-] as const;
-
-const PROPERTY_STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
-  disponible: { backgroundColor: '#D0FAE5', color: '#4D8236' },
-  apartado: { backgroundColor: '#FEF9C2', color: '#E4AE1F' },
-  vendido: { backgroundColor: '#B3B3B5', color: '#000000' },
-  preventa: { backgroundColor: '#DBEAFE', color: '#1480F0' },
-  baja: { backgroundColor: '#FEF3C7', color: '#CA5874' },
-};
-const PAGE_SIZE = 10;
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { PropertyRecord } from "@/interfaces/property.interface";
+import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmModal";
+import { useAuth } from "../../../shared/context/AuthContext";
+import { getModulePermissions } from "../../../shared/constants/roles";
+import descInfIcon from "../../../assets/images/DescInf.png";
+import agregarIcon from "../../../assets/images/Agregar.png";
+import desArcIcon from "../../../assets/images/DesArc.png";
+import verIcon from "@/assets/images/Ver.png"
+import { STATUS_OPTIONS, TYPE_OPTIONS } from "../utils/property-constants";
+import { usePropertiesStore } from "../store/usePropertiesStore";
+import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
+import { formatDireccion, getPropertyStatusStyles, formatCurrency } from "../utils/formatters";
 
 export function PropertiesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const propertyPermissions = getModulePermissions(user?.roles ?? [], 'properties');
-  const [properties, setProperties] = useState<PropertyRecord[]>([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>('Todos los estados');
-  const [typeFilter, setTypeFilter] = useState<(typeof TYPE_OPTIONS)[number]>('Todos los tipos');
-  const [isLoading, setIsLoading] = useState(false);
-  const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
+
+  const {
+    properties,
+    isLoading,
+    fetchProperties,
+    removeProperty,
+    editProperty,
+  } = usePropertiesStore();
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("Todos los estados");
+  const [typeFilter, setTypeFilter] = useState<(typeof TYPE_OPTIONS)[number]>("Todos los tipos");
   const [deletingProperty, setDeletingProperty] = useState<PropertyRecord | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
+  const propertyPermissions = getModulePermissions(user?.roles ?? [], "properties",);
 
   useEffect(() => {
-    let active = true;
-    setIsLoading(true);
-    getProperties()
-      .then((data) => {
-        if (!active) return;
-        setProperties(data);
-      })
-      .finally(() => {
-        if (!active) return;
-        setIsLoading(false);
-      });
+    fetchProperties();
+  }, [fetchProperties]);
 
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Configuración dinámica de las columnas de la tabla
+  const columns: ColumnDef<PropertyRecord>[] = useMemo(() => [
+    {
+      header: 'Propiedad',
+      render: (property) => <span className="font-medium text-slate-800">{property.titulo || 'Sin título'}</span>,
+    },
+    {
+      header: 'Tipo de inmueble',
+      accessorKey: 'tipo_inmueble',
+    },
+    {
+      header: 'Operación',
+      render: (property) => (
+        <span className="inline-flex items-center rounded-md bg-slate-100 p-2 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
+          {property.tipo_operacion}
+        </span>
+      ),
+    },
+    {
+      header: 'Dirección',
+      render: (property) => <span className="text-slate-700">{formatDireccion(property.direccion)}</span>,
+    },
+    {
+      header: 'Precio (MXN)',
+      render: (property) => <span className="font-semibold text-[#4F5EF8]">{formatCurrency(property.precio)}</span>,
+    },
+    {
+      header: 'Asesor',
+      render: (property) => (
+        <div className="flex items-center justify-center gap-2 text-slate-700">
+          <div className="h-6 w-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold uppercase overflow-hidden">
+            {property.creador?.foto_url ? (
+              <img src={property.creador.foto_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              `${property.creador?.nombres?.[0] || ''}${property.creador?.apellido_paterno?.[0] || ''}`
+            )}
+          </div>
+          <span>{`${property.creador?.nombres || ''} ${property.creador?.apellido_paterno || ''}`}</span>
+        </div>
+      ),
+    },
+    {
+      header: 'Estado',
+      render: (property) => (
+      <div className="relative inline-block w-[140px]">
+        <select
+          value={property.estatus}
+          onChange={(event) => handleStatusChange(property.id, event.target.value)}
+          disabled={updatingStatusId === property.id || !propertyPermissions.edit}
+          className="w-full appearance-none cursor-pointer rounded-full border-0 px-4 py-1.5 text-left text-xs font-semibold shadow-sm outline-none ring-1 ring-inset ring-slate-200 transition-all hover:ring-slate-300 focus:ring-2 focus:ring-[#312C85] disabled:cursor-not-allowed disabled:opacity-70"
+          style={getPropertyStatusStyles(property.estatus)}
+        >
+          {STATUS_OPTIONS.filter((option) => option !== 'Todos los estados').map((option) => (
+            <option key={option} value={option} className="bg-white text-slate-800 font-medium">
+              {option}
+            </option>
+          ))}
+        </select>
 
+        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-current opacity-70">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+      </div>
+      ),
+    },
+  ], [updatingStatusId, propertyPermissions.edit]);
+
+  // Lógica de filtrado
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
       const matchesStatus =
-        statusFilter === 'Todos los estados' ||
-        property.estatus.trim().toLowerCase() === statusFilter.trim().toLowerCase();
+        statusFilter === "Todos los estados" ||
+        property.estatus.toLowerCase() === statusFilter.toLowerCase();
 
       const matchesType =
-        typeFilter === 'Todos los tipos' ||
-        property.tipo_inmueble.trim().toLowerCase() === typeFilter.trim().toLowerCase();
+        typeFilter === "Todos los tipos" ||
+        property.tipo_inmueble.toLowerCase() === typeFilter.toLowerCase();
 
-      const address = formatDireccion(property.direccion).toLowerCase();
-      const title = (property.titulo ?? '').trim().toLowerCase();
       const query = search.trim().toLowerCase();
       const matchesSearch =
-        query.length === 0 ||
-        title.includes(query) ||
-        address.includes(query) ||
-        property.estatus.toLowerCase().includes(query);
+        query === "" ||
+        property.titulo.toLowerCase().includes(query) ||
+        property.direccion.calle.toLowerCase().includes(query) ||
+        property.creador.nombres.toLowerCase().includes(query); // Filtrar por asesor
 
       return matchesStatus && matchesType && matchesSearch;
     });
   }, [properties, search, statusFilter, typeFilter]);
-  const totalPages = Math.max(1, Math.ceil(filteredProperties.length / PAGE_SIZE));
-  const paginatedProperties = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredProperties.slice(start, start + PAGE_SIZE);
-  }, [currentPage, filteredProperties]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter, typeFilter]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
 
   function openDeleteModal(property: PropertyRecord) {
     setDeletingProperty(property);
@@ -109,55 +135,46 @@ export function PropertiesPage() {
     setDeletingProperty(null);
   }
 
-  async function handleDeleteProperty(propertyId: number): Promise<string | null> {
+  async function handleDelete(propertyId: number): Promise<string | null> {
     try {
-      await deleteProperty(propertyId);
-      setProperties((prev) => prev.filter((property) => property.id !== propertyId));
-      return null;
+      await removeProperty(propertyId); 
+      setDeletingProperty(null);
+      return null; 
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible eliminar la propiedad.';
     }
   }
 
-  function handleDownloadProperty(property: PropertyRecord) {
-    downloadPropertyAsExcel(property);
-  }
-
-  async function handleQuickStatusChange(propertyId: number, nextStatus: string) {
-    const targetProperty = properties.find((property) => property.id === propertyId);
-    if (!targetProperty || targetProperty.estatus === nextStatus) return;
-
-    const previousStatus = targetProperty.estatus;
-    setUpdatingStatusId(propertyId);
-    setProperties((prev) =>
-      prev.map((property) => (property.id === propertyId ? { ...property, estatus: nextStatus } : property)),
-    );
-
+  const handleStatusChange = async (id: number, nextStatus: string) => {
+    setUpdatingStatusId(id);
     try {
-      await updateProperty(propertyId, { estatus: nextStatus });
-    } catch {
-      setProperties((prev) =>
-        prev.map((property) => (property.id === propertyId ? { ...property, estatus: previousStatus } : property)),
-      );
+      await editProperty(id, { estatus: nextStatus });
     } finally {
       setUpdatingStatusId(null);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Propiedades</h2>
-          <p className="mt-1 text-sm text-slate-600">Gestiona el catálogo de propiedades</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Gestiona el catálogo de propiedades
+          </p>
         </div>
         <button
           type="button"
           disabled={!propertyPermissions.create}
-          onClick={() => navigate('/modulos/properties/new')}
+          onClick={() => navigate("/modulos/properties/new")}
           className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+          <img
+            src={agregarIcon}
+            alt=""
+            className="h-6 w-6 shrink-0"
+            aria-hidden="true"
+          />
           <span>Nueva propiedad</span>
         </button>
       </header>
@@ -174,7 +191,11 @@ export function PropertiesPage() {
 
           <select
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as (typeof STATUS_OPTIONS)[number])}
+            onChange={(event) =>
+              setStatusFilter(
+                event.target.value as (typeof STATUS_OPTIONS)[number],
+              )
+            }
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
           >
             {STATUS_OPTIONS.map((option) => (
@@ -186,7 +207,9 @@ export function PropertiesPage() {
 
           <select
             value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value as (typeof TYPE_OPTIONS)[number])}
+            onChange={(event) =>
+              setTypeFilter(event.target.value as (typeof TYPE_OPTIONS)[number])
+            }
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
           >
             {TYPE_OPTIONS.map((option) => (
@@ -200,288 +223,62 @@ export function PropertiesPage() {
             type="button"
             className="inline-flex items-center gap-2 rounded-lg bg-[#16A34A] px-4 py-2 text-sm font-semibold text-white shadow-sm"
           >
-            <img src={desArcIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+            <img
+              src={desArcIcon}
+              alt=""
+              className="h-6 w-6 shrink-0"
+              aria-hidden="true"
+            />
             <span>Descargar</span>
           </button>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Propiedad</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Tipo de inmueble</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Dirección</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Precio (MXN)</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Estados</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-sm text-slate-600">
-                    Cargando propiedades...
-                  </td>
-                </tr>
-              ) : filteredProperties.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-sm text-slate-600">
-                    No se encontraron propiedades
-                  </td>
-                </tr>
-              ) : (
-                paginatedProperties.map((property) => (
-                  <tr key={property.id} className="border-b border-slate-100">
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800">{property.titulo || 'Sin título'}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800">{property.tipo_inmueble}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{formatDireccion(property.direccion)}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-[#4F5EF8]">{formatCurrency(property.precio)}</td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={property.estatus}
-                        onChange={(event) => handleQuickStatusChange(property.id, event.target.value)}
-                        disabled={updatingStatusId === property.id || !propertyPermissions.edit}
-                        className="min-w-32 rounded-full border-0 px-3 py-1 text-xs font-semibold outline-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-                        style={getPropertyStatusStyles(property.estatus)}
-                      >
-                        {STATUS_OPTIONS.filter((option) => option !== 'Todos los estados').map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {propertyPermissions.edit ? (
-                          <button
-                            type="button"
-                            aria-label="Editar"
-                            title="Editar"
-                            className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                            onClick={() => navigate(`/modulos/properties/${property.id}/edit`)}
-                          >
-                            <img src={editarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          aria-label="Descargar"
-                          title="Descargar"
-                          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                          onClick={() => handleDownloadProperty(property)}
-                        >
-                          <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                        </button>
-                        {propertyPermissions.delete ? (
-                          <button
-                            type="button"
-                            aria-label="Eliminar"
-                            title="Eliminar"
-                            className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                            onClick={() => openDeleteModal(property)}
-                          >
-                            <img src={borrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <TablePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredProperties.length}
-          pageSize={PAGE_SIZE}
-          itemLabel="propiedades"
-          onPageChange={setCurrentPage}
-        />
-      </section>
+      {/* Tabla */}
+      <BaseTable
+        data={filteredProperties}
+        columns={columns}
+        isLoading={isLoading}
+        emptyMessage="No se encontraron propiedades"
+        canEdit={propertyPermissions.edit}
+        canDelete={propertyPermissions.delete}
+        onEdit={(property) => navigate(`/modulos/properties/${property.id}/edit`)}
+        onDelete={(property) => openDeleteModal(property)}
+        customActions={(property) => (
+          <>
+            {/* Botón Ver Detalles */}
+            <button
+              type="button"
+              aria-label="Ver detalles"
+              title="Ver detalles"
+              className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
+              onClick={() => console.log(`Vista de detalles pendiente para propiedad ID: ${property.id}`)}
+            >
+              <img src={verIcon} alt="" className="h-5 w-5" aria-hidden="true" />
+            </button>
 
-      {propertyPermissions.delete ? (
+            {/* Botón Descargar */}
+            <button
+              type="button"
+              aria-label="Descargar"
+              title="Descargar"
+              className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
+              onClick={() => console.log(`Descarga pendiente para propiedad ID: ${property.id}`)}
+            >
+              <img src={descInfIcon} alt="" className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </>
+        )}
+      />
+
+      {deletingProperty && (
         <DeletePropertyConfirmModal
-          isOpen={Boolean(deletingProperty)}
+          isOpen={true}
           property={deletingProperty}
+          onConfirm={() => handleDelete(deletingProperty.id)}
           onClose={closeDeleteModal}
-          onConfirm={handleDeleteProperty}
         />
-      ) : null}
+      )}
     </div>
   );
-}
-
-function getPropertyStatusStyles(estatus: string): { backgroundColor: string; color: string } {
-  const normalizedStatus = estatus.trim().toLowerCase();
-  return PROPERTY_STATUS_STYLES[normalizedStatus] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
-}
-
-function formatDireccion(direccion: { calle?: string; municipio?: string; fraccionamiento?: string }): string {
-  const parts = [direccion.calle, direccion.municipio, direccion.fraccionamiento]
-    .map((part) => (typeof part === 'string' ? part.trim() : ''))
-    .filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : 'Sin dirección';
-}
-
-function formatCurrency(value: string | number): string {
-  const parsedValue = typeof value === 'number' ? value : Number(value);
-  if (Number.isNaN(parsedValue)) return '$0.00';
-
-  const formattedValue = new Intl.NumberFormat('es-MX', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(parsedValue);
-
-  return `$${formattedValue} MXN`;
-}
-
-function downloadPropertyAsExcel(property: PropertyRecord) {
-  const rows = [
-    ['Campo', 'Valor'],
-    ['ID', String(property.id ?? '')],
-    ['Propiedad', property.titulo?.trim() || 'Sin título'],
-    ['Tipo de inmueble', property.tipo_inmueble?.trim() || 'Sin tipo'],
-    ['Tipo de operación', property.tipo_operacion?.trim() || 'Sin especificar'],
-    ['Estatus', property.estatus?.trim() || 'Sin estatus'],
-    ['Precio', formatCurrency(property.precio)],
-    ['Precio condicionado', formatConditionalPrice(property.precio_condicionado)],
-    ['Cuota mantenimiento', formatOptionalCurrency(property.cuota_mantenimiento)],
-    ['Dirección', formatFullDireccion(property.direccion)],
-    ['Descripción', property.descripcion?.trim() || 'Sin descripción'],
-    ['Tipos de pago', property.tipos_pago?.filter(Boolean).join(', ') || 'Sin especificar'],
-    ['Terreno (m2)', formatOptionalNumber(property.medidas?.terreno_m2)],
-    ['Construccion (m2)', formatOptionalNumber(property.medidas?.construccion_m2)],
-    ['Frente', formatOptionalNumber(property.medidas?.frente)],
-    ['Fondo', formatOptionalNumber(property.medidas?.fondo)],
-    ['Recámaras', formatOptionalNumber(property.caracteristicas?.recamaras)],
-    ['Baños', formatOptionalNumber(property.caracteristicas?.banos)],
-    ['Estacionamiento', formatOptionalNumber(property.caracteristicas?.estacionamiento)],
-    ['Comentarios', property.comentarios?.trim() || 'Sin comentarios'],
-  ];
-
-  const tableRows = rows
-    .map(
-      ([label, value], index) => `
-        <tr>
-          <td style="${index === 0 ? HEADER_CELL_STYLE : LABEL_CELL_STYLE}">${escapeHtml(label)}</td>
-          <td style="${index === 0 ? HEADER_CELL_STYLE : VALUE_CELL_STYLE}">${escapeHtml(value)}</td>
-        </tr>`,
-    )
-    .join('');
-
-  const excelContent = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-      <head>
-        <meta charset="UTF-8" />
-        <!--[if gte mso 9]>
-          <xml>
-            <x:ExcelWorkbook>
-              <x:ExcelWorksheets>
-                <x:ExcelWorksheet>
-                  <x:Name>Propiedad</x:Name>
-                  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-                </x:ExcelWorksheet>
-              </x:ExcelWorksheets>
-            </x:ExcelWorkbook>
-          </xml>
-        <![endif]-->
-      </head>
-      <body>
-        <table border="1" cellspacing="0" cellpadding="0">
-          ${tableRows}
-        </table>
-      </body>
-    </html>`;
-
-  const blob = new Blob([`\ufeff${excelContent}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${sanitizeFileName(property.titulo || `propiedad-${property.id}`)}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-const HEADER_CELL_STYLE =
-  'background:#E2E8F0;font-weight:700;color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
-const LABEL_CELL_STYLE =
-  'background:#F8FAFC;font-weight:600;color:#334155;padding:8px 12px;border:1px solid #CBD5E1;';
-const VALUE_CELL_STYLE = 'color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
-
-function formatConditionalPrice(
-  conditionalPrice?: { descripcion?: string; monto?: number },
-): string {
-  if (conditionalPrice?.monto == null) return 'No aplica';
-  const amount = formatCurrency(conditionalPrice.monto);
-  const description = conditionalPrice.descripcion?.trim();
-  return description ? `${amount} - ${description}` : amount;
-}
-
-function formatOptionalCurrency(value?: string | number): string {
-  if (value == null || value === '') return 'No aplica';
-  return formatCurrency(value);
-}
-
-function formatOptionalNumber(value?: string | number): string {
-  if (value == null || value === '') return 'No aplica';
-  return String(value);
-}
-
-function formatFullDireccion(direccion?: {
-  cp?: number;
-  calle?: string;
-  municipio?: string;
-  fraccionamiento?: string;
-  smz?: number;
-  mza?: number;
-  lote?: number;
-  num_ext?: number;
-  num_int?: number;
-  estado?: string;
-  referencias?: string;
-}): string {
-  if (!direccion) return 'Sin dirección';
-
-  const parts = [
-    direccion.calle,
-    direccion.num_ext != null ? `Ext. ${direccion.num_ext}` : '',
-    direccion.num_int != null ? `Int. ${direccion.num_int}` : '',
-    direccion.fraccionamiento,
-    direccion.municipio,
-    direccion.estado,
-    direccion.cp != null ? `CP ${direccion.cp}` : '',
-    direccion.smz != null ? `SMZ ${direccion.smz}` : '',
-    direccion.mza != null ? `MZA ${direccion.mza}` : '',
-    direccion.lote != null ? `Lote ${direccion.lote}` : '',
-    direccion.referencias,
-  ]
-    .map((part) => (typeof part === 'string' ? part.trim() : String(part).trim()))
-    .filter((part) => part && part !== 'undefined');
-
-  return parts.length > 0 ? parts.join(', ') : 'Sin dirección';
-}
-
-function sanitizeFileName(value: string): string {
-  return value
-    .trim()
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase();
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }

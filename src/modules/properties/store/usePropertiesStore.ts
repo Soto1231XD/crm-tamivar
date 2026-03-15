@@ -89,9 +89,11 @@ export const usePropertiesStore = create<PropertiesState>((set) => ({
       // Actualizamos la propiedad específica en la lista en memoria
       set((state) => ({
         properties: state.properties.map((prop) => 
-          prop.id === id ? updatedProperty : prop
+          prop.id === id ? { ...prop, ...updatedProperty } : prop
         ),
-        currentProperty: updatedProperty,
+        currentProperty: state.currentProperty?.id === id 
+          ? { ...state.currentProperty, ...updatedProperty }
+          : updatedProperty,
         isLoading: false,
       }));
     } catch (error) {

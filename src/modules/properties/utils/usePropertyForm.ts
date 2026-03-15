@@ -3,7 +3,7 @@ import type {
   PropertyRecord,
   CreatePropertyPayload,
 } from "@/interfaces/property.interface";
-import { validatePropertyForm, type FormState } from "./propertyValidations";
+import { validatePropertyForm, type FormState, type FormErrors } from "./propertyValidations";
 
 // --- CONSTANTES Y FORMATOS ---
 const NON_NEGATIVE_INTEGER_FIELD_NAMES = new Set([
@@ -185,10 +185,12 @@ export function usePropertyForm(
 ) {
   const [form, setForm] = useState<FormState>(() => toFormState(property));
   const [submitError, setSubmitError] = useState("");
+  const [errors, setErrors] = useState<FormErrors>({})
 
   useEffect(() => {
     setForm(toFormState(property));
     setSubmitError("");
+    setErrors({});
   }, [property]);
 
   function handleInputChange(
@@ -265,6 +267,7 @@ export function usePropertyForm(
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError("");
+    setErrors({});
 
     // Parsear los valores numéricos
     const parsedNumbers = {
@@ -285,15 +288,18 @@ export function usePropertyForm(
       precio_condicionado: parseFormattedNumber(form.precio_condicionado_monto),
     };
 
-    // Validar con la función pura
-    const errorMsg = validatePropertyForm(form, parsedNumbers);
-    if (errorMsg) {
-      setSubmitError(errorMsg);
-      return;
+    // Validar y manejar el objeto de errores
+    const validationErrors = validatePropertyForm(form, parsedNumbers);
+    
+    // Si el objeto de errores tiene alguna llave, detenemos el envío
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setSubmitError("Por favor, corrige los errores marcados en rojo.");
+      return; 
     }
 
     // Estructurar el JSON estrictamente según CreatePropertyPayload
-    const propertyData: Omit<CreatePropertyPayload, "creado_por_id"> = {
+    const propertyData: Omit<CreatePropertyPayload, "creado_por_id" | "creador"> = {
       titulo: form.titulo.trim(),
       tipo_inmueble: form.tipo_inmueble.trim(),
       tipo_operacion: form.tipo_operacion.trim(),
@@ -372,6 +378,7 @@ export function usePropertyForm(
   return {
     form,
     submitError,
+    errors,
     handleInputChange,
     handlePaymentToggle,
     handleAddImages,
