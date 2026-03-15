@@ -165,7 +165,7 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
                 onChange={(value) => updateField('etiquetas', value)}
               />
               <Field
-                label="Fecha de publicacion"
+                label="Fecha de publicación"
                 type="datetime-local"
                 value={form.fechaPublico}
                 onChange={(value) => updateField('fechaPublico', value)}
