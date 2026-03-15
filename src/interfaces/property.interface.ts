@@ -22,6 +22,15 @@ export interface PropertyRecord {
   imagenes: Imagen[];
   creado_en: string;
   creado_por_id: number;
+  creador: Creador;
+}
+
+export interface Creador {
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  correo_electronico: string;
+  foto_url: string;
 }
 
 // Sub-interfaces
@@ -74,7 +83,7 @@ export interface Imagen {
 }
 
 // Payloads para peticiones
-export type CreatePropertyPayload = Omit<PropertyRecord, 'id' | 'slug' | 'creado_en' | 'imagenes'> & {
+export type CreatePropertyPayload = Omit<PropertyRecord, 'id' | 'slug' | 'creado_en' | 'imagenes' | "creador"> & {
   imagenes?: Imagen[]; 
 };
 export type UpdatePropertyPayload = Partial<CreatePropertyPayload>;
