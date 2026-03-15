@@ -1,8 +1,3 @@
-export const TYPE_OPTIONS = ['Casa', 'Departamento', 'Desarrollo', 'Terreno', 'Local comercial', 'Edificio comercial'] as const;
-export const OPERATION_OPTIONS = ['Venta', 'Renta', 'Preventa'] as const;
-export const STATUS_OPTIONS = ['Disponible', 'Apartado', 'Vendido', 'Preventa', 'Baja'] as const;
-export const PAYMENT_OPTIONS = ['Efectivo', 'Infonavit', 'Cofinavit', 'Crédito bancario', 'Fovissste', 'Issfam', 'Otro'] as const;
-
 export type FormState = {
   titulo: string;
   tipo_inmueble: string;
@@ -74,66 +69,41 @@ export interface ParsedNumbers {
 
 /**
  * Valida los datos del formulario de propiedades.
- * Devuelve un string con el mensaje de error si algo falla, o null si todo está correcto.
+ * Devuelve un objeto con los errores de cada campo, o un objeto vacío si todo está correcto.
  */
+export type FormErrors = Partial<Record<keyof FormState, string>>;
+
 export function validatePropertyForm(
   form: FormState,
   parsed: ParsedNumbers,
-): string | null {
-  // Validaciones de campos obligatorios de texto
-  if (!form.titulo.trim()) return "El título es obligatorio.";
-  if (!form.tipo_inmueble.trim()) return "El tipo de inmueble es obligatorio.";
-  if (!form.tipo_operacion.trim())
-    return "El tipo de operación es obligatorio.";
-  if (!form.estatus.trim()) return "El estatus es obligatorio.";
+): FormErrors {
+  const errors: FormErrors = {};
 
   // Validación de Precio
   if (Number.isNaN(parsed.precio) || parsed.precio <= 0) {
-    return "El precio es obligatorio y debe ser mayor a 0.";
+    errors.precio = "Debe ser un valor numérico mayor a 0.";
   }
 
-  // Validación de números obligatorios
-  if (
-    Number.isNaN(parsed.cp) ||
-    Number.isNaN(parsed.num_ext) ||
-    Number.isNaN(parsed.terreno) ||
-    Number.isNaN(parsed.construccion) ||
-    Number.isNaN(parsed.frente) ||
-    Number.isNaN(parsed.fondo) ||
-    Number.isNaN(parsed.recamaras) ||
-    Number.isNaN(parsed.banos) ||
-    Number.isNaN(parsed.estacionamiento)
-  ) {
-    return "Completa correctamente los campos obligatorios numéricos.";
+  // Validación de Código Postal
+  const cpString = String(parsed.cp);
+  if (cpString.length !== 5 || Number.isNaN(parsed.cp)) {
+    errors.cp = "El código postal debe tener exactamente 5 dígitos.";
   }
 
-  // Validaciones específicas de la dirección
-  if (String(parsed.cp).length !== 5) {
-    return "El código postal debe tener 5 dígitos.";
+  // Validación de Tipos de pago
+  if (form.tipos_pago.length === 0) {
+    errors.tipos_pago = "Debes seleccionar al menos un método de pago.";
   }
 
-  // Validación de números opcionales (solo si se ingresaron)
-  if (
-    (form.smz && Number.isNaN(parsed.smz)) ||
-    (form.mza && Number.isNaN(parsed.mza)) ||
-    (form.lote && Number.isNaN(parsed.lote)) ||
-    (form.num_int && Number.isNaN(parsed.num_int))
-  ) {
-    return "Revisa los campos opcionales de dirección.";
-  }
+  // Validaciones de números opcionales
+  if (form.smz && Number.isNaN(parsed.smz))
+    errors.smz = "Debe ser un número válido.";
+  if (form.mza && Number.isNaN(parsed.mza))
+    errors.mza = "Debe ser un número válido.";
+  if (form.lote && Number.isNaN(parsed.lote))
+    errors.lote = "Debe ser un número válido.";
+  if (form.num_int && Number.isNaN(parsed.num_int))
+    errors.num_int = "Debe ser un número válido.";
 
-  // Validación de Tipos de pago y campos de texto de dirección
-  if (form.tipos_pago.length === 0)
-    return "Selecciona al menos un tipo de pago.";
-  if (
-    !form.calle.trim() ||
-    !form.municipio.trim() ||
-    !form.estado.trim() ||
-    !form.fraccionamiento.trim()
-  ) {
-    return "La dirección es obligatoria.";
-  }
-
-  // Si todas las validaciones pasan, retornamos null indicando que no hay errores
-  return null;
+  return errors;
 }
