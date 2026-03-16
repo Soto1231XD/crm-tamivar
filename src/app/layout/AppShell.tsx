@@ -1,141 +1,195 @@
-import { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { MODULE_LABELS, ROLE_LABELS, getAvailableModules, getPrimaryRole, getUserDisplayName } from '../../shared/constants/roles';
-import { useAuth } from '../../shared/context/AuthContext';
-import type { ModuleKey } from '../../shared/types/rbac';
-import dashboardIcon from '../../assets/images/Dashboard.png';
-import propiedadesIcon from '../../assets/images/Propiedades.png';
-import registrosIcon from '../../assets/images/Registro.png';
-import contenidoIcon from '../../assets/images/Contenido.png';
-import usuariosIcon from '../../assets/images/Usuarios.png';
-import rolIcon from '../../assets/images/Rol.png';
-import logsIcon from '../../assets/images/Logs.png';
+import { useState } from "react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
+import {
+  getAvailableModules,
+  MODULE_LABELS,
+} from "@/shared/auth/navigation.util";
+import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
+import dashboardIcon from "@/assets/images/Dashboard.png";
+import propiedadesIcon from "@/assets/images/Propiedades.png";
+import registrosIcon from "@/assets/images/Registro.png";
+import contenidoIcon from "@/assets/images/Contenido.png";
+import usuariosIcon from "@/assets/images/Usuarios.png";
+import rolIcon from "@/assets/images/Rol.png";
+import logsIcon from "@/assets/images/Logs.png";
+import MenuIcon from "@/assets/images/Menu.png";
+import LogoutIcon from "@/assets/images/Logout.png";
 
 const MODULE_ICONS: Record<ModuleKey, string> = {
   dashboard: dashboardIcon,
-  properties: propiedadesIcon,
-  leads: registrosIcon,
-  content: contenidoIcon,
-  users: usuariosIcon,
-  system_roles: rolIcon,
-  system_logs: logsIcon,
+  propiedades: propiedadesIcon,
+  registros: registrosIcon,
+  blogs: contenidoIcon,
+  usuarios: usuariosIcon,
+  roles: rolIcon,
+  movimientos: logsIcon,
 };
 
 export function AppShell() {
-  const { user, logout } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const location = useLocation();
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const roles = user?.roles ?? [];
-  const availableModules = getAvailableModules(roles);
-  const navItems: Array<{ to: string; label: string; icon: string }> = availableModules.map((module: ModuleKey) => ({
-    to: module === 'dashboard' ? '/dashboard' : `/modulos/${module}`,
-    label: MODULE_LABELS[module],
-    icon: MODULE_ICONS[module],
-  }));
-  const primaryRole = getPrimaryRole(roles);
+
+  // Leemos los permisos
+  const permissions = user?.permisos ?? [];
+  const availableModules = getAvailableModules(permissions);
+
+  const navItems: Array<{ to: string; label: string; icon: string }> =
+    availableModules.map((module: ModuleKey) => ({
+      to: module === "dashboard" ? "/dashboard" : `/modulos/${module}`,
+      label: MODULE_LABELS[module] || module,
+      icon: MODULE_ICONS[module],
+    }));
+
+  // Tomamos el primer rol del arreglo que manda el servidor (ej. "Super Administrador")
+  const primaryRoleDisplay = user?.roles?.[0] || "Sin rol asignado";
   const pageTitle = getPageTitle(location.pathname);
-  const displayName = getUserDisplayName(user);
+  const displayName = user
+    ? `${user.nombres || ""} ${user.apellido_paterno || ""}`.trim() ||
+      user.correo_electronico
+    : "Usuario";
 
   return (
     <div className="h-screen overflow-hidden bg-slate-100 text-slate-900">
-      <div
-        className={[
-          'grid h-full w-full transition-[grid-template-columns] duration-300',
-          isSidebarCollapsed ? 'grid-cols-[88px_1fr]' : 'grid-cols-[250px_1fr]',
-        ].join(' ')}
-      >
+      <div className="flex h-full w-full">
+        {/* Sidebar Overlay para móviles */}
+        {!isSidebarCollapsed && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            onClick={() => setIsSidebarCollapsed(true)}
+          />
+        )}
+
+        {/* Sidebar */}
         <aside
           className={[
-            'h-screen overflow-y-auto border-r border-slate-800 bg-sidebar-900 p-4 text-slate-100 transition-all duration-300',
-            isSidebarCollapsed ? 'md:px-3' : 'md:p-6',
-          ].join(' ')}
+            "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800 bg-sidebar-900 p-4 text-slate-100 transition-all duration-300 md:relative",
+            isSidebarCollapsed
+              ? "-translate-x-full md:translate-x-0 md:w-[88px] md:px-3"
+              : "w-[280px] translate-x-0 md:w-[250px] md:p-6",
+          ].join(" ")}
         >
-          <div className={isSidebarCollapsed ? 'flex justify-center' : undefined}>
+          {/* Header del Sidebar con botón de cerrar */}
+          <div
+            className={
+              isSidebarCollapsed ? "flex justify-center" : "flex justify-end"
+            }
+          >
             <button
               type="button"
-              onClick={() => setIsSidebarCollapsed((current) => !current)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800"
-              aria-label={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-              title={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+              onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800"
             >
-              {isSidebarCollapsed ? '>>' : '<<'}
+              <img src={MenuIcon} alt="Menu" className="h-5 w-5 shrink-0" />
             </button>
           </div>
 
-          {!isSidebarCollapsed ? (
-            <>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-slate-300">CRM TAMIVAR</p>
-              <h2 className="mt-2 text-lg font-bold text-white">Panel</h2>
-            </>
-          ) : null}
+          {!isSidebarCollapsed && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-300">
+                CRM TAMIVAR
+              </p>
+              <h2 className="text-lg font-bold text-white">Panel</h2>
+            </div>
+          )}
 
-          <nav className="mt-8 flex flex-col gap-2">
+          <nav className="mt-8 flex flex-1 flex-col gap-2 overflow-y-auto">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
-                title={item.label}
+                onClick={() =>
+                  window.innerWidth < 768 && setIsSidebarCollapsed(true)
+                }
                 className={({ isActive }) =>
                   [
-                    'rounded-lg text-sm transition',
-                    isSidebarCollapsed ? 'flex justify-center px-2 py-3' : 'px-3 py-2',
-                    isActive ? 'bg-slate-700 text-white' : 'text-slate-200 hover:bg-slate-800',
-                  ].join(' ')
+                    "rounded-lg text-sm transition flex items-center gap-3",
+                    isSidebarCollapsed
+                      ? "justify-center px-2 py-3"
+                      : "px-3 py-2",
+                    isActive
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-200 hover:bg-slate-800",
+                  ].join(" ")
                 }
               >
-                <span className={['flex items-center', isSidebarCollapsed ? 'justify-center' : 'gap-2'].join(' ')}>
-                  <img src={item.icon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
-                  {!isSidebarCollapsed ? <span>{item.label}</span> : null}
-                </span>
+                <img src={item.icon} alt="" className="h-6 w-6 shrink-0" />
+                {!isSidebarCollapsed && (
+                  <span className="truncate">{item.label}</span>
+                )}
               </NavLink>
             ))}
           </nav>
 
-          <div className="mt-8">
+          <div className="mt-auto pt-4">
             <button
               type="button"
               onClick={logout}
               className={[
-                'inline-flex rounded-lg border border-red-700 bg-red-600 font-semibold text-white transition hover:bg-red-700',
+                "inline-flex w-full items-center justify-center rounded-lg border border-red-700 bg-red-600 font-semibold text-white transition hover:bg-red-700",
                 isSidebarCollapsed
-                  ? 'h-10 w-full items-center justify-center text-sm'
-                  : 'w-full items-center justify-center px-3 py-2 text-sm',
-              ].join(' ')}
-              aria-label="Cerrar sesion"
-              title="Cerrar sesion"
+                  ? "h-10 px-2 py-3"
+                  : "px-3 py-3 gap-2 text-sm",
+              ].join(" ")}
             >
-              {isSidebarCollapsed ? 'X' : 'Cerrar sesion'}
+              <img src={LogoutIcon} alt="Logout" className="h-5 w-5 shrink-0" />
+              {!isSidebarCollapsed && <span>Cerrar sesión</span>}
             </button>
           </div>
         </aside>
 
-        <div className="flex h-screen min-w-0 min-h-0 flex-col overflow-hidden">
+        {/* Contenido Principal */}
+        <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
           <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
+                {/* Botón de hamburguesa siempre visible en móvil para abrir */}
                 <button
                   type="button"
-                  onClick={() => setIsSidebarCollapsed((current) => !current)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:hidden"
-                  aria-label={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-                  title={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+                  onClick={() => setIsSidebarCollapsed(false)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 md:hidden"
                 >
-                  {isSidebarCollapsed ? '>>' : '<<'}
+                  <img
+                    src={MenuIcon}
+                    alt="Abrir menú"
+                    className="h-5 w-5 brightness-0"
+                  />
                 </button>
-                <h1 className="text-xl font-bold text-slate-900">{pageTitle}</h1>
+                <h1 className="text-xl font-bold text-slate-900 truncate">
+                  {pageTitle}
+                </h1>
               </div>
               <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-900">{displayName}</p>
-                  <p className="text-xs text-slate-600">{primaryRole ? ROLE_LABELS[primaryRole] : 'Sin rol asignado'}</p>
+                {/* Contenedor de la Foto o Iniciales */}
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-slate-200 bg-sidebar-900 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                  {user?.foto_url ? (
+                    <img
+                      src={user.foto_url}
+                      alt={displayName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    // Si no hay foto, mostramos iniciales
+                    <span>
+                      {`${user?.nombres?.[0] || ""}${user?.apellido_paterno?.[0] || ""}`.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+
+                <div className="hidden text-right sm:block">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {displayName}
+                  </p>
+                  <p className="text-xs text-slate-600">{primaryRoleDisplay}</p>
                 </div>
               </div>
             </div>
           </header>
 
-          <main
-            className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6 md:p-8"
-          >
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 md:p-8">
             <Outlet />
           </main>
         </div>
@@ -145,12 +199,15 @@ export function AppShell() {
 }
 
 function getPageTitle(pathname: string): string {
-  if (pathname === '/dashboard') return 'Dashboard';
+  if (pathname === "/dashboard") return "Dashboard";
 
-  if (pathname.startsWith('/modulos/')) {
-    const rawModule = pathname.replace('/modulos/', '') as ModuleKey;
-    return MODULE_LABELS[rawModule] ?? 'Modulo';
+  if (pathname.startsWith("/modulos/")) {
+    // Tomamos solo la primera parte después de "modulos/" por si hay subrutas
+    const rawModule = pathname
+      .replace("/modulos/", "")
+      .split("/")[0] as ModuleKey;
+    return MODULE_LABELS[rawModule] ?? "Módulo";
   }
 
-  return 'Dashboard';
+  return "Dashboard";
 }

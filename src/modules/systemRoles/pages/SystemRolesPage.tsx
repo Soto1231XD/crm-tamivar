@@ -1,24 +1,36 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { PermissionRecord, SystemRoleRecord } from '@/interfaces/system-role.interface';
-import type { UserRecord } from '@/interfaces/user.interface';
-import toast from 'react-hot-toast';
-import agregarIcon from '../../../assets/images/Agregar.png';
-import { useAuth } from '../../../shared/context/AuthContext';
-import { getUsers } from '../../users/services/users.api';
-import { AssignedModulesModal } from '../components/AssignedModulesModal';
-import { CreateRoleModal } from '../components/CreateRoleModal';
-import { createSystemRole, getSystemRoles } from '../services/systemRoles.api';
+import { useEffect, useMemo, useState } from "react";
+import type {
+  PermissionRecord,
+  SystemRoleRecord,
+} from "@/interfaces/system-role.interface";
+import type { UserRecord } from "@/interfaces/user.interface";
+import toast from "react-hot-toast";
+import agregarIcon from "../../../assets/images/Agregar.png";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import { getUsers } from "../../users/services/users.api";
+import { AssignedModulesModal } from "../components/AssignedModulesModal";
+import { CreateRoleModal } from "../components/CreateRoleModal";
+import { createSystemRole, getSystemRoles } from "../services/systemRoles.api";
 
 export function SystemRolesPage() {
-  const { accessToken } = useAuth();
+  const accessToken = useAuthStore((state) => state.token);
+  const { can } = useHasPermission();
+
+  const canCreate = can("roles", "crear");
+
   const [roles, setRoles] = useState<SystemRoleRecord[]>([]);
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [selectedRole, setSelectedRole] = useState<SystemRoleRecord | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedRole, setSelectedRole] = useState<SystemRoleRecord | null>(
+    null,
+  );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
+    if (!accessToken) return;
+
     let active = true;
     setIsLoading(true);
 
@@ -40,7 +52,9 @@ export function SystemRolesPage() {
 
   const filteredRoles = useMemo(() => {
     const query = normalizeText(search);
-    return roles.filter((role) => query.length === 0 || normalizeText(role.rol).includes(query));
+    return roles.filter(
+      (role) => query.length === 0 || normalizeText(role.rol).includes(query),
+    );
   }, [roles, search]);
 
   const availablePermissions = useMemo(() => {
@@ -49,14 +63,16 @@ export function SystemRolesPage() {
     roles.forEach((role) => {
       (role.permisos ?? []).forEach((permissionEntry) => {
         const permission = permissionEntry?.permiso;
-        if (!permission || typeof permission.id !== 'number') return;
+        if (!permission || typeof permission.id !== "number") return;
         permissionsMap.set(permission.id, permission);
       });
     });
 
     return Array.from(permissionsMap.values()).sort((left, right) => {
       const moduleCompare = left.modulo.localeCompare(right.modulo);
-      return moduleCompare !== 0 ? moduleCompare : left.accion.localeCompare(right.accion);
+      return moduleCompare !== 0
+        ? moduleCompare
+        : left.accion.localeCompare(right.accion);
     });
   }, [roles]);
 
@@ -64,15 +80,25 @@ export function SystemRolesPage() {
     <div className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Roles del sistema</h2>
-          <p className="mt-1 text-sm text-slate-600">Define permisos y niveles de acceso del CRM</p>
+          <h2 className="text-2xl font-bold text-slate-900">
+            Roles del sistema
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Define permisos y niveles de acceso del CRM
+          </p>
         </div>
         <button
           type="button"
+          disabled={!canCreate}
           onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+          <img
+            src={agregarIcon}
+            alt=""
+            className="h-6 w-6 shrink-0"
+            aria-hidden="true"
+          />
           <span>Nuevo rol</span>
         </button>
       </header>
@@ -105,15 +131,21 @@ export function SystemRolesPage() {
               >
                 <div className="grid flex-1 gap-3 md:grid-cols-3">
                   <InfoBlock label="Rol" value={role.rol} />
-                  <InfoBlock label="Descripcion del rol" value={getRoleDescription(role.rol)} />
-                  <InfoBlock label="Usuarios asignados" value={String(getAssignedUsersCount(role, users))} />
+                  <InfoBlock
+                    label="Descripcion del rol"
+                    value={getRoleDescription(role.rol)}
+                  />
+                  <InfoBlock
+                    label="Usuarios asignados"
+                    value={String(getAssignedUsersCount(role, users))}
+                  />
                 </div>
 
                 <div className="flex justify-start lg:justify-end">
                   <button
                     type="button"
                     onClick={() => setSelectedRole(role)}
-                    className="inline-flex items-center justify-center rounded-lg bg-[#5980FF] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+                    className="inline-flex items-center justify-center rounded-lg bg-[#5980FF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-hover hover:bg-blue-600"
                   >
                     Modulos asignados
                   </button>
@@ -129,23 +161,33 @@ export function SystemRolesPage() {
         role={selectedRole}
         onClose={() => setSelectedRole(null)}
       />
-      <CreateRoleModal
-        isOpen={isCreateModalOpen}
-        permissions={availablePermissions}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreate={handleCreateRole}
-      />
+
+      {canCreate && (
+        <CreateRoleModal
+          isOpen={isCreateModalOpen}
+          permissions={availablePermissions}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreate={handleCreateRole}
+        />
+      )}
     </div>
   );
 
-  async function handleCreateRole(payload: { rol: string; permisosIds: number[] }): Promise<string | null> {
+  async function handleCreateRole(payload: {
+    rol: string;
+    permisosIds: number[];
+  }): Promise<string | null> {
     try {
+      if (!accessToken) throw new Error("No se encontró el token de acceso.");
+
       const createdRole = await createSystemRole(payload, accessToken);
       setRoles((prev) => [createdRole, ...prev]);
-      toast.success('El rol se creó con éxito.');
+      toast.success("El rol se creó con éxito.");
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible crear el rol.';
+      return error instanceof Error
+        ? error.message
+        : "No fue posible crear el rol.";
     }
   }
 }
@@ -159,49 +201,64 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
-function getAssignedUsersCount(role: SystemRoleRecord, users: UserRecord[]): number {
+function getAssignedUsersCount(
+  role: SystemRoleRecord,
+  users: UserRecord[],
+): number {
   const targetRole = normalizeText(role.rol);
-  return users.filter((user) => getUserRoles(user).some((userRole) => normalizeText(userRole) === targetRole)).length;
+  return users.filter((user) =>
+    getUserRoles(user).some(
+      (userRole) => normalizeText(userRole) === targetRole,
+    ),
+  ).length;
 }
 
 function getRoleDescription(roleName: string): string {
   const normalized = normalizeText(roleName);
-  if (normalized === 'super admin' || normalized === 'super administrador') {
-    return 'Control total del CRM y administracion completa del sistema.';
+  if (normalized === "super admin" || normalized === "super administrador") {
+    return "Control total del CRM y administracion completa del sistema.";
   }
-  if (normalized === 'admin' || normalized === 'administrador') {
-    return 'Gestion operativa del CRM con acceso amplio a los modulos principales.';
+  if (normalized === "admin" || normalized === "administrador") {
+    return "Gestion operativa del CRM con acceso amplio a los modulos principales.";
   }
-  if (normalized === 'marketing') {
-    return 'Gestion de contenido y apoyo en estrategias de difusion.';
+  if (normalized === "marketing") {
+    return "Gestion de contenido y apoyo en estrategias de difusion.";
   }
-  if (normalized === 'rh' || normalized === 'recursos humanos') {
-    return 'Consulta y gestion enfocada al modulo de usuarios.';
+  if (normalized === "rh" || normalized === "recursos humanos") {
+    return "Consulta y gestion enfocada al modulo de usuarios.";
   }
-  if (normalized === 'asesor ventas' || normalized === 'asesor de ventas') {
-    return 'Seguimiento comercial de propiedades y registros.';
+  if (normalized === "asesor ventas" || normalized === "asesor de ventas") {
+    return "Seguimiento comercial de propiedades y registros.";
   }
-  if (normalized === 'coordinador ventas' || normalized === 'coordinador de ventas') {
-    return 'Supervision comercial y coordinacion del flujo de ventas.';
+  if (
+    normalized === "coordinador ventas" ||
+    normalized === "coordinador de ventas"
+  ) {
+    return "Supervision comercial y coordinacion del flujo de ventas.";
   }
-  return 'Rol configurado dentro del CRM para controlar accesos y permisos.';
+  return "Rol configurado dentro del CRM para controlar accesos y permisos.";
 }
 
 function getUserRoles(user: UserRecord): string[] {
-  const sourceRoles = Array.isArray(user.roles) ? user.roles : user.rol ? [user.rol] : [];
+  const sourceRoles = Array.isArray(user.roles)
+    ? user.roles
+    : user.rol
+      ? [user.rol]
+      : [];
 
   return Array.from(
     new Set(
       sourceRoles
         .map((role) => {
-          if (typeof role === 'string') return role.trim();
-          if (typeof role?.rol === 'string') return role.rol.trim();
-          if (role?.rol && typeof role.rol === 'object') {
-            if (typeof role.rol.rol === 'string') return role.rol.rol.trim();
-            if (typeof role.rol.nombre === 'string') return role.rol.nombre.trim();
+          if (typeof role === "string") return role.trim();
+          if (typeof role?.rol === "string") return role.rol.trim();
+          if (role?.rol && typeof role.rol === "object") {
+            if (typeof role.rol.rol === "string") return role.rol.rol.trim();
+            if (typeof role.rol.nombre === "string")
+              return role.rol.nombre.trim();
           }
-          if (typeof role?.nombre === 'string') return role.nombre.trim();
-          return '';
+          if (typeof role?.nombre === "string") return role.nombre.trim();
+          return "";
         })
         .filter(Boolean),
     ),
@@ -209,9 +266,9 @@ function getUserRoles(user: UserRecord): string[] {
 }
 
 function normalizeText(value?: string | null): string {
-  return (value ?? '')
+  return (value ?? "")
     .trim()
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }

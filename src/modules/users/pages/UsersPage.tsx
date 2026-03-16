@@ -4,14 +4,21 @@ import toast from 'react-hot-toast';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
 import editarDosIcon from '../../../assets/images/editar2.png';
-import { useAuth } from '../../../shared/context/AuthContext';
+import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import { UserModal } from '../components/UserModal';
 import { useUsersStore } from '../store/useUsersStore';
 
 const ALL_USER_STATES = 'Todos los estados';
 
 export function UsersPage() {
-  const { user: sessionUser } = useAuth();
+  const sessionUser = useAuthStore((state) => state.user);
+  const { can } = useHasPermission();
+  
+  const canCreate = can('usuarios', 'crear');
+  const canEdit = can('usuarios', 'actualizar');
+  const canDelete = can('usuarios', 'eliminar');
+
   const {
     users,
     rolesCatalog,
@@ -22,6 +29,7 @@ export function UsersPage() {
     editUser,
     toggleStatus,
   } = useUsersStore();
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_USER_STATES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -56,8 +64,9 @@ export function UsersPage() {
         </div>
         <button
           type="button"
+          disabled={!canCreate}
           onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
           <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
           <span>Nuevo usuario</span>
@@ -106,6 +115,8 @@ export function UsersPage() {
                 return normalizedRole === 'super admin' || normalizedRole === 'super administrador';
               });
 
+              const isCurrentUser = sessionUser?.id === user.id;
+
               return (
                 <article key={user.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
@@ -144,26 +155,32 @@ export function UsersPage() {
                     </div>
                   </div>
 
-                  {!isSuperAdmin ? (
+                  {/* Verificamos permisos y que no sea un Super Admin intocable ni el mismo usuario */}
+                  {(!isSuperAdmin && !isCurrentUser) ? (
                     <div className="mt-5 flex items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditingUser(user)}
-                        className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#312C85]"
-                        style={{ backgroundColor: '#E0E7FF', boxShadow: 'inset 0 0 0 999px rgba(199, 210, 254, 0.2)' }}
-                      >
-                        <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                        <span>Editar</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleUserStatus(user)}
-                        className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#CA5874]"
-                        style={{ backgroundColor: '#FFEDD4' }}
-                      >
-                        <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                        <span>Dar de baja</span>
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingUser(user)}
+                          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#312C85] transition-hover hover:bg-indigo-100"
+                          style={{ backgroundColor: '#E0E7FF' }}
+                        >
+                          <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                          <span>Editar</span>
+                        </button>
+                      )}
+                      
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleUserStatus(user)}
+                          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#CA5874] transition-hover hover:bg-orange-100"
+                          style={{ backgroundColor: '#FFEDD4' }}
+                        >
+                          <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                          <span>{user.activo === false ? 'Reactivar' : 'Dar de baja'}</span>
+                        </button>
+                      )}
                     </div>
                   ) : null}
                 </article>
@@ -173,32 +190,33 @@ export function UsersPage() {
         )}
       </section>
 
-      <UserModal
-        isOpen={isCreateModalOpen}
-        mode="create"
-        roles={rolesCatalog}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateUser}
-      />
-      <UserModal
-        isOpen={Boolean(editingUser)}
-        mode="edit"
-        user={editingUser}
-        roles={rolesCatalog}
-        onClose={() => setEditingUser(null)}
-        onSubmit={(payload) => (editingUser ? handleEditUser(editingUser.id, payload as UpdateUserPayload) : Promise.resolve('Usuario no valido.'))}
-      />
+      {/* Renderizamos modales solo si tiene permiso de abrirlos */}
+      {canCreate && (
+        <UserModal
+          isOpen={isCreateModalOpen}
+          mode="create"
+          roles={rolesCatalog}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSubmit={handleCreateUser}
+        />
+      )}
+      
+      {canEdit && (
+        <UserModal
+          isOpen={Boolean(editingUser)}
+          mode="edit"
+          user={editingUser}
+          roles={rolesCatalog}
+          onClose={() => setEditingUser(null)}
+          onSubmit={(payload) => (editingUser ? handleEditUser(editingUser.id, payload as UpdateUserPayload) : Promise.resolve('Usuario no valido.'))}
+        />
+      )}
     </div>
   );
 
   async function handleCreateUser(payload: CreateUserPayload | UpdateUserPayload): Promise<string | null> {
     try {
-      await addUser(
-        {
-          ...(payload as CreateUserPayload),
-          creado_por_id: sessionUser?.id,
-        },
-      );
+      await addUser(payload as CreateUserPayload);
       toast.success('El usuario se creó con éxito.');
       return null;
     } catch (error) {
@@ -222,7 +240,7 @@ export function UsersPage() {
       toast.success(
         response.activo === false
           ? `Se dio de baja a ${getUserFullName(targetUser)}.`
-          : `Se reactivó a ${getUserFullName(targetUser)}.`,
+          : `Se reactivó a ${getUserFullName(targetUser)}.`
       );
     } catch {
       toast.error('No fue posible actualizar el estado del usuario.');

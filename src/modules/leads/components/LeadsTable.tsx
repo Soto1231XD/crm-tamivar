@@ -1,8 +1,8 @@
 import descInfIcon from '../../../assets/images/DescInf.png';
 import { BaseTable, type ColumnDef } from '@/components/ui/BaseTable';
 import type { LeadRecord } from '@/interfaces/lead.interface';
-import { type ModulePermissions } from '../../../shared/types/rbac';
 import { LEAD_PRIORITY_OPTIONS, LEAD_STATUS_OPTIONS } from '../utils/leads.constants';
+import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import {
   formatCreatorName,
   formatDate,
@@ -16,7 +16,6 @@ type LeadsTableProps = {
   leads: LeadRecord[];
   isLoading: boolean;
   updatingLeadId: number | null;
-  leadPermissions: ModulePermissions;
   propertyTitleById: Map<number, string>;
   onQuickChange: (leadId: number, field: 'estado' | 'prioridad', value: string) => void;
   onEdit: (lead: LeadRecord) => void;
@@ -28,13 +27,18 @@ export function LeadsTable({
   leads,
   isLoading,
   updatingLeadId,
-  leadPermissions,
   propertyTitleById,
   onQuickChange,
   onEdit,
   onDelete,
   onDownload,
 }: LeadsTableProps) {
+  // Extraemos la función 'can' del hook
+  const { can } = useHasPermission();
+
+  const canEdit = can('registros', 'actualizar');
+  const canDelete = can('registros', 'eliminar');
+
   const columns: ColumnDef<LeadRecord>[] = [
     {
       header: 'Cliente',
@@ -121,8 +125,8 @@ export function LeadsTable({
       wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
       tableClassName="w-max min-w-[1400px] text-left"
       actionsClassName="flex items-center gap-2"
-      onEdit={leadPermissions.edit ? onEdit : undefined}
-      onDelete={leadPermissions.delete ? onDelete : undefined}
+      onEdit={canEdit ? onEdit : undefined}
+      onDelete={canDelete ? onDelete : undefined}
       customActions={(lead) => (
         <button
           type="button"

@@ -1,26 +1,22 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { canAccessModule, hasAnyRole } from '../../shared/constants/roles';
-import { useAuth } from '../../shared/context/AuthContext';
-import type { ModuleKey, Role } from '../../shared/types/rbac';
+import { Navigate, Outlet } from "react-router-dom";
+import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
 
 type ProtectedRouteProps = {
-  allowedRoles?: Role[];
   module?: ModuleKey;
 };
 
-export function ProtectedRoute({ allowedRoles, module }: ProtectedRouteProps) {
-  const { user } = useAuth();
+export function ProtectedRoute({ module }: ProtectedRouteProps) {
+  const { can, userPermissions } = useHasPermission()
 
-  if (!user) {
+  // Si no hay permisos, no hay sesión válida
+  if (!userPermissions || userPermissions.length === 0) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !hasAnyRole(user.roles, allowedRoles)) {
-    return <Navigate to="/" replace />;
-  }
-
-  if (module && !canAccessModule(user.roles, module)) {
-    return <Navigate to="/" replace />;
+  // Si la ruta es de un módulo, verificamos permiso de 'leer' o comodín absoluto
+  if (module && !can(module, 'leer') && !can(module, '*')) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

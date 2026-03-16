@@ -1,10 +1,9 @@
 import type { PropsWithChildren } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from '../../shared/context/AuthContext';
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
-    <AuthProvider>
+    <>
       {children}
       <Toaster
         position="top-right"
@@ -28,6 +27,6 @@ export function AppProviders({ children }: PropsWithChildren) {
           },
         }}
       />
-    </AuthProvider>
+    </>
   );
 }

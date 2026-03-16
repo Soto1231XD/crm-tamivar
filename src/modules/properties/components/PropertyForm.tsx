@@ -60,7 +60,7 @@ export function PropertyForm({
     <div className="space-y-4">
       <button
         type="button"
-        onClick={() => navigate("/modulos/properties")}
+        onClick={() => navigate("/modulos/propiedades")}
         className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
       >
         <svg
@@ -507,7 +507,7 @@ export function PropertyForm({
             <p className="text-sm font-medium text-red-600">{submitError}</p>
           ) : null}
 
-          <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-slate-200 bg-white pt-8">
+          <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-white pt-8">
             <button
               type="button"
               onClick={onCancel}

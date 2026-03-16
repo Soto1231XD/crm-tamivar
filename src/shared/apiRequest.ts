@@ -1,16 +1,14 @@
 import axios, { AxiosError } from 'axios';
+import { useAuthStore } from './auth/useAuthStore';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-
-const SESSION_STORAGE_KEY = 'crm_tamivar_session';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
 });
 
 api.interceptors.request.use((config) => {
-  const rawSession = localStorage.getItem(SESSION_STORAGE_KEY);
-  const token = rawSession ? (JSON.parse(rawSession) as { accessToken?: string | null }).accessToken : null;
+  const token = useAuthStore.getState().token;
 
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -18,10 +16,10 @@ api.interceptors.request.use((config) => {
 
   if (config.data instanceof FormData) {
     delete config.headers?.['Content-Type'];
-    return config;
+  } else {
+    config.headers['Content-Type'] = 'application/json';
   }
 
-  config.headers['Content-Type'] = 'application/json';
   return config;
 });
 

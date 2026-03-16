@@ -1,17 +1,16 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { AppShell } from '../layout/AppShell';
-import { LoginPage } from '../../modules/auth/pages/LoginPage';
-import { ProtectedRoute } from './ProtectedRoute';
-import { RoleHomeRedirect } from './RoleHomeRedirect';
-import { DashboardPage } from '../../modules/dashboard/pages/DashboardPage';
-import { ModulePage } from '../../modules/dashboard/pages/ModulePage';
-import { PropertiesPage } from '../../modules/properties/pages/PropertiesPage';
-import { CreatePropertyPage } from '../../modules/properties/pages/CreatePropertyPage';
-import { EditPropertyPage } from '../../modules/properties/pages/EditPropertyPage';
-import { LeadsPage } from '../../modules/leads/pages/LeadsPage';
-import { UsersPage } from '../../modules/users/pages/UsersPage';
-import { SystemRolesPage } from '../../modules/systemRoles/pages/SystemRolesPage';
-import { ContentPage } from '../../modules/content/pages/ContentPage';
+import { Navigate, Route, Routes } from "react-router-dom";
+import { AppShell } from "../layout/AppShell";
+import { LoginPage } from "@/app/LoginPage";
+import { ProtectedRoute } from "./ProtectedRoute";
+import { DashboardPage } from "@/modules/dashboard/pages/DashboardPage";
+import { ModulePage } from "@/modules/dashboard/pages/ModulePage";
+import { PropertiesPage } from "@/modules/properties/pages/PropertiesPage";
+import { CreatePropertyPage } from "@/modules/properties/pages/CreatePropertyPage";
+import { EditPropertyPage } from "@/modules/properties/pages/EditPropertyPage";
+import { LeadsPage } from "@/modules/leads/pages/LeadsPage";
+import { UsersPage } from "@/modules/users/pages/UsersPage";
+import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
+import { ContentPage } from "@/modules/content/pages/ContentPage";
 
 export function AppRoutes() {
   return (
@@ -20,31 +19,36 @@ export function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route index element={<RoleHomeRedirect />} />
 
           <Route element={<ProtectedRoute module="dashboard" />}>
             <Route path="dashboard" element={<DashboardPage />} />
           </Route>
 
-          <Route element={<ProtectedRoute module="properties" />}>
-            <Route path="modulos/properties" element={<PropertiesPage />} />
-            <Route path="modulos/properties/new" element={<CreatePropertyPage />} />
-            <Route path="modulos/properties/:propertyId/edit" element={<EditPropertyPage />} />
+          <Route element={<ProtectedRoute module="propiedades" />}>
+            <Route path="modulos/propiedades" element={<PropertiesPage />} />
+            <Route
+              path="modulos/propiedades/nuevo"
+              element={<CreatePropertyPage />}
+            />
+            <Route
+              path="modulos/propiedades/:propertyId/editar"
+              element={<EditPropertyPage />}
+            />
           </Route>
-          <Route element={<ProtectedRoute module="leads" />}>
-            <Route path="modulos/leads" element={<LeadsPage />} />
+          <Route element={<ProtectedRoute module="registros" />}>
+            <Route path="modulos/registros" element={<LeadsPage />} />
           </Route>
-          <Route element={<ProtectedRoute module="users" />}>
-            <Route path="modulos/users" element={<UsersPage />} />
+          <Route element={<ProtectedRoute module="usuarios" />}>
+            <Route path="modulos/usuarios" element={<UsersPage />} />
           </Route>
-          <Route element={<ProtectedRoute module="content" />}>
-            <Route path="modulos/content" element={<ContentPage />} />
+          <Route element={<ProtectedRoute module="blogs" />}>
+            <Route path="modulos/blogs" element={<ContentPage />} />
           </Route>
-          <Route element={<ProtectedRoute module="system_roles" />}>
-            <Route path="modulos/system_roles" element={<SystemRolesPage />} />
+          <Route element={<ProtectedRoute module="roles" />}>
+            <Route path="modulos/roles" element={<SystemRolesPage />} />
           </Route>
-          <Route element={<ProtectedRoute module="system_logs" />}>
-            <Route path="modulos/system_logs" element={<ModulePage />} />
+          <Route element={<ProtectedRoute module="movimientos" />}>
+            <Route path="modulos/movimientos" element={<ModulePage />} />
           </Route>
         </Route>
       </Route>

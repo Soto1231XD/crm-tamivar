@@ -83,7 +83,7 @@ export interface Imagen {
 }
 
 // Payloads para peticiones
-export type CreatePropertyPayload = Omit<PropertyRecord, 'id' | 'slug' | 'creado_en' | 'imagenes' | "creador"> & {
+export type CreatePropertyPayload = Omit<PropertyRecord, 'id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador'> & {
   imagenes?: Imagen[]; 
 };
 export type UpdatePropertyPayload = Partial<CreatePropertyPayload>;
