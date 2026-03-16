@@ -2,20 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PropertyRecord } from "@/interfaces/property.interface";
 import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmModal";
-import { useAuth } from "../../../shared/context/AuthContext";
-import { getModulePermissions } from "../../../shared/constants/roles";
 import descInfIcon from "../../../assets/images/DescInf.png";
 import agregarIcon from "../../../assets/images/Agregar.png";
 import desArcIcon from "../../../assets/images/DesArc.png";
 import verIcon from "@/assets/images/Ver.png"
 import { STATUS_OPTIONS, TYPE_OPTIONS } from "../utils/property-constants";
 import { usePropertiesStore } from "../store/usePropertiesStore";
+import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
 import { formatDireccion, getPropertyStatusStyles, formatCurrency } from "../utils/formatters";
 
 export function PropertiesPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { can } = useHasPermission();
 
   const {
     properties,
@@ -30,7 +29,11 @@ export function PropertiesPage() {
   const [typeFilter, setTypeFilter] = useState<(typeof TYPE_OPTIONS)[number]>("Todos los tipos");
   const [deletingProperty, setDeletingProperty] = useState<PropertyRecord | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
-  const propertyPermissions = getModulePermissions(user?.roles ?? [], "properties",);
+
+  // Evaluamos permisos específicos
+  const canEdit = can("propiedades", "actualizar");
+  const canCreate = can("propiedades", "crear");
+  const canDelete = can("propiedades", "eliminar");
 
   useEffect(() => {
     fetchProperties();
@@ -84,7 +87,7 @@ export function PropertiesPage() {
         <select
           value={property.estatus}
           onChange={(event) => handleStatusChange(property.id, event.target.value)}
-          disabled={updatingStatusId === property.id || !propertyPermissions.edit}
+          disabled={updatingStatusId === property.id || !canEdit}
           className="w-full appearance-none cursor-pointer rounded-full border-0 px-4 py-1.5 text-left text-xs font-semibold shadow-sm outline-none ring-1 ring-inset ring-slate-200 transition-all hover:ring-slate-300 focus:ring-2 focus:ring-[#312C85] disabled:cursor-not-allowed disabled:opacity-70"
           style={getPropertyStatusStyles(property.estatus)}
         >
@@ -103,7 +106,7 @@ export function PropertiesPage() {
       </div>
       ),
     },
-  ], [updatingStatusId, propertyPermissions.edit]);
+  ], [updatingStatusId, canEdit]);
 
   // Lógica de filtrado
   const filteredProperties = useMemo(() => {
@@ -165,8 +168,8 @@ export function PropertiesPage() {
         </div>
         <button
           type="button"
-          disabled={!propertyPermissions.create}
-          onClick={() => navigate("/modulos/properties/new")}
+          disabled={!canCreate}
+          onClick={() => navigate("/modulos/propiedades/nuevo")}
           className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
           <img
@@ -240,9 +243,9 @@ export function PropertiesPage() {
         columns={columns}
         isLoading={isLoading}
         emptyMessage="No se encontraron propiedades"
-        canEdit={propertyPermissions.edit}
-        canDelete={propertyPermissions.delete}
-        onEdit={(property) => navigate(`/modulos/properties/${property.id}/edit`)}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        onEdit={(property) => navigate(`/modulos/propiedades/${property.id}/editar`)}
         onDelete={(property) => openDeleteModal(property)}
         customActions={(property) => (
           <>

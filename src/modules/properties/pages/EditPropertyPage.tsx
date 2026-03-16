@@ -35,7 +35,7 @@ export function EditPropertyPage() {
   }, [propertyId, fetchProperty, clearCurrentProperty]);
 
   function handleCancel() {
-    navigate("/modulos/properties");
+    navigate("/modulos/propiedades");
   }
 
   // Mantenemos la misma firma que espera tu PropertyForm ({ payload, files })
@@ -57,7 +57,7 @@ export function EditPropertyPage() {
         files,
       );
 
-      navigate("/modulos/properties");
+      navigate("/modulos/propiedades");
       return null;
     } catch (error: any) {
       console.error("Error al actualizar:", error);

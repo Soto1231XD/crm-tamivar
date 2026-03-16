@@ -12,29 +12,24 @@ export function CreatePropertyPage() {
   const addProperty = usePropertiesStore((state: PropertiesState) => state.addProperty);
 
   function handleCancel() {
-    navigate("/modulos/properties");
+    navigate("/modulos/propiedades");
   }
 
   async function handleCreateProperty({
     payload,
     files,
   }: {
-    payload: Omit<CreatePropertyPayload, "creado_por_id">;
+    payload: CreatePropertyPayload;
     files: File[];
   }): Promise<string | null> {
     try {
       setIsSubmitting(true);
 
-      const payloadConId = {
-        ...payload,
-        creado_por_id: 2,
-      };
-
       // Llamamos a la acción del Store de Zustand
-      await addProperty(payloadConId as CreatePropertyPayload, files);
+      await addProperty(payload, files);
 
       // Si la petición es exitosa, navegamos a la lista
-      navigate("/modulos/properties");
+      navigate("/modulos/propiedades");
       return null;
     } catch (error: any) {
       console.error("Error al registrar propiedad:", error);
