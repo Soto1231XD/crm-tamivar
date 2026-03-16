@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
 import { usePropertiesStore } from "../store/usePropertiesStore";
@@ -57,6 +58,7 @@ export function EditPropertyPage() {
         files,
       );
 
+      toast.success("La propiedad se actualizó con éxito.");
       navigate("/modulos/properties");
       return null;
     } catch (error: any) {

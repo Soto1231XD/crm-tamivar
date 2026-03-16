@@ -1,15 +1,17 @@
 import { create } from 'zustand';
+import type {
+  CreateUserPayload,
+  RoleOptionRecord,
+  ToggleUserStatusResponse,
+  UpdateUserPayload,
+  UserRecord,
+} from '@/interfaces/user.interface';
 import {
   createUser,
   getRoles,
   getUsers,
   toggleUserStatus,
   updateUser,
-  type CreateUserPayload,
-  type RoleOptionRecord,
-  type ToggleUserStatusResponse,
-  type UpdateUserPayload,
-  type UserRecord,
 } from '../services/users.api';
 
 type UsersState = {

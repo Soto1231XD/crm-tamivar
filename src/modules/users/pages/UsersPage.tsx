@@ -1,16 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { CreateUserPayload, UpdateUserPayload, UserRecord, UserRoleRecord } from '@/interfaces/user.interface';
+import toast from 'react-hot-toast';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
 import editarDosIcon from '../../../assets/images/editar2.png';
 import { useAuth } from '../../../shared/context/AuthContext';
 import { UserModal } from '../components/UserModal';
 import { useUsersStore } from '../store/useUsersStore';
-import {
-  type CreateUserPayload,
-  type UpdateUserPayload,
-  type UserRecord,
-  type UserRoleRecord,
-} from '../services/users.api';
 
 const ALL_USER_STATES = 'Todos los estados';
 
@@ -203,6 +199,7 @@ export function UsersPage() {
           creado_por_id: sessionUser?.id,
         },
       );
+      toast.success('El usuario se creó con éxito.');
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible crear el usuario.';
@@ -212,6 +209,7 @@ export function UsersPage() {
   async function handleEditUser(userId: number, payload: UpdateUserPayload): Promise<string | null> {
     try {
       await editUser(userId, payload);
+      toast.success('El usuario se actualizó con éxito.');
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible actualizar el usuario.';
@@ -220,9 +218,14 @@ export function UsersPage() {
 
   async function handleToggleUserStatus(targetUser: UserRecord) {
     try {
-      await toggleStatus(targetUser.id);
+      const response = await toggleStatus(targetUser.id);
+      toast.success(
+        response.activo === false
+          ? `Se dio de baja a ${getUserFullName(targetUser)}.`
+          : `Se reactivó a ${getUserFullName(targetUser)}.`,
+      );
     } catch {
-      // noop
+      toast.error('No fue posible actualizar el estado del usuario.');
     }
   }
 }

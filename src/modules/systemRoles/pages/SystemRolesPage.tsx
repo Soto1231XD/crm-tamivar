@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { PermissionRecord, SystemRoleRecord } from '@/interfaces/system-role.interface';
+import type { UserRecord } from '@/interfaces/user.interface';
+import toast from 'react-hot-toast';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import { useAuth } from '../../../shared/context/AuthContext';
-import { getUsers, type UserRecord } from '../../users/services/users.api';
+import { getUsers } from '../../users/services/users.api';
 import { AssignedModulesModal } from '../components/AssignedModulesModal';
 import { CreateRoleModal } from '../components/CreateRoleModal';
-import { createSystemRole, type PermissionRecord, getSystemRoles, type SystemRoleRecord } from '../services/systemRoles.api';
+import { createSystemRole, getSystemRoles } from '../services/systemRoles.api';
 
 export function SystemRolesPage() {
   const { accessToken } = useAuth();
@@ -139,6 +142,7 @@ export function SystemRolesPage() {
     try {
       const createdRole = await createSystemRole(payload, accessToken);
       setRoles((prev) => [createdRole, ...prev]);
+      toast.success('El rol se creó con éxito.');
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible crear el rol.';

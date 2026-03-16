@@ -1,4 +1,4 @@
-import type { LeadRecord } from '../services/leads.api';
+import type { LeadRecord } from '@/interfaces/lead.interface';
 import { PRIORITY_STYLES, STATUS_STYLES } from './leads.constants';
 
 export function getStatusStyles(estado: string): { backgroundColor: string; color: string } {

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import cerrarIcon from '../../../assets/images/Cerrar.png';
-import type { LeadRecord, UpdateLeadPayload } from '../services/leads.api';
 
 const LEAD_STATUS_OPTIONS = [
   'Contactado',

@@ -1,12 +1,12 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
-import cerrarIcon from '../../../assets/images/Cerrar.png';
-import { ImageGridUploader } from '../../properties/components/ImageGridUploader';
 import type {
   BlogImageRecord,
   BlogRecord,
   CreateBlogPayload,
   UpdateBlogPayload,
-} from '../services/content.api';
+} from '@/interfaces/blog.interface';
+import cerrarIcon from '../../../assets/images/Cerrar.png';
+import { ImageGridUploader } from '../../properties/components/ImageGridUploader';
 
 type ContentModalMode = 'create' | 'edit';
 

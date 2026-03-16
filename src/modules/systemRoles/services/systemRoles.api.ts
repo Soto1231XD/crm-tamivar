@@ -1,25 +1,8 @@
 import { apiRequest } from '../../../shared/apiRequest';
-
-export type PermissionRecord = {
-  id: number;
-  modulo: string;
-  accion: string;
-};
-
-export type RolePermissionRecord = {
-  permiso: PermissionRecord;
-};
-
-export type SystemRoleRecord = {
-  id: number;
-  rol: string;
-  permisos?: RolePermissionRecord[];
-};
-
-export type CreateSystemRolePayload = {
-  rol: string;
-  permisosIds: number[];
-};
+import type {
+  CreateSystemRolePayload,
+  SystemRoleRecord,
+} from '@/interfaces/system-role.interface';
 
 export async function getSystemRoles(accessToken?: string | null): Promise<SystemRoleRecord[]> {
   void accessToken;

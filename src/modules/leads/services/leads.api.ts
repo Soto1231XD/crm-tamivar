@@ -1,58 +1,5 @@
 import { apiRequest } from '../../../shared/apiRequest';
-
-export type LeadRecord = {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  lada?: string | null;
-  telefono: string | number;
-  correo_electronico?: string | null;
-  comentarios?: string | null;
-  estado?: string | null;
-  prioridad?: string | null;
-  fecha_cita?: string | null;
-  creado_en?: string;
-  propiedad_id: number;
-  creador?: {
-    id: number;
-    nombres?: string | null;
-    apellido_paterno?: string | null;
-  } | null;
-  propiedad?: {
-    direccion?: {
-      calle?: string;
-      municipio?: string;
-      fraccionamiento?: string;
-    };
-  } | null;
-};
-
-export type CreateLeadPayload = {
-  nombres: string;
-  apellidos: string;
-  telefono: string;
-  propiedad_id: number;
-  creado_por_id: number;
-  lada?: string;
-  correo_electronico?: string;
-  comentarios?: string;
-  estado?: string;
-  prioridad: string;
-  fecha_cita?: string;
-};
-
-export type UpdateLeadPayload = {
-  nombres?: string;
-  apellidos?: string;
-  telefono?: string;
-  propiedad_id?: number;
-  lada?: string;
-  correo_electronico?: string;
-  comentarios?: string;
-  estado?: string;
-  prioridad?: string;
-  fecha_cita?: string;
-};
+import type { CreateLeadPayload, LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 
 export async function getLeads(): Promise<LeadRecord[]> {
   const data = await apiRequest<LeadRecord[]>('/registros');
