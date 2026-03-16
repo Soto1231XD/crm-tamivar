@@ -1,4 +1,10 @@
-import type { Role } from '../../shared/types/rbac';
+export type AppRole =
+  | 'Super Administrador'
+  | 'Administrador'
+  | 'Marketing'
+  | 'Recursos Humanos'
+  | 'Coordinador de Ventas'
+  | 'Asesor de Ventas';
 
 type DashboardCardTitle =
   | 'Propiedades Disponibles'
@@ -14,17 +20,17 @@ type DashboardSectionTitle =
   | 'Usuarios'
   | 'Publicaciones';
 
-export const DASHBOARD_ENABLED_ROLES: Role[] = [
-  'SUPER_ADMIN',
-  'ADMIN',
-  'MARKETING',
-  'RH',
-  'COORDINADOR_VENTAS',
-  'ASESOR_VENTAS',
+export const DASHBOARD_ENABLED_ROLES: AppRole[] = [
+  'Super Administrador',
+  'Administrador',
+  'Marketing',
+  'Recursos Humanos',
+  'Coordinador de Ventas',
+  'Asesor de Ventas',
 ];
 
-export const DASHBOARD_CARD_TITLES: Partial<Record<Role, readonly DashboardCardTitle[]>> = {
-  SUPER_ADMIN: [
+export const DASHBOARD_CARD_TITLES: Partial<Record<AppRole, readonly DashboardCardTitle[]>> = {
+  'Super Administrador': [
     'Propiedades Disponibles',
     'Registros',
     'Propiedades vendidas',
@@ -32,18 +38,40 @@ export const DASHBOARD_CARD_TITLES: Partial<Record<Role, readonly DashboardCardT
     'Usuarios del sistema',
     'Roles del sistema',
   ],
-  ADMIN: ['Propiedades Disponibles', 'Registros', 'Propiedades vendidas', 'Blogs', 'Usuarios del sistema'],
-  MARKETING: ['Propiedades Disponibles', 'Blogs', 'Propiedades vendidas'],
-  RH: ['Propiedades Disponibles', 'Usuarios del sistema', 'Roles del sistema'],
-  COORDINADOR_VENTAS: ['Propiedades Disponibles', 'Registros', 'Propiedades vendidas'],
-  ASESOR_VENTAS: ['Propiedades Disponibles', 'Registros', 'Propiedades vendidas'],
+  'Administrador': [
+    'Propiedades Disponibles',
+    'Registros',
+    'Propiedades vendidas',
+    'Blogs',
+    'Usuarios del sistema',
+  ],
+  'Marketing': [
+    'Propiedades Disponibles', 
+    'Blogs', 
+    'Propiedades vendidas'
+  ],
+  'Recursos Humanos': [
+    'Propiedades Disponibles', 
+    'Usuarios del sistema', 
+    'Roles del sistema'
+  ],
+  'Coordinador de Ventas': [
+    'Propiedades Disponibles', 
+    'Registros', 
+    'Propiedades vendidas'
+  ],
+  'Asesor de Ventas': [
+    'Propiedades Disponibles', 
+    'Registros', 
+    'Propiedades vendidas'
+  ],
 };
 
-export const DASHBOARD_SECTION_TITLES: Partial<Record<Role, readonly DashboardSectionTitle[]>> = {
-  SUPER_ADMIN: ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Publicaciones'],
-  ADMIN: ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Publicaciones'],
-  MARKETING: ['Publicaciones', 'Propiedades Recientes'],
-  RH: ['Propiedades Recientes', 'Usuarios'],
-  COORDINADOR_VENTAS: ['Registros Recientes', 'Propiedades Recientes'],
-  ASESOR_VENTAS: ['Registros Recientes', 'Propiedades Recientes'],
+export const DASHBOARD_SECTION_TITLES: Partial<Record<AppRole, readonly DashboardSectionTitle[]>> = {
+  'Super Administrador': ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Publicaciones'],
+  'Administrador': ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Publicaciones'],
+  'Marketing': ['Publicaciones', 'Propiedades Recientes'],
+  'Recursos Humanos': ['Propiedades Recientes', 'Usuarios'],
+  'Coordinador de Ventas': ['Registros Recientes', 'Propiedades Recientes'],
+  'Asesor de Ventas': ['Registros Recientes', 'Propiedades Recientes'],
 };

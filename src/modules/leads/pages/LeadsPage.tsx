@@ -1,6 +1,4 @@
 import agregarIcon from '../../../assets/images/Agregar.png';
-import { getModulePermissions, getPrimaryRole } from '../../../shared/constants/roles';
-import { useAuth } from '../../../shared/context/AuthContext';
 import { TablePagination } from '../../../shared/components/TablePagination';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
@@ -9,11 +7,20 @@ import { LeadFilters } from '../components/LeadFilters';
 import { LeadsTable } from '../components/LeadsTable';
 import { PAGE_SIZE } from '../utils/leads.constants';
 import { useLeadsPageState } from '../hooks/useLeadsPageState';
+import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 
 export function LeadsPage() {
-  const { user } = useAuth();
-  const primaryRole = getPrimaryRole(user?.roles ?? []);
-  const leadPermissions = getModulePermissions(user?.roles ?? [], 'leads');
+  // Extraemos usuario de Zustand y la función can del Hook
+  const user = useAuthStore((state) => state.user);
+  const { can } = useHasPermission();
+
+  const primaryRole = user?.roles?.[0];
+
+  const canCreate = can('registros', 'crear');
+  const canEdit = can('registros', 'actualizar');
+  const canDelete = can('registros', 'eliminar');
+
   const {
     isLoading,
     search,
@@ -62,7 +69,8 @@ export function LeadsPage() {
         </div>
         <button
           type="button"
-          disabled={!leadPermissions.create}
+          // 5. Usamos el booleano 'canCreate'
+          disabled={!canCreate}
           onClick={() => setIsCreateModalOpen(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -93,7 +101,7 @@ export function LeadsPage() {
           leads={paginatedLeads}
           isLoading={isLoading}
           updatingLeadId={updatingLeadId}
-          leadPermissions={leadPermissions}
+          // 6. Eliminamos la prop 'leadPermissions' que ya no existe en LeadsTable
           propertyTitleById={propertyTitleById}
           onQuickChange={handleQuickLeadChange}
           onEdit={setEditingLead}
@@ -111,7 +119,8 @@ export function LeadsPage() {
         />
       </section>
 
-      {leadPermissions.create ? (
+      {/* 7. Protegemos los modales con los nuevos booleanos */}
+      {canCreate ? (
         <CreateLeadModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
@@ -119,7 +128,8 @@ export function LeadsPage() {
           propertyOptions={propertyChoices}
         />
       ) : null}
-      {leadPermissions.edit ? (
+      
+      {canEdit ? (
         <EditLeadModal
           isOpen={Boolean(editingLead)}
           lead={editingLead}
@@ -128,7 +138,8 @@ export function LeadsPage() {
           propertyOptions={propertyChoices}
         />
       ) : null}
-      {leadPermissions.delete ? (
+      
+      {canDelete ? (
         <DeleteLeadConfirmModal
           isOpen={Boolean(deletingLead)}
           lead={deletingLead}

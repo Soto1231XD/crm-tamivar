@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../layout/AppShell";
 import { LoginPage } from "@/app/LoginPage";
 import { ProtectedRoute } from "./ProtectedRoute";
-import { RoleHomeRedirect } from "./RoleHomeRedirect";
 import { DashboardPage } from "@/modules/dashboard/pages/DashboardPage";
 import { ModulePage } from "@/modules/dashboard/pages/ModulePage";
 import { PropertiesPage } from "@/modules/properties/pages/PropertiesPage";
@@ -20,7 +19,6 @@ export function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route index element={<RoleHomeRedirect />} />
 
           <Route element={<ProtectedRoute module="dashboard" />}>
             <Route path="dashboard" element={<DashboardPage />} />
