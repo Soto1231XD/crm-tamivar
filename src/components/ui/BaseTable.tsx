@@ -13,6 +13,9 @@ interface BaseTableProps<T> {
   columns: ColumnDef<T>[];
   isLoading?: boolean;
   emptyMessage?: string;
+  wrapperClassName?: string;
+  tableClassName?: string;
+  actionsClassName?: string;
   
   // Acciones por defecto
   onEdit?: (item: T) => void;
@@ -35,6 +38,9 @@ export const BaseTable = <T extends { id: number | string }>({
   columns,
   isLoading = false,
   emptyMessage = 'No se encontraron registros',
+  wrapperClassName = '',
+  tableClassName = 'min-w-full text-center',
+  actionsClassName = 'flex items-center justify-center gap-2 w-max mx-auto',
   onEdit,
   onDelete,
   canEdit = true,
@@ -49,9 +55,9 @@ export const BaseTable = <T extends { id: number | string }>({
   const hasActions = Boolean(onEdit || onDelete || customActions);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col">
+    <div className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col ${wrapperClassName}`.trim()}>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-center"> 
+        <table className={tableClassName}> 
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr>
               {columns.map((col, index) => (
@@ -98,7 +104,7 @@ export const BaseTable = <T extends { id: number | string }>({
                   {/* Celda de Acciones */}
                   {hasActions && (
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2 w-max mx-auto">
+                      <div className={actionsClassName}>
                         
                         {/* Botón Editar */}
                         {onEdit && canEdit && (

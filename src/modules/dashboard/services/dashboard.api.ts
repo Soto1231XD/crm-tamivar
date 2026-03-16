@@ -1,55 +1,5 @@
 import { apiRequest } from '../../../shared/apiRequest';
-
-export type DashboardSummary = {
-  propiedades_disponibles: number;
-  registros: number;
-  usuarios_sistema: number;
-  registros_recientes: Array<{
-    nombre: string;
-    apellido: string;
-    correo: string;
-    estado: string;
-  }>;
-  propiedades_recientes: Array<{
-    tipo_inmueble: string;
-    direccion: {
-      calle: string;
-      municipio: string;
-      fraccionamiento: string;
-    };
-    estatus: string;
-    precio: string;
-  }>;
-  usuarios_recientes: Array<{
-    nombres: string;
-    apellido_paterno: string;
-    correo_electronico: string;
-    rol?: string;
-    roles?: string[];
-  }>;
-  mis_publicaciones: Array<{
-    titulo: string;
-    fecha_creacion: string;
-    fechaPublico?: string | null;
-    publicado: boolean;
-    imagenes?: Array<{
-      url?: string;
-      titulo?: string;
-      principal?: boolean;
-    }> | null;
-  }>;
-};
-
-export type RecentProperty = {
-  tipo_inmueble: string;
-  direccion: {
-    calle: string;
-    municipio: string;
-    fraccionamiento: string;
-  };
-  estatus: string;
-  precio: string;
-};
+import type { DashboardSummary, RecentProperty } from '@/interfaces/dashboard.interface';
 
 export async function getDashboardSummary(accessToken: string): Promise<DashboardSummary> {
   void accessToken;

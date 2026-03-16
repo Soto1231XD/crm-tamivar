@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import cerrarIcon from '../../../assets/images/Cerrar.png';
-import type { CreateUserPayload, RoleOptionRecord, UpdateUserPayload, UserRecord } from '../services/users.api';
+import type { CreateUserPayload, RoleOptionRecord, UpdateUserPayload, UserRecord } from '@/interfaces/user.interface';
 
 type UserModalMode = 'create' | 'edit';
 

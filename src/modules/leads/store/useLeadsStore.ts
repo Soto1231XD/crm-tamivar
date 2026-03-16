@@ -1,12 +1,10 @@
 import { create } from 'zustand';
+import type { CreateLeadPayload, LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import {
   createLead,
   deleteLead,
   getLeads,
   updateLead,
-  type CreateLeadPayload,
-  type LeadRecord,
-  type UpdateLeadPayload,
 } from '../services/leads.api';
 
 export interface LeadsState {

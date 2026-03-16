@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import cerrarIcon from '../../../assets/images/Cerrar.png';
-import type { LeadRecord } from '../services/leads.api';
+import type { LeadRecord } from '@/interfaces/lead.interface';
 
 type DeleteLeadConfirmModalProps = {
   isOpen: boolean;

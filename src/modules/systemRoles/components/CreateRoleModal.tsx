@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import cerrarIcon from '../../../assets/images/Cerrar.png';
-import type { PermissionRecord } from '../services/systemRoles.api';
+import type { PermissionRecord } from '@/interfaces/system-role.interface';
 
 type CreateRoleModalProps = {
   isOpen: boolean;

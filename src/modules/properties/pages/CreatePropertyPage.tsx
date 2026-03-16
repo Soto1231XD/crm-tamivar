@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
 import { usePropertiesStore, type PropertiesState } from "../store/usePropertiesStore";
@@ -27,6 +28,7 @@ export function CreatePropertyPage() {
 
       // Llamamos a la acción del Store de Zustand
       await addProperty(payload, files);
+      toast.success("La propiedad se creó con éxito.");
 
       // Si la petición es exitosa, navegamos a la lista
       navigate("/modulos/propiedades");

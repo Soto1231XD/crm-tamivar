@@ -1,13 +1,11 @@
 import { create } from 'zustand';
+import type { BlogRecord, CreateBlogPayload, UpdateBlogPayload } from '@/interfaces/blog.interface';
 import {
   createBlog,
   deleteBlog,
   getBlog,
   getBlogs,
   updateBlog,
-  type BlogRecord,
-  type CreateBlogPayload,
-  type UpdateBlogPayload,
 } from '../services/content.api';
 
 type ContentState = {

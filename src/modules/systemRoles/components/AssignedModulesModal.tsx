@@ -1,5 +1,5 @@
 import cerrarIcon from '../../../assets/images/Cerrar.png';
-import type { SystemRoleRecord } from '../services/systemRoles.api';
+import type { SystemRoleRecord } from '@/interfaces/system-role.interface';
 
 type AssignedModulesModalProps = {
   isOpen: boolean;

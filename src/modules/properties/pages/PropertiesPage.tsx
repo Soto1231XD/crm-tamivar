@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import type { PropertyRecord } from "@/interfaces/property.interface";
 import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmModal";
@@ -142,8 +143,10 @@ export function PropertiesPage() {
     try {
       await removeProperty(propertyId); 
       setDeletingProperty(null);
+      toast.success("La propiedad se eliminó con éxito.");
       return null; 
     } catch (error) {
+      toast.error("No fue posible eliminar la propiedad.");
       return error instanceof Error ? error.message : 'No fue posible eliminar la propiedad.';
     }
   }
@@ -152,6 +155,9 @@ export function PropertiesPage() {
     setUpdatingStatusId(id);
     try {
       await editProperty(id, { estatus: nextStatus });
+      toast.success(`El estado de la propiedad cambió a ${nextStatus}.`);
+    } catch {
+      toast.error("No fue posible actualizar el estado de la propiedad.");
     } finally {
       setUpdatingStatusId(null);
     }

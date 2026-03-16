@@ -1,4 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import type {
+  BlogImageRecord,
+  BlogRecord,
+  CreateBlogPayload,
+  UpdateBlogPayload,
+} from '@/interfaces/blog.interface';
+import toast from 'react-hot-toast';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
 import editarDosIcon from '../../../assets/images/editar2.png';
@@ -6,12 +13,6 @@ import subirIcon from '../../../assets/images/subir1.png';
 import { useAuth } from '../../../shared/context/AuthContext';
 import { ContentModal } from '../components/ContentModal';
 import { useContentStore } from '../store/useContentStore';
-import type {
-  BlogImageRecord,
-  BlogRecord,
-  CreateBlogPayload,
-  UpdateBlogPayload,
-} from '../services/content.api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const ALL_CONTENT_STATES = 'Todos los estados';
@@ -195,6 +196,7 @@ export function ContentPage() {
         },
         files,
       );
+      toast.success('El artículo se creó con éxito.');
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible crear el articulo.';
@@ -208,6 +210,7 @@ export function ContentPage() {
   ): Promise<string | null> {
     try {
       await editBlog(blogId, payload, files);
+      toast.success('El artículo se actualizó con éxito.');
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible actualizar el articulo.';
@@ -225,8 +228,9 @@ export function ContentPage() {
         },
         [],
       );
+      toast.success(`El artículo "${blog.titulo}" se publicó con éxito.`);
     } catch {
-      // noop
+      toast.error('No fue posible publicar el artículo.');
     }
   }
 
@@ -236,8 +240,9 @@ export function ContentPage() {
 
     try {
       await removeBlog(blog.id);
+      toast.success(`El artículo "${blog.titulo}" se eliminó con éxito.`);
     } catch {
-      // noop
+      toast.error('No fue posible eliminar el artículo.');
     }
   }
 }
