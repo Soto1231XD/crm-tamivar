@@ -189,7 +189,17 @@ export function PropertiesPage() {
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Filtros
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Busca propiedades por título y combina los filtros para ubicar resultados más rápido.
+            </p>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
           <input
             type="text"
             placeholder="Buscar propiedades"
@@ -240,6 +250,7 @@ export function PropertiesPage() {
             />
             <span>Descargar</span>
           </button>
+        </div>
         </div>
       </section>
 

@@ -155,12 +155,12 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     return data.registrosRecientes.map((registro, index) => (
       <li
         key={`${registro.correo}-${registro.nombre}-${registro.apellido}-${index}`}
-        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+        className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:bg-slate-100/80"
       >
         <p className="text-sm font-semibold text-slate-800">
           {registro.nombre} {registro.apellido}
         </p>
-        <p className="mt-1 text-xs text-slate-600">{registro.correo}</p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">{registro.correo}</p>
         <div className="mt-2">
           <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold" style={getStatusStyles(registro.estado)}>
             {registro.estado}
@@ -174,10 +174,10 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     return data.propiedadesRecientes.map((propiedad, index) => (
       <li
         key={`${propiedad.tipo_inmueble}-${propiedad.precio}-${index}`}
-        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+        className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:bg-slate-100/80"
       >
         <p className="text-sm font-semibold text-slate-800">{propiedad.tipo_inmueble}</p>
-        <p className="mt-1 text-xs text-slate-600">{formatDireccion(propiedad.direccion)}</p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">{formatDireccion(propiedad.direccion)}</p>
         <div className="mt-2 flex items-center justify-between gap-2">
           <span
             className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
@@ -195,12 +195,12 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     return data.usuariosRecientes.map((usuario, index) => (
       <li
         key={`${usuario.correo_electronico}-${index}`}
-        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+        className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:bg-slate-100/80"
       >
         <p className="text-sm font-semibold text-slate-800">
           {usuario.nombres} {usuario.apellido_paterno}
         </p>
-        <p className="mt-1 text-xs text-slate-600">{usuario.correo_electronico}</p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">{usuario.correo_electronico}</p>
         <div className="mt-2">
           <span
             className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
@@ -217,10 +217,10 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     return data.misPublicaciones.map((publicacion, index) => (
       <li
         key={`${publicacion.titulo}-${publicacion.fecha_creacion}-${index}`}
-        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+        className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#F8FAFC,#EEF2FF)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#F8FAFC,#E8EDFF)]"
       >
         <div className="flex items-start gap-3">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-200">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-200 ring-1 ring-inset ring-slate-200">
             {getPublicationImageUrl(publicacion.imagenes) ? (
               <img
                 src={getPublicationImageUrl(publicacion.imagenes) ?? ''}
@@ -235,8 +235,8 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-semibold text-slate-800">{publicacion.titulo}</p>
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-800">{publicacion.titulo}</p>
+            <p className="mt-1 text-xs font-medium text-slate-500">
               {formatDate(publicacion.fechaPublico || publicacion.fecha_creacion)}
             </p>
             <div className="mt-2">

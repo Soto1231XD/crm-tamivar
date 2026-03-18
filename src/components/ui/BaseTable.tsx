@@ -4,7 +4,7 @@ import borrarIcon from '@/assets/images/Borrar.png';
 
 export interface ColumnDef<T> {
   header: string; // El título de la columna
-  accessorKey?: keyof T; // La llave del objeto (si es texto plano)
+  accessorKey?: keyof T; // La llave del objeto (si es texto plano-)
   render?: (item: T) => React.ReactNode; // Función por si queremos pintar algo complejo (Select, Badge, Avatar)
 }
 

@@ -69,7 +69,6 @@ export function LeadsPage() {
         </div>
         <button
           type="button"
-          // 5. Usamos el booleano 'canCreate'
           disabled={!canCreate}
           onClick={() => setIsCreateModalOpen(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
@@ -101,7 +100,6 @@ export function LeadsPage() {
           leads={paginatedLeads}
           isLoading={isLoading}
           updatingLeadId={updatingLeadId}
-          // 6. Eliminamos la prop 'leadPermissions' que ya no existe en LeadsTable
           propertyTitleById={propertyTitleById}
           onQuickChange={handleQuickLeadChange}
           onEdit={setEditingLead}
@@ -119,7 +117,6 @@ export function LeadsPage() {
         />
       </section>
 
-      {/* 7. Protegemos los modales con los nuevos booleanos */}
       {canCreate ? (
         <CreateLeadModal
           isOpen={isCreateModalOpen}
@@ -128,7 +125,7 @@ export function LeadsPage() {
           propertyOptions={propertyChoices}
         />
       ) : null}
-      
+
       {canEdit ? (
         <EditLeadModal
           isOpen={Boolean(editingLead)}
@@ -138,7 +135,7 @@ export function LeadsPage() {
           propertyOptions={propertyChoices}
         />
       ) : null}
-      
+
       {canDelete ? (
         <DeleteLeadConfirmModal
           isOpen={Boolean(deletingLead)}

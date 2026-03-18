@@ -231,24 +231,58 @@ export function DashboardPage() {
     : false;
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-slate-700 bg-welcome-800 p-6 shadow-sm">
-        <h2 className="text-2xl font-bold text-white">{`Bienvenido, ${displayName}`}</h2>
-        <p className="mt-2 text-sm text-slate-200">
-          {primaryRole || "Sin rol asignado"}
-        </p>
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-welcome-800 px-6 py-7 shadow-sm sm:px-8">
+        <div className="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_center,_rgba(124,139,255,0.28),transparent_62%)] lg:block" />
+        <div className="absolute left-0 top-0 h-20 w-20 rounded-full bg-white/5 blur-3xl" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-brand-100/80">
+              Panel principal
+            </p>
+            <h2 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-[2rem]">
+              {`Bienvenido, ${displayName}`}
+            </h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-200/95">
+              Consulta el estado general del CRM, revisa actividad reciente y da seguimiento
+              a la operación desde un solo lugar.
+            </p>
+          </div>
+
+          <div className="inline-flex w-fit flex-col rounded-2xl border border-white/10 bg-white/10 px-4 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200/80">
+              Perfil actual
+            </span>
+            <span className="mt-2 text-sm font-semibold text-white">
+              {primaryRole || "Sin rol asignado"}
+            </span>
+          </div>
+        </div>
       </section>
 
       {canViewDashboard ? (
-        <section className="space-y-3">
+        <section className="space-y-5">
           {summaryError ? (
-            <p className="text-sm text-red-600">{summaryError}</p>
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {summaryError}
+            </div>
           ) : null}
           <DashboardSummaryCards
             titles={dashboardCards}
             values={cardValues}
             isLoading={isLoadingSummary}
           />
+
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-bold tracking-tight text-slate-900">
+                Actividad reciente
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Resumen visual de los movimientos más recientes del CRM.
+              </p>
+            </div>
+          </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {dashboardSections.map((sectionTitle) => (

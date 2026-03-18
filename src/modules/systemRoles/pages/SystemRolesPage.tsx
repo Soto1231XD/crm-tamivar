@@ -77,13 +77,13 @@ export function SystemRolesPage() {
   }, [roles]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">
             Roles del sistema
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
             Define permisos y niveles de acceso del CRM
           </p>
         </div>
@@ -103,52 +103,77 @@ export function SystemRolesPage() {
         </button>
       </header>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <input
-          type="text"
-          placeholder="Buscar rol"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
-        />
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Filtros
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Busca un rol por nombre para localizarlo más rápido.
+            </p>
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar rol"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring md:max-w-sm"
+          />
+        </div>
       </section>
 
       <section>
         {isLoading ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-600 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
             Cargando roles...
           </div>
         ) : filteredRoles.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-600 shadow-sm">
-            No se encontraron roles
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
+            <p className="font-semibold text-slate-700">Sin resultados</p>
+            <p className="mt-1">No se encontraron roles</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {filteredRoles.map((role) => (
               <article
                 key={role.id}
-                className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="grid flex-1 gap-3 md:grid-cols-3">
-                  <InfoBlock label="Rol" value={role.rol} />
-                  <InfoBlock
-                    label="Descripcion del rol"
-                    value={getRoleDescription(role.rol)}
-                  />
-                  <InfoBlock
-                    label="Usuarios asignados"
-                    value={String(getAssignedUsersCount(role, users))}
-                  />
+                <div className="border-b border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.95),rgba(255,255,255,0.98))] px-5 py-4">
+                  <div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Rol del sistema
+                      </p>
+                      <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+                        {role.rol}
+                      </h3>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex justify-start lg:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole(role)}
-                    className="inline-flex items-center justify-center rounded-lg bg-[#5980FF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-hover hover:bg-blue-600"
-                  >
-                    Modulos asignados
-                  </button>
+                <div className="flex flex-col gap-5 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="grid flex-1 gap-4 md:grid-cols-[1.4fr_0.7fr]">
+                    <InfoBlock
+                      label="Descripción del rol"
+                      value={getRoleDescription(role.rol)}
+                    />
+                    <InfoBlock
+                      label="Usuarios asignados"
+                      value={String(getAssignedUsersCount(role, users))}
+                    />
+                  </div>
+
+                  <div className="flex justify-start lg:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole(role)}
+                      className="inline-flex items-center justify-center rounded-xl bg-[#5980FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#456df4]"
+                    >
+                      Módulos asignados
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
@@ -194,9 +219,11 @@ export function SystemRolesPage() {
 
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-sm font-semibold text-slate-700">{label}:</p>
-      <p className="mt-1 text-sm text-slate-600">{value}</p>
+    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-slate-700">{value}</p>
     </div>
   );
 }

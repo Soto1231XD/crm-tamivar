@@ -56,11 +56,13 @@ export function UsersPage() {
   }, [search, statusFilter, users]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Usuarios</h2>
-          <p className="mt-1 text-sm text-slate-600">Gestiona usuarios y asigna roles</p>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">Usuarios</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+            Gestiona usuarios, estados y roles dentro del CRM.
+          </p>
         </div>
         <button
           type="button"
@@ -74,37 +76,49 @@ export function UsersPage() {
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            type="text"
-            placeholder="Buscar usuario"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
-          />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Filtros
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Busca usuarios por nombre y filtra por estado para ubicar información más rápido.
+            </p>
+          </div>
 
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
-          >
-            {[ALL_USER_STATES, 'Activo', 'Baja'].map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <div className="grid gap-3 md:grid-cols-2 lg:min-w-[540px]">
+            <input
+              type="text"
+              placeholder="Buscar usuario"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
+            >
+              {[ALL_USER_STATES, 'Activo', 'Baja'].map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 
       <section>
         {isLoading ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-600 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
             Cargando usuarios...
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-600 shadow-sm">
-            No se encontraron usuarios
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
+            <p className="font-semibold text-slate-700">Sin resultados</p>
+            <p className="mt-1">No se encontraron usuarios</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -118,10 +132,13 @@ export function UsersPage() {
               const isCurrentUser = sessionUser?.id === user.id;
 
               return (
-                <article key={user.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <article
+                  key={user.id}
+                  className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="truncate text-base font-bold text-slate-900">
+                      <h3 className="truncate text-lg font-bold tracking-tight text-slate-900">
                         {getUserFullName(user)}
                       </h3>
                       <p className="mt-1 truncate text-sm text-slate-600">
@@ -139,50 +156,49 @@ export function UsersPage() {
                   <div className="mt-4">
                     <p className="text-sm font-semibold text-slate-700">Roles</p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {roles.length > 0 ? (
-                        roles.map((role) => (
-                          <span
-                            key={`${user.id}-${role}`}
-                            className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
-                            style={{ backgroundColor: '#E0E7FF', color: '#1480F0' }}
-                          >
-                            {role}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-slate-500">Sin roles asignados</span>
-                      )}
+                        {roles.length > 0 ? (
+                          roles.map((role) => (
+                            <span
+                              key={`${user.id}-${role}`}
+                              className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                              style={{ backgroundColor: '#E0E7FF', color: '#1480F0' }}
+                            >
+                              {role}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-slate-500">Sin roles asignados</span>
+                        )}
                     </div>
                   </div>
 
-                  {/* Verificamos permisos y que no sea un Super Admin intocable ni el mismo usuario */}
                   {(!isSuperAdmin && !isCurrentUser) ? (
-                    <div className="mt-5 flex items-center justify-center gap-2">
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={() => setEditingUser(user)}
-                          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#312C85] transition-hover hover:bg-indigo-100"
-                          style={{ backgroundColor: '#E0E7FF' }}
-                        >
-                          <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                          <span>Editar</span>
-                        </button>
-                      )}
-                      
-                      {canDelete && (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleUserStatus(user)}
-                          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#CA5874] transition-hover hover:bg-orange-100"
-                          style={{ backgroundColor: '#FFEDD4' }}
-                        >
-                          <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                          <span>{user.activo === false ? 'Reactivar' : 'Dar de baja'}</span>
-                        </button>
-                      )}
-                    </div>
-                  ) : null}
+                      <div className="mt-5 flex items-center justify-center gap-2">
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingUser(user)}
+                            className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100"
+                            style={{ backgroundColor: '#E0E7FF' }}
+                          >
+                            <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                            <span>Editar</span>
+                          </button>
+                        )}
+
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserStatus(user)}
+                            className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition-colors hover:bg-orange-100"
+                            style={{ backgroundColor: '#FFEDD4' }}
+                          >
+                            <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                            <span>{user.activo === false ? 'Reactivar' : 'Dar de baja'}</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
                 </article>
               );
             })}

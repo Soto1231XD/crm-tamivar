@@ -50,11 +50,11 @@ export function ContentPage() {
   }, [blogs, search, statusFilter]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Contenido</h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">Contenido</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
             Gestiona blogs y articulos del sitio web
           </p>
         </div>
@@ -75,62 +75,74 @@ export function ContentPage() {
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            type="text"
-            placeholder="Buscar por titulo"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
-          />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Filtros
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Busca artículos por título y filtra por estado de publicación.
+            </p>
+          </div>
 
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
-          >
-            {[ALL_CONTENT_STATES, "Publicado", "Borrador"].map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <div className="grid gap-3 md:grid-cols-2 lg:min-w-[540px]">
+            <input
+              type="text"
+              placeholder="Buscar por titulo"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
+            >
+              {[ALL_CONTENT_STATES, "Publicado", "Borrador"].map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 
       <section>
         {isLoading ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-600 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
             Cargando contenido...
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-600 shadow-sm">
-            No se encontraron articulos
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
+            <p className="font-semibold text-slate-700">Sin resultados</p>
+            <p className="mt-1">No se encontraron articulos</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredItems.map((item) => (
               <article
                 key={item.id}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="overflow-hidden rounded-xl bg-slate-100">
+                <div className="overflow-hidden border-b border-slate-200 bg-slate-100">
                   {getMainImageUrl(item.imagenes) ? (
                     <img
                       src={getMainImageUrl(item.imagenes) ?? ""}
                       alt={item.titulo || "Imagen del articulo"}
-                      className="h-44 w-full object-cover"
+                      className="h-48 w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-44 w-full items-center justify-center text-sm font-medium text-slate-400">
+                    <div className="flex h-48 w-full items-center justify-center text-sm font-medium text-slate-400">
                       Sin imagen
                     </div>
                   )}
                 </div>
 
-                <div className="mt-3 px-1">
+                <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="line-clamp-1 text-lg font-extrabold text-[#4338CA]">
+                    <p className="line-clamp-2 text-lg font-bold leading-6 text-slate-900">
                       {item.titulo?.trim() || "Sin titulo"}
                     </p>
                     <span
@@ -141,64 +153,64 @@ export function ContentPage() {
                     </span>
                   </div>
 
-                  <p className="mt-2 line-clamp-2 text-base font-bold leading-5 text-slate-900">
+                  <p className="mt-3 line-clamp-2 text-sm font-semibold leading-6 text-[#4338CA]">
                     {item.subtitulo?.trim() || "Sin subtitulo"}
                   </p>
-                  <p className="mt-2 line-clamp-3 text-sm leading-5 text-slate-600">
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
                     {item.resumen?.trim() || "Sin resumen"}
                   </p>
-                </div>
 
-                <div className="mt-4 flex items-center gap-2 px-1">
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => handlePublishBlog(item)}
-                      disabled={item.publicado === true}
-                      className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-md bg-[#16A34A] px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <img
-                        src={subirIcon}
-                        alt=""
-                        className="h-5 w-5 shrink-0"
-                        aria-hidden="true"
-                      />
-                      <span>Publicar</span>
-                    </button>
-                  )}
+                  <div className="mt-5 flex items-center gap-2 border-t border-slate-200 pt-4">
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => handlePublishBlog(item)}
+                        disabled={item.publicado === true}
+                        className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-[#16A34A] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <img
+                          src={subirIcon}
+                          alt=""
+                          className="h-5 w-5 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span>Publicar</span>
+                      </button>
+                    )}
 
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => setEditingBlog(item)}
-                      className="inline-flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-[#312C85] transition hover:bg-indigo-100"
-                      style={{ backgroundColor: "#E0E7FF" }}
-                    >
-                      <img
-                        src={editarDosIcon}
-                        alt=""
-                        className="h-5 w-5 shrink-0"
-                        aria-hidden="true"
-                      />
-                      <span>Editar</span>
-                    </button>
-                  )}
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingBlog(item)}
+                        className="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition hover:bg-indigo-100"
+                        style={{ backgroundColor: "#E0E7FF" }}
+                      >
+                        <img
+                          src={editarDosIcon}
+                          alt=""
+                          className="h-5 w-5 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span>Editar</span>
+                      </button>
+                    )}
 
-                  {canDelete && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteBlog(item)}
-                      className="inline-flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-[#CA5874] transition hover:bg-orange-100"
-                      style={{ backgroundColor: "#FFEDD4" }}
-                    >
-                      <img
-                        src={borrarIcon}
-                        alt=""
-                        className="h-5 w-5 shrink-0"
-                        aria-hidden="true"
-                      />
-                    </button>
-                  )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteBlog(item)}
+                        className="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition hover:bg-orange-100"
+                        style={{ backgroundColor: "#FFEDD4" }}
+                      >
+                        <img
+                          src={borrarIcon}
+                          alt=""
+                          className="h-5 w-5 shrink-0"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </article>
             ))}

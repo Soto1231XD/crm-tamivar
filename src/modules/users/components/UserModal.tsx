@@ -152,7 +152,7 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
                 onChange={(value) => updateField('apellido_materno', sanitizeName(value))}
               />
               <Field
-                label="Telefono"
+                label="Teléfono"
                 required
                 value={form.telefono}
                 inputMode="numeric"
@@ -160,14 +160,14 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
                 onChange={(value) => updateField('telefono', value.replace(/\D/g, '').slice(0, 10))}
               />
               <Field
-                label="Correo electronico"
+                label="Correo electrónico"
                 required
                 type="email"
                 value={form.correo_electronico}
                 onChange={(value) => updateField('correo_electronico', value)}
               />
               <Field
-                label={mode === 'create' ? 'Contrasena' : 'Contrasena nueva'}
+                label={mode === 'create' ? 'Contraseña' : 'Contraseña nueva'}
                 required={mode === 'create'}
                 type="password"
                 value={form.contrasena}
@@ -179,7 +179,7 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
                 onChange={(value) => updateField('foto_url', value)}
               />
               <Field
-                label="Folio certificacion"
+                label="Folio certificación"
                 value={form.folio_certificacion}
                 onChange={(value) => updateField('folio_certificacion', value)}
               />

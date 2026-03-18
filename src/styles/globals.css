@@ -1,7 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  font-family: "Poppins", "Segoe UI", sans-serif;
+  --font-sans-crm:
+    "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --text-page-title: clamp(1.75rem, 1.4rem + 0.8vw, 2rem);
+  --text-page-subtitle: 0.9375rem;
+  --text-section-title: 1.125rem;
+  --text-card-title: 1rem;
+  --text-label: 0.75rem;
+  --text-body: 0.875rem;
+  --text-body-sm: 0.8125rem;
+  font-family: var(--font-sans-crm);
 }
 
 @theme {
@@ -24,6 +33,71 @@ body,
 
 body {
   margin: 0;
+  font-family: var(--font-sans-crm);
+  color: #0f172a;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.crm-page-title {
+  font-size: var(--text-page-title);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.crm-page-subtitle {
+  font-size: var(--text-page-subtitle);
+  line-height: 1.6;
+  font-weight: 400;
+  color: #475569;
+}
+
+.crm-section-title {
+  font-size: var(--text-section-title);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.crm-card-title {
+  font-size: var(--text-card-title);
+  line-height: 1.35;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.crm-label-text {
+  font-size: var(--text-label);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.crm-body-text {
+  font-size: var(--text-body);
+  line-height: 1.6;
+  font-weight: 400;
+  color: #334155;
+}
+
+.crm-body-text-sm {
+  font-size: var(--text-body-sm);
+  line-height: 1.55;
+  font-weight: 400;
+  color: #475569;
 }
 
 button,
