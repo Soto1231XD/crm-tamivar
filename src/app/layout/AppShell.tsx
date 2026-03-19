@@ -15,6 +15,7 @@ import rolIcon from "@/assets/images/Rol.png";
 import logsIcon from "@/assets/images/Logs.png";
 import MenuIcon from "@/assets/images/Menu.png";
 import LogoutIcon from "@/assets/images/Logout.png";
+import logoBlanco from "@/assets/images/logo_blanco.png";
 
 const MODULE_ICONS: Record<ModuleKey, string> = {
   dashboard: dashboardIcon,
@@ -88,11 +89,18 @@ export function AppShell() {
           </div>
 
           {!isSidebarCollapsed && (
-            <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-300">
-                CRM TAMIVAR
-              </p>
-              <h2 className="text-lg font-bold text-white">Panel</h2>
+            <div className="mt-4 flex items-center gap-3">
+              <img
+                src={logoBlanco}
+                alt="Logo Tamivar"
+                className="h-12 w-auto shrink-0"
+              />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-300">
+                  CRM TAMIVAR
+                </p>
+                <h2 className="text-lg font-bold text-white">Panel</h2>
+              </div>
             </div>
           )}
 
