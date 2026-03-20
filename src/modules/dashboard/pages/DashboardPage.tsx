@@ -231,24 +231,60 @@ export function DashboardPage() {
     : false;
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-slate-700 bg-welcome-800 p-6 shadow-sm">
-        <h2 className="text-2xl font-bold text-white">{`Bienvenido, ${displayName}`}</h2>
-        <p className="mt-2 text-sm text-slate-200">
-          {primaryRole || "Sin rol asignado"}
-        </p>
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-slate-300/80 bg-[#E6ECF5] px-6 py-7 shadow-sm sm:px-8">
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+              Panel principal
+            </p>
+            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-[2rem]">
+              {`Bienvenido, ${displayName}`}
+            </h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+              Consulta el estado general del CRM, revisa actividad reciente y da seguimiento
+              a la operación desde un solo lugar.
+            </p>
+          </div>
+
+          <div className="inline-flex w-fit flex-col rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 shadow-sm backdrop-blur-sm">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Perfil actual
+            </span>
+            <span className="mt-2 text-sm font-semibold text-slate-900">
+              {primaryRole || "Sin rol asignado"}
+            </span>
+          </div>
+        </div>
       </section>
 
       {canViewDashboard ? (
-        <section className="space-y-3">
+        <section className="space-y-5">
           {summaryError ? (
-            <p className="text-sm text-red-600">{summaryError}</p>
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {summaryError}
+            </div>
           ) : null}
+
           <DashboardSummaryCards
             titles={dashboardCards}
             values={cardValues}
             isLoading={isLoadingSummary}
           />
+
+          <div className="flex items-center justify-between gap-3 px-1">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Seguimiento
+              </p>
+              <h3 className="mt-2 text-lg font-bold tracking-tight text-slate-950">
+                Actividad reciente
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Resumen visual de los movimientos más recientes del CRM.
+              </p>
+            </div>
+          </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {dashboardSections.map((sectionTitle) => (

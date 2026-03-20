@@ -1,25 +1,30 @@
 import { useState } from 'react';
-import type { LeadRecord } from '@/interfaces/lead.interface';
+import type { BlogRecord } from '@/interfaces/blog.interface';
 import { AppModal } from '@/components/ui/AppModal';
 
-type DeleteLeadConfirmModalProps = {
+type DeleteContentConfirmModalProps = {
   isOpen: boolean;
-  lead: LeadRecord | null;
+  blog: BlogRecord | null;
   onClose: () => void;
-  onConfirm: (leadId: number) => Promise<string | null>;
+  onConfirm: (blogId: number) => Promise<string | null>;
 };
 
-export function DeleteLeadConfirmModal({ isOpen, lead, onClose, onConfirm }: DeleteLeadConfirmModalProps) {
+export function DeleteContentConfirmModal({
+  isOpen,
+  blog,
+  onClose,
+  onConfirm,
+}: DeleteContentConfirmModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  if (!isOpen || !lead) return null;
-  const currentLead = lead;
+  if (!isOpen || !blog) return null;
+  const selectedBlog = blog;
 
   async function handleConfirm() {
     setSubmitError('');
     setIsSubmitting(true);
-    const error = await onConfirm(currentLead.id);
+    const error = await onConfirm(selectedBlog.id);
     setIsSubmitting(false);
 
     if (error) {
@@ -34,19 +39,19 @@ export function DeleteLeadConfirmModal({ isOpen, lead, onClose, onConfirm }: Del
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Eliminar registro"
-      subtitle="Esta acción quitara el registro del flujo comercial actual."
+      title="Eliminar articulo"
+      subtitle="Esta accion quitara el contenido del listado actual."
       maxWidthClassName="max-w-lg"
       scrollBody={false}
     >
       <div className="space-y-5">
         <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
           <p className="text-sm leading-6 text-slate-700">
-            Estas por eliminar el registro de{' '}
+            Estas por eliminar el articulo{' '}
             <span className="font-semibold text-slate-900">
-              {`${currentLead.nombres ?? ''} ${currentLead.apellidos ?? ''}`.trim() || 'este cliente'}
+              {selectedBlog.titulo?.trim() || 'Sin titulo'}
             </span>
-            . Esta acción no se puede deshacer desde esta vista.
+            . Esta accion no se puede deshacer desde esta vista.
           </p>
         </div>
 

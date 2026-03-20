@@ -6,6 +6,7 @@ import fondoLogin from "@/assets/images/Fondo_login.jpg";
 import fondoLogin1 from "@/assets/images/Fondo_login1.jpg";
 import fondoLogin2 from "@/assets/images/Fondo_login2.jpg";
 import fondoLogin3 from "@/assets/images/Fondo_login3.jpg";
+import logoCompleto from "@/assets/images/LOGO_COMPLETO.png";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
 
 const loginBackgrounds = [fondoLogin, fondoLogin1, fondoLogin2, fondoLogin3];
@@ -45,7 +46,6 @@ export function LoginPage() {
         setChallengeId(result.challengeId!);
         setInfo(result.message || "Código de verificación enviado.");
       } else if (result.status === "authenticated") {
-        // Accedemos al user desde el store después de setearse
         const user = useAuthStore.getState().user;
         navigate(getDefaultDashboardPath(user!.permisos), { replace: true });
       }
@@ -74,18 +74,18 @@ export function LoginPage() {
       }
     } catch (currentError) {
       console.error("Error en 2FA:", currentError);
-      
+
       setError(
-        currentError instanceof Error 
-          ? currentError.message 
-          : "Código inválido o expirado."
+        currentError instanceof Error
+          ? currentError.message
+          : "Código inválido o expirado.",
       );
     }
   };
 
   return (
-    <div className="grid h-screen w-full overflow-hidden lg:grid-cols-2">
-      <aside className="relative h-[40vh] lg:h-screen">
+    <div className="grid min-h-screen w-full bg-white lg:h-screen lg:grid-cols-2 lg:overflow-hidden">
+      <aside className="relative min-h-[30vh] sm:min-h-[34vh] lg:h-screen">
         {loginBackgrounds.map((imageSrc, index) => (
           <img
             key={imageSrc}
@@ -98,23 +98,33 @@ export function LoginPage() {
           />
         ))}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent" />
-        <div className="absolute bottom-0 left-0 p-5 sm:p-6 lg:p-8">
+        <div className="absolute inset-x-0 bottom-0 p-5 text-center sm:p-6 lg:left-0 lg:right-auto lg:text-left lg:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-brand-100/90">
             CRM TAMIVAR
           </p>
-          <h2 className="mt-2 max-w-md text-xl font-black leading-tight text-white sm:text-2xl lg:text-3xl">
+          <h2 className="mt-2 mx-auto max-w-md text-xl font-black leading-tight text-white sm:text-2xl lg:mx-0 lg:text-3xl">
             Plataforma central para operar equipos y ventas.
           </h2>
-          <p className="mt-2 max-w-md text-xs text-slate-200/90 sm:text-sm">
+          <p className="mt-2 mx-auto max-w-md text-xs text-slate-200/90 sm:text-sm lg:mx-0">
             Accede con tus credenciales y continúa con tu flujo de trabajo según
             tu rol.
           </p>
         </div>
       </aside>
 
-      <section className="relative flex h-[60vh] items-center justify-center overflow-hidden bg-white px-5 py-6 sm:px-7 sm:py-8 lg:h-screen lg:items-center lg:py-0">
+      <section className="relative flex min-h-[70vh] items-start justify-center overflow-hidden bg-white px-5 py-5 sm:px-7 sm:py-6 lg:h-screen lg:items-center lg:py-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(25,75,141,0.10),transparent_55%)]" />
-        <div className="relative w-full max-w-sm">
+        <div className="absolute inset-x-0 top-3 z-10 flex justify-center px-5 sm:top-4 sm:px-7 lg:top-8">
+          <div className="flex w-full max-w-sm justify-center">
+            <img
+              src={logoCompleto}
+              alt="Logo Tamivar Inmobiliaria"
+              className="h-14 w-auto sm:h-16 lg:h-20"
+            />
+          </div>
+        </div>
+
+        <div className="relative mt-16 w-full max-w-sm text-center sm:mt-18 lg:mt-0 lg:pt-12 lg:text-left">
           <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">
             Iniciar sesión
           </h1>
@@ -124,7 +134,7 @@ export function LoginPage() {
 
           {!challengeId ? (
             <form className="mt-6 space-y-4" onSubmit={handleLogin}>
-              <label className="block">
+              <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
                   Correo electrónico
                 </span>
@@ -137,7 +147,7 @@ export function LoginPage() {
                 />
               </label>
 
-              <label className="block">
+              <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
                   Contraseña
                 </span>
@@ -160,7 +170,7 @@ export function LoginPage() {
             </form>
           ) : (
             <form className="mt-6 space-y-4" onSubmit={handleVerifyTwoFa}>
-              <label className="block">
+              <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
                   Código 2FA
                 </span>

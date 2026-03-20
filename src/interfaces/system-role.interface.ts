@@ -18,3 +18,5 @@ export interface CreateSystemRolePayload {
   rol: string;
   permisosIds: number[];
 }
+
+export type UpdateSystemRolePayload = Partial<CreateSystemRolePayload>;

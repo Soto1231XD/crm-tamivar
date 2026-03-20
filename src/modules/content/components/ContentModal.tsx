@@ -1,11 +1,11 @@
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import type {
   BlogImageRecord,
   BlogRecord,
   CreateBlogPayload,
   UpdateBlogPayload,
 } from '@/interfaces/blog.interface';
-import cerrarIcon from '../../../assets/images/Cerrar.png';
+import { AppModal } from '@/components/ui/AppModal';
 import { ImageGridUploader } from '../../properties/components/ImageGridUploader';
 
 type ContentModalMode = 'create' | 'edit';
@@ -26,10 +26,7 @@ type ContentModalProps = {
   mode: ContentModalMode;
   blog?: BlogRecord | null;
   onClose: () => void;
-  onSubmit: (
-    payload: CreateBlogPayload | UpdateBlogPayload,
-    files: File[],
-  ) => Promise<string | null>;
+  onSubmit: (payload: CreateBlogPayload | UpdateBlogPayload, files: File[]) => Promise<string | null>;
 };
 
 const INITIAL_FORM: FormState = {
@@ -42,6 +39,76 @@ const INITIAL_FORM: FormState = {
   fechaPublico: '',
   imagenes: [],
 };
+
+const fieldClassName =
+  'w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10';
+
+function FieldLabel({ children, required = false }: { children: string; required?: boolean }) {
+  return (
+    <span className="text-sm font-medium text-slate-700">
+      {children}
+      {required ? <span className="ml-1 font-semibold text-red-600">*</span> : null}
+    </span>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  required = false,
+  type = 'text',
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  type?: string;
+  placeholder?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className={fieldClassName}
+      />
+    </label>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+  rows,
+  required = false,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows: number;
+  required?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <textarea
+        value={value}
+        rows={rows}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${fieldClassName} resize-none`}
+      />
+    </label>
+  );
+}
 
 export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentModalProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
@@ -58,8 +125,6 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
     setIsSubmitting(false);
   }, [isOpen, blog]);
 
-  if (!isOpen) return null;
-
   function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
   }
@@ -69,6 +134,7 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
       const newFiles = Array.from(event.target.files);
       setSelectedFiles((current) => [...current, ...newFiles]);
     }
+
     event.target.value = '';
   }
 
@@ -83,7 +149,7 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
     }));
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError('');
 
@@ -117,170 +183,104 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-3 sm:p-4">
-      <div className="mx-auto flex min-h-full w-full max-w-4xl items-start justify-center py-3 sm:py-6">
-        <div className="flex max-h-[88vh] w-full flex-col rounded-xl bg-white p-4 shadow-xl sm:p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900">
-              {mode === 'create' ? 'Crear articulo' : 'Editar articulo'}
-            </h3>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar modal"
-              title="Cerrar"
-              className="rounded-md p-1 hover:bg-slate-100"
-            >
-              <img src={cerrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-            </button>
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={mode === 'create' ? 'Crear articulo' : 'Editar articulo'}
+      subtitle={
+        mode === 'create'
+          ? 'Captura el contenido principal, su contexto editorial y las imágenes del articulo.'
+          : 'Actualiza el contenido publicado sin salir del flujo editorial.'
+      }
+      maxWidthClassName="max-w-4xl"
+      panelClassName="max-h-[88vh]"
+    >
+      <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-slate-600">
+        <span className="font-semibold text-red-600">*</span> Campo obligatorio
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Información editorial</p>
+            <p className="mt-1 text-sm text-slate-600">Define el enfoque del articulo y como se mostrara en la experiencia de lectura.</p>
           </div>
 
-          <p className="mb-4 text-sm text-slate-600">
-            <span className="font-semibold text-red-600">*</span> Campo obligatorio
-          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Titulo" required value={form.titulo} onChange={(value) => updateField('titulo', value)} />
+            <Field label="Subtitulo" required value={form.subtitulo} onChange={(value) => updateField('subtitulo', value)} />
+            <Field label="Resumen" value={form.resumen} onChange={(value) => updateField('resumen', value)} />
+            <Field
+              label="Etiquetas"
+              placeholder="Ej. mercado, lujo, inversion"
+              value={form.etiquetas}
+              onChange={(value) => updateField('etiquetas', value)}
+            />
+            <Field
+              label="Fecha de publicación"
+              type="datetime-local"
+              value={form.fechaPublico}
+              onChange={(value) => updateField('fechaPublico', value)}
+            />
 
-          <form onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-1">
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field
-                label="Titulo"
-                required
-                value={form.titulo}
-                onChange={(value) => updateField('titulo', value)}
-              />
-              <Field
-                label="Subtitulo"
-                required
-                value={form.subtitulo}
-                onChange={(value) => updateField('subtitulo', value)}
-              />
-              <Field
-                label="Resumen"
-                value={form.resumen}
-                onChange={(value) => updateField('resumen', value)}
-              />
-              <Field
-                label="Etiquetas"
-                placeholder="Ej. mercado, lujo, inversion"
-                value={form.etiquetas}
-                onChange={(value) => updateField('etiquetas', value)}
-              />
-              <Field
-                label="Fecha de publicación"
-                type="datetime-local"
-                value={form.fechaPublico}
-                onChange={(value) => updateField('fechaPublico', value)}
-              />
-              <label className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700">
+            <label className="flex flex-col gap-1.5">
+              <FieldLabel>Estado de publicación</FieldLabel>
+              <div className="flex min-h-[46px] items-center gap-3 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5">
                 <input
                   type="checkbox"
                   checked={form.publicado}
                   onChange={(event) => updateField('publicado', event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-700"
+                  className="h-4 w-4 rounded border-slate-300 text-[#312C85] focus:ring-[#312C85]"
                 />
-                <span>Publicado</span>
-              </label>
-            </div>
+                <span className="text-sm text-slate-700">{form.publicado ? 'Publicado' : 'Borrador'}</span>
+              </div>
+            </label>
+          </div>
+        </div>
 
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Contenido</p>
+            <p className="mt-1 text-sm text-slate-600">Escribe el cuerpo principal del articulo y organiza el soporte visual del contenido.</p>
+          </div>
+
+          <div className="space-y-4">
             <TextArea
               label="Contenido"
               required
               rows={8}
               value={form.contenido}
               onChange={(value) => updateField('contenido', value)}
+              placeholder="Desarrolla aquí el contenido del articulo."
             />
 
             <ImageGridUploader
-              label="Imágenes del artículo"
+              label="Imágenes del articulo"
               images={selectedFiles}
               existingImages={form.imagenes}
               onAddImages={handleAddImages}
               onRemoveImage={handleRemoveImage}
               onRemoveExistingImage={removeExistingImage}
             />
-
-            {submitError ? <p className="text-sm font-medium text-red-600">{submitError}</p> : null}
-
-            <div className="sticky bottom-0 flex items-center justify-center gap-2 border-t border-slate-200 bg-white pt-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar cambios'}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function Field({
-  label,
-  value,
-  onChange,
-  required = false,
-  type = 'text',
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  required?: boolean;
-  type?: string;
-  placeholder?: string;
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-sm text-slate-700">
-      <span>
-        {label}
-        {required ? <span className="ml-0.5 font-semibold text-red-600">*</span> : null}
-      </span>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
-      />
-    </label>
-  );
-}
+        {submitError ? <p className="text-sm font-medium text-red-600">{submitError}</p> : null}
 
-function TextArea({
-  label,
-  value,
-  onChange,
-  rows,
-  required = false,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  rows: number;
-  required?: boolean;
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-sm text-slate-700">
-      <span>
-        {label}
-        {required ? <span className="ml-0.5 font-semibold text-red-600">*</span> : null}
-      </span>
-      <textarea
-        value={value}
-        rows={rows}
-        onChange={(event) => onChange(event.target.value)}
-        className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
-      />
-    </label>
+        <div className="flex items-center justify-center gap-3 border-t border-slate-200 pt-4">
+          <button type="button" onClick={onClose} className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar cambios'}
+          </button>
+        </div>
+      </form>
+    </AppModal>
   );
 }
 
@@ -317,8 +317,10 @@ function parseTags(value: string): string[] {
 
 function toDateTimeLocalValue(value?: string | null): string {
   if (!value) return '';
+
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
+
   const offset = date.getTimezoneOffset();
   const localDate = new Date(date.getTime() - offset * 60_000);
   return localDate.toISOString().slice(0, 16);

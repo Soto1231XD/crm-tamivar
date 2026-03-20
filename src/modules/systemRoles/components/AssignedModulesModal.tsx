@@ -1,5 +1,5 @@
-import cerrarIcon from '../../../assets/images/Cerrar.png';
 import type { SystemRoleRecord } from '@/interfaces/system-role.interface';
+import { AppModal } from '@/components/ui/AppModal';
 
 type AssignedModulesModalProps = {
   isOpen: boolean;
@@ -13,25 +13,15 @@ export function AssignedModulesModal({ isOpen, role, onClose }: AssignedModulesM
   const modules = getRoleModules(role);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-3 sm:p-4">
-      <div className="mx-auto flex min-h-full w-full max-w-2xl items-start justify-center py-3 sm:py-6">
-        <div className="w-full rounded-xl bg-white p-4 shadow-xl sm:p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Modulos asignados</h3>
-              <p className="mt-1 text-sm text-slate-600">{role.rol}</p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar modal"
-              title="Cerrar"
-              className="rounded-md p-1 hover:bg-slate-100"
-            >
-              <img src={cerrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-            </button>
-          </div>
-
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Modulos asignados"
+      subtitle={role.rol}
+      maxWidthClassName="max-w-2xl"
+      scrollBody={false}
+    >
+      <>
           {modules.length === 0 ? (
             <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
               Este rol no tiene modulos asignados.
@@ -56,9 +46,8 @@ export function AssignedModulesModal({ isOpen, role, onClose }: AssignedModulesM
               ))}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+      </>
+    </AppModal>
   );
 }
 
