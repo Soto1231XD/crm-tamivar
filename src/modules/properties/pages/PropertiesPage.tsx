@@ -6,12 +6,17 @@ import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmM
 import descInfIcon from "../../../assets/images/DescInf.png";
 import agregarIcon from "../../../assets/images/Agregar.png";
 import desArcIcon from "../../../assets/images/DesArc.png";
-import verIcon from "@/assets/images/Ver.png"
+import verIcon from "@/assets/images/Ver.png";
 import { STATUS_OPTIONS, TYPE_OPTIONS } from "../utils/property-constants";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
-import { formatDireccion, getPropertyStatusStyles, formatCurrency } from "../utils/formatters";
+import {
+  formatDireccion,
+  getPropertyStatusStyles,
+  formatCurrency,
+} from "../utils/formatters";
+import { DownloadPdfButton } from "../utils/DownloadPdfButton";
 
 export function PropertiesPage() {
   const navigate = useNavigate();
@@ -26,9 +31,12 @@ export function PropertiesPage() {
   } = usePropertiesStore();
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("Todos los estados");
-  const [typeFilter, setTypeFilter] = useState<(typeof TYPE_OPTIONS)[number]>("Todos los tipos");
-  const [deletingProperty, setDeletingProperty] = useState<PropertyRecord | null>(null);
+  const [statusFilter, setStatusFilter] =
+    useState<(typeof STATUS_OPTIONS)[number]>("Todos los estados");
+  const [typeFilter, setTypeFilter] =
+    useState<(typeof TYPE_OPTIONS)[number]>("Todos los tipos");
+  const [deletingProperty, setDeletingProperty] =
+    useState<PropertyRecord | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
 
   // Evaluamos permisos específicos
@@ -41,73 +49,111 @@ export function PropertiesPage() {
   }, [fetchProperties]);
 
   // Configuración dinámica de las columnas de la tabla
-  const columns: ColumnDef<PropertyRecord>[] = useMemo(() => [
-    {
-      header: 'Propiedad',
-      render: (property) => <span className="font-medium text-slate-800">{property.titulo || 'Sin título'}</span>,
-    },
-    {
-      header: 'Tipo de inmueble',
-      accessorKey: 'tipo_inmueble',
-    },
-    {
-      header: 'Operación',
-      render: (property) => (
-        <span className="inline-flex items-center rounded-md bg-slate-100 p-2 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
-          {property.tipo_operacion}
-        </span>
-      ),
-    },
-    {
-      header: 'Dirección',
-      render: (property) => <span className="text-slate-700">{formatDireccion(property.direccion)}</span>,
-    },
-    {
-      header: 'Precio (MXN)',
-      render: (property) => <span className="font-semibold text-[#4F5EF8]">{formatCurrency(property.precio)}</span>,
-    },
-    {
-      header: 'Asesor',
-      render: (property) => (
-        <div className="flex items-center justify-center gap-2 text-slate-700">
-          <div className="h-6 w-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold uppercase overflow-hidden">
-            {property.creador?.foto_url ? (
-              <img src={property.creador.foto_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              `${property.creador?.nombres?.[0] || ''}${property.creador?.apellido_paterno?.[0] || ''}`
-            )}
-          </div>
-          <span>{`${property.creador?.nombres || ''} ${property.creador?.apellido_paterno || ''}`}</span>
-        </div>
-      ),
-    },
-    {
-      header: 'Estado',
-      render: (property) => (
-      <div className="relative inline-block w-[140px]">
-        <select
-          value={property.estatus}
-          onChange={(event) => handleStatusChange(property.id, event.target.value)}
-          disabled={updatingStatusId === property.id || !canEdit}
-          className="w-full appearance-none cursor-pointer rounded-full border-0 px-4 py-1.5 text-left text-xs font-semibold shadow-sm outline-none ring-1 ring-inset ring-slate-200 transition-all hover:ring-slate-300 focus:ring-2 focus:ring-[#312C85] disabled:cursor-not-allowed disabled:opacity-70"
-          style={getPropertyStatusStyles(property.estatus)}
-        >
-          {STATUS_OPTIONS.filter((option) => option !== 'Todos los estados').map((option) => (
-            <option key={option} value={option} className="bg-white text-slate-800 font-medium">
-              {option}
-            </option>
-          ))}
-        </select>
-
-        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-current opacity-70">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+  const columns: ColumnDef<PropertyRecord>[] = useMemo(
+    () => [
+      {
+        header: "Propiedad",
+        render: (property) => (
+          <span className="font-medium text-slate-800">
+            {property.titulo || "Sin título"}
           </span>
-      </div>
-      ),
-    },
-  ], [updatingStatusId, canEdit]);
+        ),
+      },
+      {
+        header: "Tipo de inmueble",
+        accessorKey: "tipo_inmueble",
+      },
+      {
+        header: "Operación",
+        render: (property) => (
+          <span className="inline-flex items-center rounded-md bg-slate-100 p-2 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
+            {property.tipo_operacion}
+          </span>
+        ),
+      },
+      {
+        header: "Dirección",
+        render: (property) => (
+          <span className="text-slate-700">
+            {formatDireccion(property.direccion)}
+          </span>
+        ),
+      },
+      {
+        header: "Precio (MXN)",
+        render: (property) => (
+          <span className="font-semibold text-[#4F5EF8]">
+            {formatCurrency(property.precio)}
+          </span>
+        ),
+      },
+      {
+        header: "Asesor",
+        render: (property) => (
+          <div className="flex items-center justify-center gap-2 text-slate-700">
+            <div className="h-6 w-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold uppercase overflow-hidden">
+              {property.creador?.foto_url ? (
+                <img
+                  src={property.creador.foto_url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                `${property.creador?.nombres?.[0] || ""}${property.creador?.apellido_paterno?.[0] || ""}`
+              )}
+            </div>
+            <span>{`${property.creador?.nombres || ""} ${property.creador?.apellido_paterno || ""}`}</span>
+          </div>
+        ),
+      },
+      {
+        header: "Estado",
+        render: (property) => (
+          <div className="relative inline-block w-[140px]">
+            <select
+              value={property.estatus}
+              onChange={(event) =>
+                handleStatusChange(property.id, event.target.value)
+              }
+              disabled={updatingStatusId === property.id || !canEdit}
+              className="w-full appearance-none cursor-pointer rounded-full border-0 px-4 py-1.5 text-left text-xs font-semibold shadow-sm outline-none ring-1 ring-inset ring-slate-200 transition-all hover:ring-slate-300 focus:ring-2 focus:ring-[#312C85] disabled:cursor-not-allowed disabled:opacity-70"
+              style={getPropertyStatusStyles(property.estatus)}
+            >
+              {STATUS_OPTIONS.filter(
+                (option) => option !== "Todos los estados",
+              ).map((option) => (
+                <option
+                  key={option}
+                  value={option}
+                  className="bg-white text-slate-800 font-medium"
+                >
+                  {option}
+                </option>
+              ))}
+            </select>
+
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-current opacity-70">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </span>
+          </div>
+        ),
+      },
+    ],
+    [updatingStatusId, canEdit],
+  );
 
   // Lógica de filtrado
   const filteredProperties = useMemo(() => {
@@ -141,13 +187,15 @@ export function PropertiesPage() {
 
   async function handleDelete(propertyId: number): Promise<string | null> {
     try {
-      await removeProperty(propertyId); 
+      await removeProperty(propertyId);
       setDeletingProperty(null);
       toast.success("La propiedad se eliminó con éxito.");
-      return null; 
+      return null;
     } catch (error) {
       toast.error("No fue posible eliminar la propiedad.");
-      return error instanceof Error ? error.message : 'No fue posible eliminar la propiedad.';
+      return error instanceof Error
+        ? error.message
+        : "No fue posible eliminar la propiedad.";
     }
   }
 
@@ -251,7 +299,9 @@ export function PropertiesPage() {
         emptyMessage="No se encontraron propiedades"
         canEdit={canEdit}
         canDelete={canDelete}
-        onEdit={(property) => navigate(`/modulos/propiedades/${property.id}/editar`)}
+        onEdit={(property) =>
+          navigate(`/modulos/propiedades/${property.id}/editar`)
+        }
         onDelete={(property) => openDeleteModal(property)}
         customActions={(property) => (
           <>
@@ -261,21 +311,29 @@ export function PropertiesPage() {
               aria-label="Ver detalles"
               title="Ver detalles"
               className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
-              onClick={() => console.log(`Vista de detalles pendiente para propiedad ID: ${property.id}`)}
+              onClick={() => navigate(`/modulos/propiedades/${property.id}`)}
             >
-              <img src={verIcon} alt="" className="h-5 w-5" aria-hidden="true" />
+              <img
+                src={verIcon}
+                alt=""
+                className="h-5 w-5"
+                aria-hidden="true"
+              />
             </button>
 
             {/* Botón Descargar */}
-            <button
-              type="button"
-              aria-label="Descargar"
-              title="Descargar"
-              className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
-              onClick={() => console.log(`Descarga pendiente para propiedad ID: ${property.id}`)}
+            <DownloadPdfButton
+              property={property}
+              className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center"
             >
-              <img src={descInfIcon} alt="" className="h-5 w-5" aria-hidden="true" />
-            </button>
+              {(loading) =>
+                loading ? (
+                  <div className="h-5 w-5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" />
+                ) : (
+                  <img src={descInfIcon} alt="Descargar" className="h-5 w-5" />
+                )
+              }
+            </DownloadPdfButton>
           </>
         )}
       />
