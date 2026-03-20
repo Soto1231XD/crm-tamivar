@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import cerrarIcon from '../../../assets/images/Cerrar.png';
+import { useEffect, useState, type FormEvent, type HTMLAttributes } from 'react';
 import type { CreateUserPayload, RoleOptionRecord, UpdateUserPayload, UserRecord } from '@/interfaces/user.interface';
+import { AppModal } from '@/components/ui/AppModal';
 
 type UserModalMode = 'create' | 'edit';
 
@@ -37,6 +37,53 @@ const INITIAL_FORM: FormState = {
   roles_ids: [],
 };
 
+const fieldClassName =
+  'w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10';
+
+function FieldLabel({ children, required = false }: { children: string; required?: boolean }) {
+  return (
+    <span className="text-sm font-medium text-slate-700">
+      {children}
+      {required ? <span className="ml-1 font-semibold text-red-600">*</span> : null}
+    </span>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  required = false,
+  type = 'text',
+  inputMode,
+  maxLength,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  type?: string;
+  inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
+  maxLength?: number;
+  placeholder?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <input
+        type={type}
+        value={value}
+        inputMode={inputMode}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className={fieldClassName}
+      />
+    </label>
+  );
+}
+
 export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: UserModalProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [submitError, setSubmitError] = useState('');
@@ -48,8 +95,6 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
     setSubmitError('');
     setIsSubmitting(false);
   }, [isOpen, user]);
-
-  if (!isOpen) return null;
 
   function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -64,7 +109,7 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
     }));
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError('');
 
@@ -109,161 +154,134 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-3 sm:p-4">
-      <div className="mx-auto flex min-h-full w-full max-w-3xl items-start justify-center py-3 sm:py-6">
-        <div className="flex max-h-[88vh] w-full flex-col rounded-xl bg-white p-4 shadow-xl sm:p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900">
-              {mode === 'create' ? 'Crear usuario' : 'Editar usuario'}
-            </h3>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar modal"
-              title="Cerrar"
-              className="rounded-md p-1 hover:bg-slate-100"
-            >
-              <img src={cerrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-            </button>
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={mode === 'create' ? 'Crear usuario' : 'Editar usuario'}
+      subtitle={
+        mode === 'create'
+          ? 'Captura la información principal, acceso y roles del usuario dentro del CRM.'
+          : 'Actualiza los datos del usuario y sus accesos sin salir de la vista actual.'
+      }
+      maxWidthClassName="max-w-3xl"
+      panelClassName="max-h-[88vh]"
+    >
+      <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-slate-600">
+        <span className="font-semibold text-red-600">*</span> Campo obligatorio
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Información del usuario</p>
+            <p className="mt-1 text-sm text-slate-600">Completa los datos personales y de acceso del usuario para dejarlo listo dentro del sistema.</p>
           </div>
 
-          <p className="mb-4 text-sm text-slate-600">
-            <span className="font-semibold text-red-600">*</span> Campo obligatorio
-          </p>
-
-          <form onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-1">
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field
-                label="Nombres"
-                required
-                value={form.nombres}
-                onChange={(value) => updateField('nombres', sanitizeName(value))}
-              />
-              <Field
-                label="Apellido paterno"
-                required
-                value={form.apellido_paterno}
-                onChange={(value) => updateField('apellido_paterno', sanitizeName(value))}
-              />
-              <Field
-                label="Apellido materno"
-                required
-                value={form.apellido_materno}
-                onChange={(value) => updateField('apellido_materno', sanitizeName(value))}
-              />
-              <Field
-                label="Teléfono"
-                required
-                value={form.telefono}
-                inputMode="numeric"
-                maxLength={10}
-                onChange={(value) => updateField('telefono', value.replace(/\D/g, '').slice(0, 10))}
-              />
-              <Field
-                label="Correo electrónico"
-                required
-                type="email"
-                value={form.correo_electronico}
-                onChange={(value) => updateField('correo_electronico', value)}
-              />
-              <Field
-                label={mode === 'create' ? 'Contraseña' : 'Contraseña nueva'}
-                required={mode === 'create'}
-                type="password"
-                value={form.contrasena}
-                onChange={(value) => updateField('contrasena', value)}
-              />
-              <Field
-                label="Foto URL"
-                value={form.foto_url}
-                onChange={(value) => updateField('foto_url', value)}
-              />
-              <Field
-                label="Folio certificación"
-                value={form.folio_certificacion}
-                onChange={(value) => updateField('folio_certificacion', value)}
-              />
-            </div>
-
-            <div>
-              <p className="text-sm text-slate-700">
-                Roles<span className="ml-0.5 font-semibold text-red-600">*</span>
-              </p>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                {roles.map((role) => (
-                  <label
-                    key={role.id}
-                    className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.roles_ids.includes(role.id)}
-                      onChange={() => toggleRole(role.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-700"
-                    />
-                    <span>{role.rol}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {submitError ? <p className="text-sm font-medium text-red-600">{submitError}</p> : null}
-
-            <div className="sticky bottom-0 flex items-center justify-center gap-2 border-t border-slate-200 bg-white pt-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar cambios'}
-              </button>
-            </div>
-          </form>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              label="Nombres"
+              required
+              value={form.nombres}
+              onChange={(value) => updateField('nombres', sanitizeName(value))}
+            />
+            <Field
+              label="Apellido paterno"
+              required
+              value={form.apellido_paterno}
+              onChange={(value) => updateField('apellido_paterno', sanitizeName(value))}
+            />
+            <Field
+              label="Apellido materno"
+              required
+              value={form.apellido_materno}
+              onChange={(value) => updateField('apellido_materno', sanitizeName(value))}
+            />
+            <Field
+              label="Teléfono"
+              required
+              value={form.telefono}
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="9981144249"
+              onChange={(value) => updateField('telefono', value.replace(/\D/g, '').slice(0, 10))}
+            />
+            <Field
+              label="Correo electrónico"
+              required
+              type="email"
+              value={form.correo_electronico}
+              placeholder="usuario@correo.com"
+              onChange={(value) => updateField('correo_electronico', value)}
+            />
+            <Field
+              label={mode === 'create' ? 'Contraseña' : 'Contraseña nueva'}
+              required={mode === 'create'}
+              type="password"
+              value={form.contrasena}
+              onChange={(value) => updateField('contrasena', value)}
+            />
+            <Field
+              label="Foto URL"
+              value={form.foto_url}
+              placeholder="https://..."
+              onChange={(value) => updateField('foto_url', value)}
+            />
+            <Field
+              label="Folio certificación"
+              value={form.folio_certificacion}
+              onChange={(value) => updateField('folio_certificacion', value)}
+            />
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function Field({
-  label,
-  value,
-  onChange,
-  required = false,
-  type = 'text',
-  inputMode,
-  maxLength,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  required?: boolean;
-  type?: string;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
-  maxLength?: number;
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-sm text-slate-700">
-      <span>
-        {label}
-        {required ? <span className="ml-0.5 font-semibold text-red-600">*</span> : null}
-      </span>
-      <input
-        type={type}
-        value={value}
-        inputMode={inputMode}
-        maxLength={maxLength}
-        onChange={(event) => onChange(event.target.value)}
-        className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
-      />
-    </label>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Roles y acceso</p>
+            <p className="mt-1 text-sm text-slate-600">Selecciona al menos un rol para definir los permisos y el alcance operativo del usuario.</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {roles.map((role) => {
+              const selected = form.roles_ids.includes(role.id);
+
+              return (
+                <label
+                  key={role.id}
+                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-sm transition ${
+                    selected
+                      ? 'border-[#312C85]/20 bg-indigo-50 text-slate-800'
+                      : 'border-slate-200 bg-white text-slate-700'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => toggleRole(role.id)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#312C85] focus:ring-[#312C85]"
+                  />
+                  <span className="font-medium">{role.rol}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {submitError ? <p className="text-sm font-medium text-red-600">{submitError}</p> : null}
+
+        <div className="flex items-center justify-center gap-3 border-t border-slate-200 pt-4">
+          <button type="button" onClick={onClose} className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar cambios'}
+          </button>
+        </div>
+      </form>
+    </AppModal>
   );
 }
 
@@ -304,12 +322,12 @@ function validateForm(form: FormState, mode: UserModalMode): string | null {
   if (!form.nombres.trim()) return 'Nombres es obligatorio.';
   if (!form.apellido_paterno.trim()) return 'Apellido paterno es obligatorio.';
   if (!form.apellido_materno.trim()) return 'Apellido materno es obligatorio.';
-  if (!/^\d{10}$/.test(form.telefono.trim())) return 'El telefono debe tener exactamente 10 digitos.';
-  if (!form.correo_electronico.trim()) return 'Correo electronico es obligatorio.';
-  if (!/\S+@\S+\.\S+/.test(form.correo_electronico.trim())) return 'Correo electronico no valido.';
-  if (mode === 'create' && form.contrasena.trim().length < 8) return 'La contrasena debe tener al menos 8 caracteres.';
+  if (!/^\d{10}$/.test(form.telefono.trim())) return 'El teléfono debe tener exactamente 10 dígitos.';
+  if (!form.correo_electronico.trim()) return 'Correo electrónico es obligatorio.';
+  if (!/\S+@\S+\.\S+/.test(form.correo_electronico.trim())) return 'Correo electrónico no valido.';
+  if (mode === 'create' && form.contrasena.trim().length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
   if (mode === 'edit' && form.contrasena.trim() && form.contrasena.trim().length < 8) {
-    return 'La contrasena debe tener al menos 8 caracteres.';
+    return 'La contraseña debe tener al menos 8 caracteres.';
   }
   if (form.roles_ids.length === 0) return 'Debes seleccionar al menos un rol.';
 

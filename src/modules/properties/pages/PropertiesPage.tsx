@@ -2,28 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import type { PropertyRecord } from "@/interfaces/property.interface";
-import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmModal";
-import descInfIcon from "../../../assets/images/DescInf.png";
-import agregarIcon from "../../../assets/images/Agregar.png";
-import desArcIcon from "../../../assets/images/DesArc.png";
-import verIcon from "@/assets/images/Ver.png"
-import { STATUS_OPTIONS, TYPE_OPTIONS } from "../utils/property-constants";
-import { usePropertiesStore } from "../store/usePropertiesStore";
-import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
-import { formatDireccion, getPropertyStatusStyles, formatCurrency } from "../utils/formatters";
+import { FilterCard, FilterSearchInput, FilterSelect } from "@/components/ui/AppFilters";
+import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import verIcon from "@/assets/images/Ver.png";
+import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmModal";
+import { usePropertiesStore } from "../store/usePropertiesStore";
+import { STATUS_OPTIONS, TYPE_OPTIONS } from "../utils/property-constants";
+import { formatDireccion, formatCurrency, getPropertyStatusStyles } from "../utils/formatters";
+import agregarIcon from "../../../assets/images/Agregar.png";
+import descInfIcon from "../../../assets/images/DescInf.png";
+import desArcIcon from "../../../assets/images/DesArc.png";
 
 export function PropertiesPage() {
   const navigate = useNavigate();
   const { can } = useHasPermission();
 
-  const {
-    properties,
-    isLoading,
-    fetchProperties,
-    removeProperty,
-    editProperty,
-  } = usePropertiesStore();
+  const { properties, isLoading, fetchProperties, removeProperty, editProperty } = usePropertiesStore();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("Todos los estados");
@@ -31,7 +26,6 @@ export function PropertiesPage() {
   const [deletingProperty, setDeletingProperty] = useState<PropertyRecord | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
 
-  // Evaluamos permisos específicos
   const canEdit = can("propiedades", "actualizar");
   const canCreate = can("propiedades", "crear");
   const canDelete = can("propiedades", "eliminar");
@@ -40,92 +34,114 @@ export function PropertiesPage() {
     fetchProperties();
   }, [fetchProperties]);
 
-  // Configuración dinámica de las columnas de la tabla
-  const columns: ColumnDef<PropertyRecord>[] = useMemo(() => [
-    {
-      header: 'Propiedad',
-      render: (property) => <span className="font-medium text-slate-800">{property.titulo || 'Sin título'}</span>,
-    },
-    {
-      header: 'Tipo de inmueble',
-      accessorKey: 'tipo_inmueble',
-    },
-    {
-      header: 'Operación',
-      render: (property) => (
-        <span className="inline-flex items-center rounded-md bg-slate-100 p-2 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
-          {property.tipo_operacion}
-        </span>
-      ),
-    },
-    {
-      header: 'Dirección',
-      render: (property) => <span className="text-slate-700">{formatDireccion(property.direccion)}</span>,
-    },
-    {
-      header: 'Precio (MXN)',
-      render: (property) => <span className="font-semibold text-[#4F5EF8]">{formatCurrency(property.precio)}</span>,
-    },
-    {
-      header: 'Asesor',
-      render: (property) => (
-        <div className="flex items-center justify-center gap-2 text-slate-700">
-          <div className="h-6 w-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold uppercase overflow-hidden">
-            {property.creador?.foto_url ? (
-              <img src={property.creador.foto_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              `${property.creador?.nombres?.[0] || ''}${property.creador?.apellido_paterno?.[0] || ''}`
-            )}
+  const columns: ColumnDef<PropertyRecord>[] = useMemo(
+    () => [
+      {
+        header: "Propiedad",
+        render: (property) => (
+          <div className="min-w-[220px]">
+            <p className="font-semibold text-slate-900">{property.titulo || "Sin titulo"}</p>
+            <p className="mt-1 text-xs text-slate-500">{property.tipo_operacion}</p>
           </div>
-          <span>{`${property.creador?.nombres || ''} ${property.creador?.apellido_paterno || ''}`}</span>
-        </div>
-      ),
-    },
-    {
-      header: 'Estado',
-      render: (property) => (
-      <div className="relative inline-block w-[140px]">
-        <select
-          value={property.estatus}
-          onChange={(event) => handleStatusChange(property.id, event.target.value)}
-          disabled={updatingStatusId === property.id || !canEdit}
-          className="w-full appearance-none cursor-pointer rounded-full border-0 px-4 py-1.5 text-left text-xs font-semibold shadow-sm outline-none ring-1 ring-inset ring-slate-200 transition-all hover:ring-slate-300 focus:ring-2 focus:ring-[#312C85] disabled:cursor-not-allowed disabled:opacity-70"
-          style={getPropertyStatusStyles(property.estatus)}
-        >
-          {STATUS_OPTIONS.filter((option) => option !== 'Todos los estados').map((option) => (
-            <option key={option} value={option} className="bg-white text-slate-800 font-medium">
-              {option}
-            </option>
-          ))}
-        </select>
-
-        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-current opacity-70">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+        ),
+      },
+      {
+        header: "Tipo de inmueble",
+        render: (property) => (
+          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+            {property.tipo_inmueble}
           </span>
-      </div>
-      ),
-    },
-  ], [updatingStatusId, canEdit]);
+        ),
+      },
+      {
+        header: "Operación",
+        render: (property) => (
+          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+            {property.tipo_operacion}
+          </span>
+        ),
+      },
+      {
+        header: "Dirección",
+        headerClassName: "w-[320px]",
+        cellClassName: "w-[320px] whitespace-normal align-top",
+        render: (property) => (
+          <div className="min-w-[300px] max-w-[320px] break-words text-sm leading-6 text-slate-600">
+            {formatDireccion(property.direccion)}
+          </div>
+        ),
+      },
+      {
+        header: "Precio (MXN)",
+        headerClassName: "w-[160px]",
+        cellClassName: "w-[160px] align-top",
+        render: (property) => (
+          <span className="whitespace-nowrap font-semibold text-[#4F5EF8]">{formatCurrency(property.precio)}</span>
+        ),
+      },
+      {
+        header: "Asesor",
+        render: (property) => (
+          <div className="flex min-w-[180px] items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-xs font-bold uppercase text-brand-700">
+              {property.creador?.foto_url ? (
+                <img src={property.creador.foto_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                `${property.creador?.nombres?.[0] || ""}${property.creador?.apellido_paterno?.[0] || ""}`
+              )}
+            </div>
+            <div>
+              <p className="font-medium text-slate-800">
+                {`${property.creador?.nombres || ""} ${property.creador?.apellido_paterno || ""}`.trim() || "Sin asesor"}
+              </p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        header: "Estado",
+        render: (property) => (
+          <div className="relative inline-block w-[145px]">
+            <select
+              value={property.estatus}
+              onChange={(event) => handleStatusChange(property.id, event.target.value)}
+              disabled={updatingStatusId === property.id || !canEdit}
+              className="w-full appearance-none rounded-full border-0 px-4 py-1.5 text-left text-xs font-semibold shadow-sm outline-none ring-1 ring-inset ring-slate-200 transition-all hover:ring-slate-300 focus:ring-2 focus:ring-[#312C85] disabled:cursor-not-allowed disabled:opacity-70"
+              style={getPropertyStatusStyles(property.estatus)}
+            >
+              {STATUS_OPTIONS.filter((option) => option !== "Todos los estados").map((option) => (
+                <option key={option} value={option} className="bg-white font-medium text-slate-800">
+                  {option}
+                </option>
+              ))}
+            </select>
 
-  // Lógica de filtrado
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-current opacity-70">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+          </div>
+        ),
+      },
+    ],
+    [updatingStatusId, canEdit],
+  );
+
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
       const matchesStatus =
-        statusFilter === "Todos los estados" ||
-        property.estatus.toLowerCase() === statusFilter.toLowerCase();
+        statusFilter === "Todos los estados" || property.estatus.toLowerCase() === statusFilter.toLowerCase();
 
       const matchesType =
-        typeFilter === "Todos los tipos" ||
-        property.tipo_inmueble.toLowerCase() === typeFilter.toLowerCase();
+        typeFilter === "Todos los tipos" || property.tipo_inmueble.toLowerCase() === typeFilter.toLowerCase();
 
       const query = search.trim().toLowerCase();
       const matchesSearch =
         query === "" ||
         property.titulo.toLowerCase().includes(query) ||
         property.direccion.calle.toLowerCase().includes(query) ||
-        property.creador.nombres.toLowerCase().includes(query); // Filtrar por asesor
+        property.creador.nombres.toLowerCase().includes(query);
 
       return matchesStatus && matchesType && matchesSearch;
     });
@@ -141,13 +157,13 @@ export function PropertiesPage() {
 
   async function handleDelete(propertyId: number): Promise<string | null> {
     try {
-      await removeProperty(propertyId); 
+      await removeProperty(propertyId);
       setDeletingProperty(null);
-      toast.success("La propiedad se eliminó con éxito.");
-      return null; 
+      toast.success("La propiedad se elimino con exito.");
+      return null;
     } catch (error) {
       toast.error("No fue posible eliminar la propiedad.");
-      return error instanceof Error ? error.message : 'No fue posible eliminar la propiedad.';
+      return error instanceof Error ? error.message : "No fue posible eliminar la propiedad.";
     }
   }
 
@@ -155,7 +171,7 @@ export function PropertiesPage() {
     setUpdatingStatusId(id);
     try {
       await editProperty(id, { estatus: nextStatus });
-      toast.success(`El estado de la propiedad cambió a ${nextStatus}.`);
+      toast.success(`El estado de la propiedad cambio a ${nextStatus}.`);
     } catch {
       toast.error("No fue posible actualizar el estado de la propiedad.");
     } finally {
@@ -164,125 +180,97 @@ export function PropertiesPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Propiedades</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Gestiona el catálogo de propiedades
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Catalogo inmobiliario</p>
+          <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-[2rem]">Propiedades</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Gestiona el catalogo de propiedades, revisa su estado y encuentra inmuebles mas rapido con filtros claros.
           </p>
         </div>
+
         <button
           type="button"
           disabled={!canCreate}
           onClick={() => navigate("/modulos/propiedades/nuevo")}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <img
-            src={agregarIcon}
-            alt=""
-            className="h-6 w-6 shrink-0"
-            aria-hidden="true"
-          />
+          <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
           <span>Nueva propiedad</span>
         </button>
       </header>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Filtros
-            </p>
-            <p className="mt-1 text-sm text-slate-600">
-              Busca propiedades por título y combina los filtros para ubicar resultados más rápido.
-            </p>
-          </div>
-
-          <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
-          <input
+      <FilterCard description="Busca propiedades por titulo y combina los filtros para ubicar resultados mas rapido.">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_auto]">
+          <FilterSearchInput
             type="text"
-            placeholder="Buscar propiedades"
+            placeholder="Buscar por titulo, calle o asesor"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
           />
 
-          <select
+          <FilterSelect
             value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(
-                event.target.value as (typeof STATUS_OPTIONS)[number],
-              )
-            }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+            onChange={(event) => setStatusFilter(event.target.value as (typeof STATUS_OPTIONS)[number])}
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
             ))}
-          </select>
+          </FilterSelect>
 
-          <select
+          <FilterSelect
             value={typeFilter}
-            onChange={(event) =>
-              setTypeFilter(event.target.value as (typeof TYPE_OPTIONS)[number])
-            }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+            onChange={(event) => setTypeFilter(event.target.value as (typeof TYPE_OPTIONS)[number])}
           >
             {TYPE_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
             ))}
-          </select>
+          </FilterSelect>
 
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-lg bg-[#16A34A] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d]"
           >
-            <img
-              src={desArcIcon}
-              alt=""
-              className="h-6 w-6 shrink-0"
-              aria-hidden="true"
-            />
+            <img src={desArcIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
             <span>Descargar</span>
           </button>
         </div>
-        </div>
-      </section>
+      </FilterCard>
 
-      {/* Tabla */}
       <BaseTable
         data={filteredProperties}
         columns={columns}
         isLoading={isLoading}
         emptyMessage="No se encontraron propiedades"
+        wrapperClassName="rounded-2xl"
+        tableClassName="min-w-full text-left"
+        actionsClassName="mx-auto flex w-max items-center justify-center gap-2"
         canEdit={canEdit}
         canDelete={canDelete}
         onEdit={(property) => navigate(`/modulos/propiedades/${property.id}/editar`)}
         onDelete={(property) => openDeleteModal(property)}
         customActions={(property) => (
           <>
-            {/* Botón Ver Detalles */}
             <button
               type="button"
               aria-label="Ver detalles"
               title="Ver detalles"
-              className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
+              className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50"
               onClick={() => console.log(`Vista de detalles pendiente para propiedad ID: ${property.id}`)}
             >
               <img src={verIcon} alt="" className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            {/* Botón Descargar */}
             <button
               type="button"
               aria-label="Descargar"
               title="Descargar"
-              className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
+              className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50"
               onClick={() => console.log(`Descarga pendiente para propiedad ID: ${property.id}`)}
             >
               <img src={descInfIcon} alt="" className="h-5 w-5" aria-hidden="true" />

@@ -6,12 +6,14 @@ import type {
   UpdateBlogPayload,
 } from "@/interfaces/blog.interface";
 import toast from "react-hot-toast";
+import { FilterCard, FilterSearchInput, FilterSelect } from "@/components/ui/AppFilters";
 import agregarIcon from "../../../assets/images/Agregar.png";
 import borrarIcon from "../../../assets/images/Borrar.png";
 import editarDosIcon from "../../../assets/images/editar2.png";
 import subirIcon from "../../../assets/images/subir1.png";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { ContentModal } from "../components/ContentModal";
+import { DeleteContentConfirmModal } from "../components/DeleteContentConfirmModal";
 import { useContentStore } from "../store/useContentStore";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -31,6 +33,7 @@ export function ContentPage() {
   const [statusFilter, setStatusFilter] = useState(ALL_CONTENT_STATES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<BlogRecord | null>(null);
+  const [deletingBlog, setDeletingBlog] = useState<BlogRecord | null>(null);
 
   useEffect(() => {
     void fetchBlogs();
@@ -55,7 +58,7 @@ export function ContentPage() {
         <div>
           <h2 className="text-2xl font-black tracking-tight text-slate-900">Contenido</h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Gestiona blogs y articulos del sitio web
+            Gestiona blogs y artículos del sitio web
           </p>
         </div>
         <button
@@ -74,40 +77,24 @@ export function ContentPage() {
         </button>
       </header>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Filtros
-            </p>
-            <p className="mt-1 text-sm text-slate-600">
-              Busca artículos por título y filtra por estado de publicación.
-            </p>
-          </div>
+      <FilterCard description="Busca artículos por titulo y filtra por estado de publicación.">
+        <div className="grid gap-3 md:grid-cols-2 lg:max-w-[540px]">
+          <FilterSearchInput
+            type="text"
+            placeholder="Buscar por titulo"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
 
-          <div className="grid gap-3 md:grid-cols-2 lg:min-w-[540px]">
-            <input
-              type="text"
-              placeholder="Buscar por titulo"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
-            />
-
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
-            >
-              {[ALL_CONTENT_STATES, "Publicado", "Borrador"].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            {[ALL_CONTENT_STATES, "Publicado", "Borrador"].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </FilterSelect>
         </div>
-      </section>
+      </FilterCard>
 
       <section>
         {isLoading ? (
@@ -117,7 +104,7 @@ export function ContentPage() {
         ) : filteredItems.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
             <p className="font-semibold text-slate-700">Sin resultados</p>
-            <p className="mt-1">No se encontraron articulos</p>
+            <p className="mt-1">No se encontraron artículos</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -198,7 +185,7 @@ export function ContentPage() {
                     {canDelete && (
                       <button
                         type="button"
-                        onClick={() => handleDeleteBlog(item)}
+                        onClick={() => setDeletingBlog(item)}
                         className="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition hover:bg-orange-100"
                         style={{ backgroundColor: "#FFEDD4" }}
                       >
@@ -241,6 +228,14 @@ export function ContentPage() {
                 )
               : Promise.resolve("Articulo no valido.")
           }
+        />
+      )}
+      {canDelete && (
+        <DeleteContentConfirmModal
+          isOpen={Boolean(deletingBlog)}
+          blog={deletingBlog}
+          onClose={() => setDeletingBlog(null)}
+          onConfirm={handleDeleteBlog}
         />
       )}
     </div>
@@ -294,17 +289,17 @@ export function ContentPage() {
     }
   }
 
-  async function handleDeleteBlog(blog: BlogRecord) {
-    const confirmed = window.confirm(
-      `Se eliminara el articulo "${blog.titulo}".`,
-    );
-    if (!confirmed) return;
+  async function handleDeleteBlog(blogId: number): Promise<string | null> {
+    const targetBlog = blogs.find((item) => item.id === blogId) ?? deletingBlog;
 
     try {
-      await removeBlog(blog.id);
-      toast.success(`El artículo "${blog.titulo}" se eliminó con éxito.`);
+      await removeBlog(blogId);
+      setDeletingBlog(null);
+      toast.success(`El articulo "${targetBlog?.titulo ?? 'seleccionado'}" se elimino con exito.`);
+      return null;
     } catch {
-      toast.error("No fue posible eliminar el artículo.");
+      toast.error("No fue posible eliminar el articulo.");
+      return "No fue posible eliminar el articulo.";
     }
   }
 }

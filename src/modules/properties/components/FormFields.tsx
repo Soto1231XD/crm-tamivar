@@ -8,35 +8,25 @@ export function LabelText({
   required?: boolean;
 }) {
   return (
-    <span>
+    <span className="text-sm font-semibold text-slate-700">
       {label}
-      {required ? (
-        <span className="ml-0.5 font-semibold text-red-600">*</span>
-      ) : null}
+      {required ? <span className="ml-1 font-semibold text-red-600">*</span> : null}
     </span>
   );
 }
 
-// Field Input
+const baseFieldClassName =
+  "w-full rounded-xl border bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#312C85]/10";
+
 type FieldInputProps = {
   label: string;
   name: string;
   value: string;
   onChange: (
-    event: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => void;
   type?: string;
-  inputMode?:
-    | "text"
-    | "decimal"
-    | "numeric"
-    | "email"
-    | "search"
-    | "tel"
-    | "url"
-    | "none";
+  inputMode?: "text" | "decimal" | "numeric" | "email" | "search" | "tel" | "url" | "none";
   required?: boolean;
   min?: string;
   step?: string;
@@ -55,12 +45,10 @@ export function FieldInput({
   min,
   step,
   className,
-  error
+  error,
 }: FieldInputProps) {
   return (
-    <label
-      className={`flex flex-col gap-1 text-sm text-slate-700 ${className ?? ""}`}
-    >
+    <label className={`flex flex-col gap-1.5 ${className ?? ""}`}>
       <LabelText label={label} required={required} />
       <input
         name={name}
@@ -71,25 +59,23 @@ export function FieldInput({
         required={required}
         min={min}
         step={step}
-        className={`rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
-          error ? 'border-red-500 ring-red-500 focus:ring-1' : 'border-slate-300 ring-brand-700 focus:ring'
+        className={`${baseFieldClassName} ${
+          error
+            ? "border-red-500 focus:border-red-500"
+            : "border-slate-300 focus:border-[#312C85]"
         }`}
       />
-      {/* Mostramos el error si existe */}
-      {error && <span className="text-xs font-medium text-red-500">{error}</span>}
+      {error ? <span className="text-xs font-medium text-red-500">{error}</span> : null}
     </label>
   );
 }
 
-// Field Select
 type FieldSelectProps = {
   label: string;
   name: string;
   value: string;
   onChange: (
-    event: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => void;
   options: readonly string[];
   required?: boolean;
@@ -105,12 +91,10 @@ export function FieldSelect({
   options,
   required,
   className,
-  error
+  error,
 }: FieldSelectProps) {
   return (
-    <label
-      className={`flex flex-col gap-1 text-sm text-slate-700 ${className ?? ""}`}
-    >
+    <label className={`flex flex-col gap-1.5 ${className ?? ""}`}>
       <LabelText label={label} required={required} />
       <div className="relative">
         <select
@@ -118,8 +102,10 @@ export function FieldSelect({
           value={value}
           onChange={onChange}
           required={required}
-          className={`w-full appearance-none rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
-            error ? 'border-red-500 ring-red-500 focus:ring-1' : 'border-slate-300 ring-brand-700 focus:ring'
+          className={`${baseFieldClassName} appearance-none pr-10 ${
+            error
+              ? "border-red-500 focus:border-red-500"
+              : "border-slate-300 focus:border-[#312C85]"
           }`}
         >
           {options.map((option) => (
@@ -135,8 +121,7 @@ export function FieldSelect({
           </svg>
         </span>
       </div>
-
-      {error && <span className="text-xs font-medium text-red-500">{error}</span>}
+      {error ? <span className="text-xs font-medium text-red-500">{error}</span> : null}
     </label>
   );
 }
@@ -146,9 +131,7 @@ type FieldTextareaProps = {
   name: string;
   value: string;
   onChange: (
-    event: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => void;
   className?: string;
 };
@@ -161,15 +144,13 @@ export function FieldTextarea({
   className,
 }: FieldTextareaProps) {
   return (
-    <label
-      className={`flex flex-col gap-1 text-sm text-slate-700 ${className ?? ""}`}
-    >
+    <label className={`flex flex-col gap-1.5 ${className ?? ""}`}>
       <LabelText label={label} />
       <textarea
         name={name}
         value={value}
         onChange={onChange}
-        className="min-h-24 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+        className={`${baseFieldClassName} min-h-28 resize-y border-slate-300 focus:border-[#312C85]`}
       />
     </label>
   );
@@ -180,9 +161,7 @@ type ToggleProps = {
   label: string;
   checked: boolean;
   onChange: (
-    event: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => void;
   className?: string;
 };
@@ -196,15 +175,31 @@ export function Toggle({
 }: ToggleProps) {
   return (
     <label
-      className={`flex items-center gap-2 text-sm text-slate-700 ${className ?? ""}`}
+      className={`flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 ${className ?? ""}`}
     >
+      <span
+        className={`relative flex h-5 w-5 items-center justify-center rounded-md border transition ${
+          checked
+            ? "border-[#312C85] bg-[#312C85] text-white"
+            : "border-slate-300 bg-white text-transparent"
+        }`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fillRule="evenodd"
+            d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.415 0L3.296 9.217a1 1 0 011.414-1.414l4.036 4.035 6.543-6.547a1 1 0 011.415 0z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </span>
       <input
         type="checkbox"
         name={name}
         checked={checked}
         onChange={onChange}
+        className="sr-only"
       />
-      {label}
+      <span className="font-medium">{label}</span>
     </label>
   );
 }
@@ -226,22 +221,22 @@ export function PaymentMultiSelect({
   onToggle,
   className,
   required,
-  error
+  error,
 }: PaymentMultiSelectProps) {
   return (
-    <div
-      className={`flex flex-col gap-1 text-sm text-slate-700 ${className ?? ""}`}
-    >
+    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
       <LabelText label={label} required={required} />
       <details className="group relative">
-        <summary className={`list-none rounded-lg border px-3 py-2 text-sm outline-none cursor-pointer ${
-          error ? 'border-red-500 ring-red-500 focus:ring-1' : 'border-slate-300 ring-brand-700 focus:ring'
-        }`}>
+        <summary
+          className={`${baseFieldClassName} list-none cursor-pointer ${
+            error
+              ? "border-red-500 focus:border-red-500"
+              : "border-slate-300 focus:border-[#312C85]"
+          }`}
+        >
           <div className="flex items-center justify-between gap-3">
             <span className="truncate">
-              {selectedValues.length > 0
-                ? selectedValues.join(", ")
-                : "Selecciona uno o más tipos de pago"}
+              {selectedValues.length > 0 ? selectedValues.join(", ") : "Selecciona uno o mas tipos de pago"}
             </span>
             <span className="text-slate-500 transition-transform duration-200 group-open:rotate-180">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -250,17 +245,18 @@ export function PaymentMultiSelect({
             </span>
           </div>
         </summary>
-        <div className="absolute z-10 mt-2 w-full rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
-          <div className="space-y-2">
+        <div className="absolute z-10 mt-2 w-full rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+          <div className="grid gap-2 sm:grid-cols-2">
             {options.map((option) => (
               <label
                 key={option}
-                className="flex items-center gap-2 text-sm text-slate-700"
+                className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-50"
               >
                 <input
                   type="checkbox"
                   checked={selectedValues.includes(option)}
                   onChange={() => onToggle(option)}
+                  className="rounded border-slate-300 text-[#312C85] focus:ring-[#312C85]"
                 />
                 {option}
               </label>
@@ -268,7 +264,7 @@ export function PaymentMultiSelect({
           </div>
         </div>
       </details>
-      {error && <span className="text-xs font-medium text-red-500">{error}</span>}
+      {error ? <span className="text-xs font-medium text-red-500">{error}</span> : null}
     </div>
   );
 }

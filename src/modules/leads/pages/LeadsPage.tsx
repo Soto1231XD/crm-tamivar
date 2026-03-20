@@ -1,17 +1,16 @@
 import agregarIcon from '../../../assets/images/Agregar.png';
+import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import { TablePagination } from '../../../shared/components/TablePagination';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
 import { EditLeadModal } from '../components/EditLeadModal';
 import { LeadFilters } from '../components/LeadFilters';
 import { LeadsTable } from '../components/LeadsTable';
-import { PAGE_SIZE } from '../utils/leads.constants';
 import { useLeadsPageState } from '../hooks/useLeadsPageState';
-import { useAuthStore } from '@/shared/auth/useAuthStore';
-import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
+import { PAGE_SIZE } from '../utils/leads.constants';
 
 export function LeadsPage() {
-  // Extraemos usuario de Zustand y la función can del Hook
   const user = useAuthStore((state) => state.user);
   const { can } = useHasPermission();
 
@@ -61,17 +60,23 @@ export function LeadsPage() {
   });
 
   return (
-    <div className="min-w-0 space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Registros</h2>
-          <p className="mt-1 text-sm text-slate-600">Gestiona todos los registros</p>
+    <div className="min-w-0 space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Seguimiento comercial
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-[2rem]">Registros</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Administra el flujo comercial, revisa estados y da seguimiento puntual a cada prospecto desde un solo lugar.
+          </p>
         </div>
+
         <button
           type="button"
           disabled={!canCreate}
           onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
           <span>Nuevo registro</span>
@@ -95,7 +100,7 @@ export function LeadsPage() {
         onDownload={handleDownloadFilteredLeads}
       />
 
-      <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <section className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <LeadsTable
           leads={paginatedLeads}
           isLoading={isLoading}

@@ -1,9 +1,7 @@
 export const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
-  contactado: { backgroundColor: '#DBEAFE', color: '#1480F0' },
   'en seguimiento': { backgroundColor: '#F3E8FF', color: '#C455DB' },
   cancelado: { backgroundColor: '#FEF3C7', color: '#CA5874' },
   'cita agendada': { backgroundColor: '#CD8774', color: '#2F0905' },
-  'en espera': { backgroundColor: '#DBFCE7', color: '#4D8236' },
   'en proceso': { backgroundColor: '#C455DB', color: '#F3E8FF' },
   cerrado: { backgroundColor: '#C3B28A', color: '#050505' },
 };
@@ -19,11 +17,9 @@ export const ALL_PRIORITIES = 'Todas las prioridades';
 export const ALL_PROPERTIES = 'Todas las propiedades';
 
 export const LEAD_STATUS_OPTIONS = [
-  'Contactado',
   'En seguimiento',
   'Cancelado',
   'Cita agendada',
-  'En espera',
   'En proceso',
   'Cerrado',
 ] as const;

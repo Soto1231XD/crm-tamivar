@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CreateUserPayload, UpdateUserPayload, UserRecord, UserRoleRecord } from '@/interfaces/user.interface';
 import toast from 'react-hot-toast';
+import { FilterCard, FilterSearchInput, FilterSelect } from '@/components/ui/AppFilters';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
 import editarDosIcon from '../../../assets/images/editar2.png';
@@ -75,40 +76,24 @@ export function UsersPage() {
         </button>
       </header>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Filtros
-            </p>
-            <p className="mt-1 text-sm text-slate-600">
-              Busca usuarios por nombre y filtra por estado para ubicar información más rápido.
-            </p>
-          </div>
+      <FilterCard description="Busca usuarios por nombre y filtra por estado para ubicar informacion mas rapido.">
+        <div className="grid gap-3 md:grid-cols-2 lg:max-w-[540px]">
+          <FilterSearchInput
+            type="text"
+            placeholder="Buscar usuario"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
 
-          <div className="grid gap-3 md:grid-cols-2 lg:min-w-[540px]">
-            <input
-              type="text"
-              placeholder="Buscar usuario"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
-            />
-
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
-            >
-              {[ALL_USER_STATES, 'Activo', 'Baja'].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            {[ALL_USER_STATES, 'Activo', 'Baja'].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </FilterSelect>
         </div>
-      </section>
+      </FilterCard>
 
       <section>
         {isLoading ? (
@@ -134,11 +119,12 @@ export function UsersPage() {
               return (
                 <article
                   key={user.id}
-                  className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="truncate text-lg font-bold tracking-tight text-slate-900">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Usuario</p>
+                      <h3 className="mt-2 truncate text-lg font-bold tracking-tight text-slate-900">
                         {getUserFullName(user)}
                       </h3>
                       <p className="mt-1 truncate text-sm text-slate-600">
@@ -146,59 +132,74 @@ export function UsersPage() {
                       </p>
                     </div>
                     <span
-                      className="inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold"
+                      className="inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm"
                       style={getUserStatusStyles(user.activo)}
                     >
                       {getUserStatusLabel(user.activo)}
                     </span>
                   </div>
 
-                  <div className="mt-4">
-                    <p className="text-sm font-semibold text-slate-700">Roles</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {roles.length > 0 ? (
-                          roles.map((role) => (
-                            <span
-                              key={`${user.id}-${role}`}
-                              className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
-                              style={{ backgroundColor: '#E0E7FF', color: '#1480F0' }}
-                            >
-                              {role}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-sm text-slate-500">Sin roles asignados</span>
-                        )}
+                  <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-slate-700">Roles asignados</p>
+                      <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                        {roles.length} {roles.length === 1 ? 'rol' : 'roles'}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {roles.length > 0 ? (
+                        roles.map((role) => (
+                          <span
+                            key={`${user.id}-${role}`}
+                            className="inline-flex rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-[#312C85]"
+                          >
+                            {role}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-slate-500">Sin roles asignados</span>
+                      )}
                     </div>
                   </div>
 
                   {(!isSuperAdmin && !isCurrentUser) ? (
-                      <div className="mt-5 flex items-center justify-center gap-2">
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => setEditingUser(user)}
-                            className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100"
-                            style={{ backgroundColor: '#E0E7FF' }}
-                          >
-                            <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                            <span>Editar</span>
-                          </button>
-                        )}
+                    <div className="mt-5 flex flex-wrap items-center justify-center gap-2 border-t border-slate-200 pt-4">
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingUser(user)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100"
+                        >
+                          <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                          <span>Editar</span>
+                        </button>
+                      )}
 
-                        {canDelete && (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleUserStatus(user)}
-                            className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition-colors hover:bg-orange-100"
-                            style={{ backgroundColor: '#FFEDD4' }}
-                          >
-                            <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                            <span>{user.activo === false ? 'Reactivar' : 'Dar de baja'}</span>
-                          </button>
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleUserStatus(user)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-orange-100 bg-orange-50 px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition-colors hover:bg-orange-100"
+                        >
+                          <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                          <span>{user.activo === false ? 'Reactivar' : 'Dar de baja'}</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-5 border-t border-slate-200 pt-4">
+                      <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-slate-700">
+                        {isSuperAdmin ? (
+                          <span>
+                            Este usuario pertenece a un perfil de alto rango. Su información no se puede manipular desde esta vista.
+                          </span>
+                        ) : (
+                          <span>Este usuario corresponde a tu sesión actual y no puede manipularse desde esta vista.</span>
                         )}
                       </div>
-                    ) : null}
+                    </div>
+                  )}
                 </article>
               );
             })}

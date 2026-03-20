@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import cerrarIcon from '../../../assets/images/Cerrar.png';
 import type { PropertyRecord } from '@/interfaces/property.interface';
+import { AppModal } from '@/components/ui/AppModal';
 
 type DeletePropertyConfirmModalProps = {
   isOpen: boolean;
@@ -36,24 +36,17 @@ export function DeletePropertyConfirmModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-900">Confirmar eliminación</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar modal"
-            title="Cerrar"
-            className="rounded-md p-1 hover:bg-slate-100"
-          >
-            <img src={cerrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-          </button>
-        </div>
-
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Confirmar eliminacion"
+      maxWidthClassName="max-w-lg"
+      scrollBody={false}
+    >
+      <>
         <p className="text-sm text-slate-700">
-          ¿Estás seguro de que quieres eliminar la propiedad{' '}
-          <span className="font-semibold text-slate-900">{selectedProperty.titulo || 'Sin título'}</span>?
+          Estas seguro de que quieres eliminar la propiedad{' '}
+          <span className="font-semibold text-slate-900">{selectedProperty.titulo || 'Sin titulo'}</span>?
         </p>
 
         {submitError ? <p className="mt-3 text-sm font-medium text-red-600">{submitError}</p> : null}
@@ -75,7 +68,7 @@ export function DeletePropertyConfirmModal({
             {isSubmitting ? 'Eliminando...' : 'Eliminar'}
           </button>
         </div>
-      </div>
-    </div>
+      </>
+    </AppModal>
   );
 }

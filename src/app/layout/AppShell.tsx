@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
 import {
   getAvailableModules,
@@ -34,7 +35,6 @@ export function AppShell() {
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Leemos los permisos
   const permissions = user?.permisos ?? [];
   const availableModules = getAvailableModules(permissions);
 
@@ -45,7 +45,6 @@ export function AppShell() {
       icon: MODULE_ICONS[module],
     }));
 
-  // Tomamos el primer rol del arreglo que manda el servidor (ej. "Super Administrador")
   const primaryRoleDisplay = user?.roles?.[0] || "Sin rol asignado";
   const pageTitle = getPageTitle(location.pathname);
   const displayName = user
@@ -54,57 +53,56 @@ export function AppShell() {
     : "Usuario";
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-100 text-slate-900">
+    <div className="h-screen overflow-hidden bg-slate-50 text-slate-900">
       <div className="flex h-full w-full">
-        {/* Sidebar Overlay para móviles */}
         {!isSidebarCollapsed && (
           <div
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            className="fixed inset-0 z-40 bg-slate-950/45 md:hidden"
             onClick={() => setIsSidebarCollapsed(true)}
           />
         )}
 
-        {/* Sidebar */}
         <aside
           className={[
-            "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800 bg-sidebar-900 p-4 text-slate-100 transition-all duration-300 md:relative",
+            "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800/80 bg-[linear-gradient(180deg,#0f172a_0%,#111827_100%)] text-slate-100 transition-all duration-300 md:relative",
             isSidebarCollapsed
-              ? "-translate-x-full md:translate-x-0 md:w-[88px] md:px-3"
-              : "w-[280px] translate-x-0 md:w-[250px] md:p-6",
+              ? "-translate-x-full md:translate-x-0 md:w-[92px] md:px-3 md:py-5"
+              : "w-[282px] translate-x-0 px-4 py-5 md:w-[264px] md:px-5 md:py-6",
           ].join(" ")}
         >
-          {/* Header del Sidebar con botón de cerrar */}
           <div
             className={
-              isSidebarCollapsed ? "flex justify-center" : "flex justify-end"
+              isSidebarCollapsed ? "flex justify-center" : "flex justify-between"
             }
           >
+            {!isSidebarCollapsed && (
+              <div className="flex items-center gap-3">
+                <img
+                  src={logoBlanco}
+                  alt="Logo Tamivar"
+                  className="h-11 w-auto shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                    CRM TAMIVAR
+                  </p>
+                  <h2 className="truncate text-lg font-bold tracking-tight text-white">
+                    Panel
+                  </h2>
+                </div>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700/80 bg-white/5 text-slate-200 transition hover:bg-white/10"
             >
               <img src={MenuIcon} alt="Menu" className="h-5 w-5 shrink-0" />
             </button>
           </div>
 
-          {!isSidebarCollapsed && (
-            <div className="mt-4 flex items-center gap-3">
-              <img
-                src={logoBlanco}
-                alt="Logo Tamivar"
-                className="h-12 w-auto shrink-0"
-              />
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-300">
-                  CRM TAMIVAR
-                </p>
-                <h2 className="text-lg font-bold text-white">Panel</h2>
-              </div>
-            </div>
-          )}
-
-          <nav className="mt-8 flex flex-1 flex-col gap-2 overflow-y-auto">
+          <nav className="crm-scrollbar-hidden mt-8 flex flex-1 flex-col gap-2 overflow-y-auto">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -114,33 +112,44 @@ export function AppShell() {
                 }
                 className={({ isActive }) =>
                   [
-                    "rounded-lg text-sm transition flex items-center gap-3",
+                    "group flex items-center gap-3 rounded-2xl text-sm transition-all duration-200",
                     isSidebarCollapsed
-                      ? "justify-center px-2 py-3"
-                      : "px-3 py-2",
+                      ? "justify-center px-2 py-3.5"
+                      : "px-3.5 py-3",
                     isActive
-                      ? "bg-slate-700 text-white"
-                      : "text-slate-200 hover:bg-slate-800",
+                      ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                      : "text-slate-300 hover:bg-white/5 hover:text-white",
                   ].join(" ")
                 }
               >
-                <img src={item.icon} alt="" className="h-6 w-6 shrink-0" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
+                  <img src={item.icon} alt="" className="h-5 w-5 shrink-0" />
+                </span>
                 {!isSidebarCollapsed && (
-                  <span className="truncate">{item.label}</span>
+                  <span className="truncate font-medium">{item.label}</span>
                 )}
               </NavLink>
             ))}
           </nav>
 
-          <div className="mt-auto pt-4">
+          <div className="mt-auto space-y-4 pt-4">
+            {!isSidebarCollapsed && (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="truncate text-sm font-semibold text-white">
+                  {displayName}
+                </p>
+                <p className="mt-1 text-xs text-slate-400">{primaryRoleDisplay}</p>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={logout}
               className={[
-                "inline-flex w-full items-center justify-center rounded-lg border border-red-700 bg-red-600 font-semibold text-white transition hover:bg-red-700",
+                "inline-flex w-full items-center justify-center rounded-2xl border border-red-500/60 bg-red-600 font-semibold text-white shadow-sm transition hover:bg-red-700",
                 isSidebarCollapsed
-                  ? "h-10 px-2 py-3"
-                  : "px-3 py-3 gap-2 text-sm",
+                  ? "h-11 px-2 py-3"
+                  : "gap-2 px-3 py-3 text-sm",
               ].join(" ")}
             >
               <img src={LogoutIcon} alt="Logout" className="h-5 w-5 shrink-0" />
@@ -149,16 +158,14 @@ export function AppShell() {
           </div>
         </aside>
 
-        {/* Contenido Principal */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-          <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="border-b border-slate-200/80 bg-white/95 px-5 py-4 backdrop-blur md:px-8">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                {/* Botón de hamburguesa siempre visible en móvil para abrir */}
+              <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setIsSidebarCollapsed(false)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 md:hidden"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-100 md:hidden"
                 >
                   <img
                     src={MenuIcon}
@@ -166,13 +173,19 @@ export function AppShell() {
                     className="h-5 w-5 brightness-0"
                   />
                 </button>
-                <h1 className="text-xl font-bold text-slate-900 truncate">
-                  {pageTitle}
-                </h1>
+
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                    Vista actual
+                  </p>
+                  <h1 className="truncate text-xl font-black tracking-tight text-slate-950">
+                    {pageTitle}
+                  </h1>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                {/* Contenedor de la Foto o Iniciales */}
-                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-slate-200 bg-sidebar-900 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-900 text-sm font-bold text-white shadow-sm">
                   {user?.foto_url ? (
                     <img
                       src={user.foto_url}
@@ -180,7 +193,6 @@ export function AppShell() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    // Si no hay foto, mostramos iniciales
                     <span>
                       {`${user?.nombres?.[0] || ""}${user?.apellido_paterno?.[0] || ""}`.toUpperCase()}
                     </span>
@@ -191,14 +203,25 @@ export function AppShell() {
                   <p className="text-sm font-semibold text-slate-900">
                     {displayName}
                   </p>
-                  <p className="text-xs text-slate-600">{primaryRoleDisplay}</p>
+                  <p className="text-xs text-slate-500">{primaryRoleDisplay}</p>
                 </div>
               </div>
             </div>
           </header>
 
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 md:p-8">
-            <Outlet />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4 md:p-8">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="min-h-0"
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </main>
         </div>
       </div>
@@ -210,7 +233,6 @@ function getPageTitle(pathname: string): string {
   if (pathname === "/dashboard") return "Dashboard";
 
   if (pathname.startsWith("/modulos/")) {
-    // Tomamos solo la primera parte después de "modulos/" por si hay subrutas
     const rawModule = pathname
       .replace("/modulos/", "")
       .split("/")[0] as ModuleKey;

@@ -1,8 +1,8 @@
-import descInfIcon from '../../../assets/images/DescInf.png';
 import { BaseTable, type ColumnDef } from '@/components/ui/BaseTable';
 import type { LeadRecord } from '@/interfaces/lead.interface';
-import { LEAD_PRIORITY_OPTIONS, LEAD_STATUS_OPTIONS } from '../utils/leads.constants';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
+import descInfIcon from '../../../assets/images/DescInf.png';
+import { LEAD_PRIORITY_OPTIONS, LEAD_STATUS_OPTIONS } from '../utils/leads.constants';
 import {
   formatCreatorName,
   formatDate,
@@ -33,7 +33,6 @@ export function LeadsTable({
   onDelete,
   onDownload,
 }: LeadsTableProps) {
-  // Extraemos la función 'can' del hook
   const { can } = useHasPermission();
 
   const canEdit = can('registros', 'actualizar');
@@ -42,28 +41,38 @@ export function LeadsTable({
   const columns: ColumnDef<LeadRecord>[] = [
     {
       header: 'Cliente',
+      cellClassName: 'min-w-[220px]',
       render: (lead) => (
-        <span className="text-sm font-medium text-slate-800">
-          {`${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'}
-        </span>
+        <div>
+          <p className="font-semibold text-slate-900">
+            {`${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">{lead.correo_electronico || 'Sin correo'}</p>
+        </div>
       ),
     },
     {
       header: 'Correo electronico',
+      cellClassName: 'min-w-[220px]',
       render: (lead) => <span className="text-sm text-slate-700">{lead.correo_electronico || 'Sin correo'}</span>,
     },
     {
       header: 'Telefono',
+      cellClassName: 'min-w-[150px]',
       render: (lead) => <span className="text-sm text-slate-700">{formatPhone(lead.lada, lead.telefono)}</span>,
     },
     {
       header: 'Propiedad',
+      cellClassName: 'min-w-[220px] whitespace-normal',
       render: (lead) => (
-        <span className="text-sm text-slate-700">{propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo'}</span>
+        <div className="max-w-[220px] break-words text-sm leading-6 text-slate-700">
+          {propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo'}
+        </div>
       ),
     },
     {
-      header: 'Estados',
+      header: 'Estado',
+      cellClassName: 'min-w-[150px]',
       render: (lead) => (
         <select
           value={lead.estado || LEAD_STATUS_OPTIONS[0]}
@@ -82,6 +91,7 @@ export function LeadsTable({
     },
     {
       header: 'Prioridad',
+      cellClassName: 'min-w-[150px]',
       render: (lead) => (
         <select
           value={lead.prioridad || LEAD_PRIORITY_OPTIONS[1]}
@@ -100,19 +110,27 @@ export function LeadsTable({
     },
     {
       header: 'Creado por',
+      cellClassName: 'min-w-[180px]',
       render: (lead) => <span className="text-sm text-slate-700">{formatCreatorName(lead.creador)}</span>,
     },
     {
       header: 'Fecha de creacion',
+      cellClassName: 'min-w-[150px]',
       render: (lead) => <span className="text-sm text-slate-700">{formatDate(lead.creado_en)}</span>,
     },
     {
       header: 'Fecha de cita',
+      cellClassName: 'min-w-[180px]',
       render: (lead) => <span className="text-sm text-slate-700">{formatDateTime(lead.fecha_cita)}</span>,
     },
     {
       header: 'Comentarios',
-      render: (lead) => <span className="text-sm text-slate-700">{lead.comentarios || 'Sin comentarios'}</span>,
+      cellClassName: 'min-w-[240px] whitespace-normal',
+      render: (lead) => (
+        <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">
+          {lead.comentarios || 'Sin comentarios'}
+        </div>
+      ),
     },
   ];
 
@@ -123,7 +141,7 @@ export function LeadsTable({
       isLoading={isLoading}
       emptyMessage="No se encontraron registros"
       wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
-      tableClassName="w-max min-w-[1400px] text-left"
+      tableClassName="w-max min-w-[1520px] text-left"
       actionsClassName="flex items-center gap-2"
       onEdit={canEdit ? onEdit : undefined}
       onDelete={canDelete ? onDelete : undefined}
@@ -132,7 +150,7 @@ export function LeadsTable({
           type="button"
           aria-label="Descargar"
           title="Descargar"
-          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
+          className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-50"
           onClick={() => onDownload(lead)}
         >
           <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />

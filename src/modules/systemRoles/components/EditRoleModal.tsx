@@ -1,12 +1,13 @@
-import { useMemo, useState, type FormEvent } from 'react';
-import type { PermissionRecord } from '@/interfaces/system-role.interface';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import type { PermissionRecord, SystemRoleRecord } from '@/interfaces/system-role.interface';
 import { AppModal } from '@/components/ui/AppModal';
 
-type CreateRoleModalProps = {
+type EditRoleModalProps = {
   isOpen: boolean;
+  role: SystemRoleRecord | null;
   permissions: PermissionRecord[];
   onClose: () => void;
-  onCreate: (payload: { rol: string; permisosIds: number[] }) => Promise<string | null>;
+  onEdit: (payload: { rol: string; permisosIds: number[] }) => Promise<string | null>;
 };
 
 const fieldClassName =
@@ -21,13 +22,24 @@ function FieldLabel({ children, required = false }: { children: string; required
   );
 }
 
-export function CreateRoleModal({ isOpen, permissions, onClose, onCreate }: CreateRoleModalProps) {
+export function EditRoleModal({ isOpen, role, permissions, onClose, onEdit }: EditRoleModalProps) {
   const [roleName, setRoleName] = useState('');
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   const groupedPermissions = useMemo(() => groupPermissions(permissions), [permissions]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setRoleName(role?.rol ?? '');
+    setSelectedPermissionIds(getSelectedPermissionIds(role));
+    setIsSubmitting(false);
+    setSubmitError('');
+  }, [isOpen, role]);
+
+  if (!role) return null;
 
   function closeModal() {
     setRoleName('');
@@ -61,7 +73,7 @@ export function CreateRoleModal({ isOpen, permissions, onClose, onCreate }: Crea
     }
 
     setIsSubmitting(true);
-    const error = await onCreate({
+    const error = await onEdit({
       rol: normalizedRoleName,
       permisosIds: selectedPermissionIds,
     });
@@ -79,8 +91,8 @@ export function CreateRoleModal({ isOpen, permissions, onClose, onCreate }: Crea
     <AppModal
       isOpen={isOpen}
       onClose={closeModal}
-      title="Crear rol"
-      subtitle="Define el nombre del rol y los permisos disponibles por modulo."
+      title="Editar rol"
+      subtitle="Ajusta el nombre y los permisos asignados para este rol."
       maxWidthClassName="max-w-3xl"
       panelClassName="max-h-[88vh]"
     >
@@ -92,7 +104,7 @@ export function CreateRoleModal({ isOpen, permissions, onClose, onCreate }: Crea
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Información del rol</p>
-            <p className="mt-1 text-sm text-slate-600">Asigna un nombre claro y define exactamente que puede hacer dentro del CRM.</p>
+            <p className="mt-1 text-sm text-slate-600">Actualiza el nombre del rol y redefine su alcance operativo dentro del CRM.</p>
           </div>
 
           <label className="flex flex-col gap-1.5">
@@ -110,7 +122,7 @@ export function CreateRoleModal({ isOpen, permissions, onClose, onCreate }: Crea
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Permisos por modulo</p>
-            <p className="mt-1 text-sm text-slate-600">Selecciona las acciones permitidas para cada modulo del sistema.</p>
+            <p className="mt-1 text-sm text-slate-600">Activa o desactiva las acciones permitidas para este rol.</p>
           </div>
 
           {groupedPermissions.length === 0 ? (
@@ -159,12 +171,19 @@ export function CreateRoleModal({ isOpen, permissions, onClose, onCreate }: Crea
             disabled={isSubmitting}
             className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isSubmitting ? 'Guardando...' : 'Crear rol'}
+            {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </div>
       </form>
     </AppModal>
   );
+}
+
+function getSelectedPermissionIds(role?: SystemRoleRecord | null): number[] {
+  if (!role?.permisos) return [];
+  return role.permisos
+    .map((entry) => entry?.permiso?.id)
+    .filter((id): id is number => typeof id === 'number');
 }
 
 function groupPermissions(permissions: PermissionRecord[]) {
