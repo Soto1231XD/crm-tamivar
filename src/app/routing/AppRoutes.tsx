@@ -11,10 +11,12 @@ import { LeadsPage } from "@/modules/leads/pages/LeadsPage";
 import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
 import { ContentPage } from "@/modules/content/pages/ContentPage";
+import { PropertyDetailView } from "@/modules/properties/components/PropertyDetailView";
 
 export function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
 
       <Route element={<ProtectedRoute />}>
@@ -34,6 +36,7 @@ export function AppRoutes() {
               path="modulos/propiedades/:propertyId/editar"
               element={<EditPropertyPage />}
             />
+            <Route path="modulos/propiedades/:id" element={<PropertyDetailView />} />
           </Route>
           <Route element={<ProtectedRoute module="registros" />}>
             <Route path="modulos/registros" element={<LeadsPage />} />
