@@ -66,67 +66,6 @@ export function formatCreatorName(
   return parts.length > 0 ? parts.join(' ') : 'Sin asignar';
 }
 
-export function downloadLeadAsExcel(lead: LeadRecord, propertyTitle: string) {
-  const rows = [
-    ['Campo', 'Valor'],
-    ['ID', String(lead.id ?? '')],
-    ['Cliente', `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'],
-    ['Correo electronico', lead.correo_electronico?.trim() || 'Sin correo'],
-    ['Telefono', formatPhone(lead.lada, lead.telefono)],
-    ['Propiedad', propertyTitle],
-    ['Estado', lead.estado?.trim() || 'Sin estado'],
-    ['Prioridad', lead.prioridad?.trim() || 'Sin prioridad'],
-    ['Creado por', formatCreatorName(lead.creador)],
-    ['Fecha de creacion', formatDate(lead.creado_en)],
-    ['Fecha de cita', formatDateTime(lead.fecha_cita)],
-    ['Comentarios', lead.comentarios?.trim() || 'Sin comentarios'],
-  ];
-
-  const tableRows = rows
-    .map(
-      ([label, value], index) => `
-        <tr>
-          <td style="${index === 0 ? HEADER_CELL_STYLE : LABEL_CELL_STYLE}">${escapeHtml(label)}</td>
-          <td style="${index === 0 ? HEADER_CELL_STYLE : VALUE_CELL_STYLE}">${escapeHtml(value)}</td>
-        </tr>`,
-    )
-    .join('');
-
-  const excelContent = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-      <head>
-        <meta charset="UTF-8" />
-        <!--[if gte mso 9]>
-          <xml>
-            <x:ExcelWorkbook>
-              <x:ExcelWorksheets>
-                <x:ExcelWorksheet>
-                  <x:Name>Registro</x:Name>
-                  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-                </x:ExcelWorksheet>
-              </x:ExcelWorksheets>
-            </x:ExcelWorkbook>
-          </xml>
-        <![endif]-->
-      </head>
-      <body>
-        <table border="1" cellspacing="0" cellpadding="0">
-          ${tableRows}
-        </table>
-      </body>
-    </html>`;
-
-  const blob = new Blob([`\ufeff${excelContent}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${sanitizeFileName(`${lead.nombres ?? ''}-${lead.apellidos ?? ''}` || `registro-${lead.id}`)}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
 export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string[]) {
   const rows = [
     [
@@ -208,17 +147,7 @@ export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string
 
 const HEADER_CELL_STYLE =
   'background:#E2E8F0;font-weight:700;color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
-const LABEL_CELL_STYLE =
-  'background:#F8FAFC;font-weight:600;color:#334155;padding:8px 12px;border:1px solid #CBD5E1;';
 const VALUE_CELL_STYLE = 'color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
-
-function sanitizeFileName(value: string): string {
-  return value
-    .trim()
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase();
-}
 
 function escapeHtml(value: string): string {
   return value

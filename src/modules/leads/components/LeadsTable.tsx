@@ -2,6 +2,7 @@ import { BaseTable, type ColumnDef } from '@/components/ui/BaseTable';
 import type { LeadRecord } from '@/interfaces/lead.interface';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import descInfIcon from '../../../assets/images/DescInf.png';
+import { DownloadLeadPdfButton } from './DownloadLeadPdfButton';
 import { LEAD_PRIORITY_OPTIONS, LEAD_STATUS_OPTIONS } from '../utils/leads.constants';
 import {
   formatCreatorName,
@@ -20,7 +21,6 @@ type LeadsTableProps = {
   onQuickChange: (leadId: number, field: 'estado' | 'prioridad', value: string) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
-  onDownload: (lead: LeadRecord) => void;
 };
 
 export function LeadsTable({
@@ -31,7 +31,6 @@ export function LeadsTable({
   onQuickChange,
   onEdit,
   onDelete,
-  onDownload,
 }: LeadsTableProps) {
   const { can } = useHasPermission();
 
@@ -146,15 +145,19 @@ export function LeadsTable({
       onEdit={canEdit ? onEdit : undefined}
       onDelete={canDelete ? onDelete : undefined}
       customActions={(lead) => (
-        <button
-          type="button"
-          aria-label="Descargar"
-          title="Descargar"
+        <DownloadLeadPdfButton
+          lead={lead}
+          propertyTitle={propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo'}
           className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-50"
-          onClick={() => onDownload(lead)}
         >
-          <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-        </button>
+          {(loading) =>
+            loading ? (
+              <div className="h-6 w-6 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" />
+            ) : (
+              <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />
+            )
+          }
+        </DownloadLeadPdfButton>
       )}
     />
   );

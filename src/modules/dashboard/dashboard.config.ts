@@ -1,77 +1,57 @@
-export type AppRole =
-  | 'Super Administrador'
-  | 'Administrador'
-  | 'Marketing'
-  | 'Recursos Humanos'
-  | 'Coordinador de Ventas'
-  | 'Asesor de Ventas';
+import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
 
-type DashboardCardTitle =
-  | 'Propiedades Disponibles'
-  | 'Registros'
-  | 'Propiedades vendidas'
-  | 'Blogs'
-  | 'Usuarios del sistema'
-  | 'Roles del sistema';
+export type DashboardCardTitle =
+  | "Propiedades Disponibles"
+  | "Registros"
+  | "Propiedades vendidas"
+  | "Blogs"
+  | "Usuarios del sistema"
+  | "Roles del sistema";
 
-type DashboardSectionTitle =
-  | 'Registros Recientes'
-  | 'Propiedades Recientes'
-  | 'Usuarios'
-  | 'Publicaciones';
+export type DashboardSectionTitle =
+  | "Registros Recientes"
+  | "Propiedades Recientes"
+  | "Usuarios"
+  | "Publicaciones";
 
-export const DASHBOARD_ENABLED_ROLES: AppRole[] = [
-  'Super Administrador',
-  'Administrador',
-  'Marketing',
-  'Recursos Humanos',
-  'Coordinador de Ventas',
-  'Asesor de Ventas',
+type DashboardCan = (module: ModuleKey, action?: "leer") => boolean;
+
+const DASHBOARD_CARD_MODULES: Record<DashboardCardTitle, ModuleKey> = {
+  "Propiedades Disponibles": "propiedades",
+  Registros: "registros",
+  "Propiedades vendidas": "propiedades",
+  Blogs: "blogs",
+  "Usuarios del sistema": "usuarios",
+  "Roles del sistema": "roles",
+};
+
+const DASHBOARD_SECTION_MODULES: Record<DashboardSectionTitle, ModuleKey> = {
+  "Registros Recientes": "registros",
+  "Propiedades Recientes": "propiedades",
+  Usuarios: "usuarios",
+  Publicaciones: "blogs",
+};
+
+const DASHBOARD_CARD_ORDER: readonly DashboardCardTitle[] = [
+  "Propiedades Disponibles",
+  "Registros",
+  "Propiedades vendidas",
+  "Blogs",
+  "Usuarios del sistema",
+  "Roles del sistema",
 ];
 
-export const DASHBOARD_CARD_TITLES: Partial<Record<AppRole, readonly DashboardCardTitle[]>> = {
-  'Super Administrador': [
-    'Propiedades Disponibles',
-    'Registros',
-    'Propiedades vendidas',
-    'Blogs',
-    'Usuarios del sistema',
-    'Roles del sistema',
-  ],
-  'Administrador': [
-    'Propiedades Disponibles',
-    'Registros',
-    'Propiedades vendidas',
-    'Blogs',
-    'Usuarios del sistema',
-  ],
-  'Marketing': [
-    'Propiedades Disponibles', 
-    'Blogs', 
-    'Propiedades vendidas'
-  ],
-  'Recursos Humanos': [
-    'Propiedades Disponibles', 
-    'Usuarios del sistema', 
-    'Roles del sistema'
-  ],
-  'Coordinador de Ventas': [
-    'Propiedades Disponibles', 
-    'Registros', 
-    'Propiedades vendidas'
-  ],
-  'Asesor de Ventas': [
-    'Propiedades Disponibles', 
-    'Registros', 
-    'Propiedades vendidas'
-  ],
-};
+const DASHBOARD_SECTION_ORDER: readonly DashboardSectionTitle[] = [
+  "Registros Recientes",
+  "Propiedades Recientes",
+  "Usuarios",
+  "Publicaciones",
+];
 
-export const DASHBOARD_SECTION_TITLES: Partial<Record<AppRole, readonly DashboardSectionTitle[]>> = {
-  'Super Administrador': ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Publicaciones'],
-  'Administrador': ['Registros Recientes', 'Propiedades Recientes', 'Usuarios', 'Publicaciones'],
-  'Marketing': ['Publicaciones', 'Propiedades Recientes'],
-  'Recursos Humanos': ['Propiedades Recientes', 'Usuarios'],
-  'Coordinador de Ventas': ['Registros Recientes', 'Propiedades Recientes'],
-  'Asesor de Ventas': ['Registros Recientes', 'Propiedades Recientes'],
-};
+export function getVisibleDashboardCards(can: DashboardCan): DashboardCardTitle[] {
+  return DASHBOARD_CARD_ORDER.filter((title) => can(DASHBOARD_CARD_MODULES[title], "leer"));
+}
+
+export function getVisibleDashboardSections(can: DashboardCan): DashboardSectionTitle[] {
+  return DASHBOARD_SECTION_ORDER.filter((title) => can(DASHBOARD_SECTION_MODULES[title], "leer"));
+}

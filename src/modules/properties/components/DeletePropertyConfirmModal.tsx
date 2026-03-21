@@ -39,7 +39,7 @@ export function DeletePropertyConfirmModal({
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Confirmar eliminacion"
+      title="Confirmar eliminación"
       maxWidthClassName="max-w-lg"
       scrollBody={false}
     >

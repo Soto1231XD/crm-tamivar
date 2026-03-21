@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
+import type { BlogRecord } from "@/interfaces/blog.interface";
+import type { UserRecord, UserRoleRecord } from "@/interfaces/user.interface";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import { getRecordsReadScope } from "@/shared/auth/permissions/permissions.util";
+import { canAccessDashboard } from "@/shared/auth/navigation.util";
+import { getBlogs } from "../../content/services/content.api";
 import { getLeads } from "../../leads/services/leads.api";
 import { getProperties } from "../../properties/services/properties.api";
 import { getSystemRoles } from "../../systemRoles/services/systemRoles.api";
+import { getUsers } from "../../users/services/users.api";
 import { DashboardSectionCard } from "../components/DashboardSectionCard";
 import { DashboardSummaryCards } from "../components/DashboardSummaryCards";
 import {
-  DASHBOARD_CARD_TITLES,
-  DASHBOARD_ENABLED_ROLES,
-  DASHBOARD_SECTION_TITLES,
-  type AppRole,
+  getVisibleDashboardCards,
+  getVisibleDashboardSections,
 } from "../dashboard.config";
 import {
   type RecentLeadItem,
@@ -19,11 +25,6 @@ import {
   getSectionItemsCount,
   renderSectionItems,
 } from "../dashboard.utils";
-import {
-  getDashboardSummary,
-  getRecentPropertiesFallback,
-} from "../services/dashboard.api";
-import { useAuthStore } from "@/shared/auth/useAuthStore";
 
 type DashboardSummaryState = {
   propiedadesDisponibles: number;
@@ -56,25 +57,30 @@ const INITIAL_SUMMARY: DashboardSummaryState = {
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.token);
-
-  const primaryRole = user?.roles?.[0] as AppRole | undefined;
+  const { can, userPermissions } = useHasPermission();
 
   const displayName = user
     ? `${user.nombres || ""} ${user.apellido_paterno || ""}`.trim() ||
       user.correo_electronico
     : "Usuario";
+  const primaryRoleDisplay = user?.roles?.[0] || "Sin rol asignado";
+  const recordsReadScope = getRecordsReadScope(user);
+  const canViewDashboard = canAccessDashboard(userPermissions);
+  const dashboardCards = getVisibleDashboardCards(can);
+  const dashboardSections = getVisibleDashboardSections(can);
 
-  const [summary, setSummary] =
-    useState<DashboardSummaryState>(INITIAL_SUMMARY);
+  const canReadProperties = can("propiedades", "leer");
+  const canReadRegistros = can("registros", "leer");
+  const canReadBlogs = can("blogs", "leer");
+  const canReadUsers = can("usuarios", "leer");
+  const canReadRoles = can("roles", "leer");
+
+  const [summary, setSummary] = useState<DashboardSummaryState>(INITIAL_SUMMARY);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState("");
 
   useEffect(() => {
-    if (
-      !accessToken ||
-      !primaryRole ||
-      !DASHBOARD_ENABLED_ROLES.includes(primaryRole)
-    ) {
+    if (!accessToken || !canViewDashboard) {
       return;
     }
 
@@ -83,23 +89,22 @@ export function DashboardPage() {
     setSummaryError("");
 
     Promise.all([
-      getDashboardSummary(accessToken),
-      getProperties(),
-      getSystemRoles(accessToken),
-      getLeads(),
+      canReadProperties ? getProperties() : Promise.resolve([]),
+      canReadRegistros ? getLeads() : Promise.resolve([]),
+      canReadBlogs ? getBlogs() : Promise.resolve([]),
+      canReadUsers ? getUsers(accessToken) : Promise.resolve([]),
+      canReadRoles ? getSystemRoles(accessToken) : Promise.resolve([]),
     ])
-      .then(async ([data, properties, roles, leads]) => {
+      .then(([properties, leads, blogs, users, roles]) => {
         if (!isActive) return;
 
-        const propiedadesRecientes = Array.isArray(data.propiedades_recientes)
-          ? data.propiedades_recientes
-          : [];
         const propiedadesDisponiblesActivas = Array.isArray(properties)
           ? properties.filter(
               (property) =>
                 normalizePropertyStatus(property.estatus) === "disponible",
             ).length
           : 0;
+
         const propiedadesVendidas = Array.isArray(properties)
           ? properties.filter(
               (property) =>
@@ -107,19 +112,39 @@ export function DashboardPage() {
             ).length
           : 0;
 
-        const propiedadesRecientesFinal =
-          propiedadesRecientes.length > 0
-            ? propiedadesRecientes
-            : await getRecentPropertiesFallback();
-
-        if (!isActive) return;
+        const propiedadesRecientes = Array.isArray(properties)
+          ? properties
+              .slice()
+              .sort((left, right) => {
+                const leftDate = left.creado_en
+                  ? new Date(left.creado_en).getTime()
+                  : 0;
+                const rightDate = right.creado_en
+                  ? new Date(right.creado_en).getTime()
+                  : 0;
+                return rightDate - leftDate;
+              })
+              .slice(0, 5)
+              .map((property) => ({
+                tipo_inmueble: property.tipo_inmueble,
+                direccion: {
+                  calle: property.direccion?.calle ?? "",
+                  municipio: property.direccion?.municipio ?? "",
+                  fraccionamiento: property.direccion?.fraccionamiento ?? "",
+                },
+                estatus: property.estatus,
+                precio: String(property.precio ?? 0),
+              }))
+          : [];
 
         const ownLeads =
-          primaryRole === "Asesor de Ventas" && user?.id
+          recordsReadScope === "own" && user?.id
             ? leads.filter((lead) => lead.creador?.id === user.id)
             : [];
 
-        const ownRecentLeads = ownLeads
+        const visibleLeads = recordsReadScope === "own" ? ownLeads : leads;
+
+        const visibleRecentLeads = visibleLeads
           .slice()
           .sort((left, right) => {
             const leftDate = left.creado_en
@@ -138,29 +163,55 @@ export function DashboardPage() {
             estado: lead.estado ?? "Sin estado",
           }));
 
+        const recentUsers = Array.isArray(users)
+          ? users
+              .slice()
+              .sort((left, right) => right.id - left.id)
+              .slice(0, 5)
+              .map((item: UserRecord) => ({
+                nombres: item.nombres ?? "Sin nombre",
+                apellido_paterno: item.apellido_paterno ?? "",
+                correo_electronico: item.correo_electronico ?? "Sin correo",
+                rol: typeof item.rol === "string" ? item.rol : undefined,
+                roles: getUserRoles(item),
+              }))
+          : [];
+
+        const recentPublications = Array.isArray(blogs)
+          ? blogs
+              .slice()
+              .sort((left: BlogRecord, right: BlogRecord) => {
+                const leftDate = left.creadoEn
+                  ? new Date(left.creadoEn).getTime()
+                  : 0;
+                const rightDate = right.creadoEn
+                  ? new Date(right.creadoEn).getTime()
+                  : 0;
+                return rightDate - leftDate;
+              })
+              .slice(0, 5)
+              .map((blog: BlogRecord) => ({
+                titulo: blog.titulo,
+                fecha_creacion: blog.creadoEn,
+                fechaPublico: blog.fechaPublico ?? null,
+                publicado: Boolean(blog.publicado),
+                imagenes: blog.imagenes ?? [],
+              }))
+          : [];
+
         setSummary({
           propiedadesDisponibles: propiedadesDisponiblesActivas,
           propiedadesVendidas,
-          registros:
-            primaryRole === "Asesor de Ventas"
-              ? ownLeads.length
-              : data.registros,
-          blogs: Array.isArray(data.mis_publicaciones)
-            ? data.mis_publicaciones.length
-            : 0,
+          registros: visibleLeads.length,
+          blogs: Array.isArray(blogs) ? blogs.length : 0,
           rolesSistema: Array.isArray(roles) ? roles.length : 0,
-          usuariosSistema: data.usuarios_sistema,
-          registrosRecientes: Array.isArray(data.registros_recientes)
-            ? data.registros_recientes
-            : [],
-          misRegistrosRecientes: ownRecentLeads,
-          propiedadesRecientes: propiedadesRecientesFinal,
-          usuariosRecientes: Array.isArray(data.usuarios_recientes)
-            ? data.usuarios_recientes
-            : [],
-          misPublicaciones: Array.isArray(data.mis_publicaciones)
-            ? data.mis_publicaciones
-            : [],
+          usuariosSistema: Array.isArray(users) ? users.length : 0,
+          registrosRecientes: visibleRecentLeads,
+          misRegistrosRecientes:
+            recordsReadScope === "own" ? visibleRecentLeads : [],
+          propiedadesRecientes,
+          usuariosRecientes: recentUsers,
+          misPublicaciones: recentPublications,
         });
       })
       .catch((error: unknown) => {
@@ -179,7 +230,17 @@ export function DashboardPage() {
     return () => {
       isActive = false;
     };
-  }, [accessToken, primaryRole, user?.id]);
+  }, [
+    accessToken,
+    canReadBlogs,
+    canReadProperties,
+    canReadRegistros,
+    canReadRoles,
+    canReadUsers,
+    canViewDashboard,
+    recordsReadScope,
+    user?.id,
+  ]);
 
   const cardValues = useMemo(
     () => ({
@@ -203,7 +264,7 @@ export function DashboardPage() {
   const sectionData = useMemo(
     () => ({
       registrosRecientes:
-        primaryRole === "Asesor de Ventas"
+        recordsReadScope === "own"
           ? summary.misRegistrosRecientes
           : summary.registrosRecientes,
       propiedadesRecientes: summary.propiedadesRecientes,
@@ -211,7 +272,7 @@ export function DashboardPage() {
       misPublicaciones: summary.misPublicaciones,
     }),
     [
-      primaryRole,
+      recordsReadScope,
       summary.misPublicaciones,
       summary.misRegistrosRecientes,
       summary.propiedadesRecientes,
@@ -219,16 +280,6 @@ export function DashboardPage() {
       summary.usuariosRecientes,
     ],
   );
-
-  const dashboardCards = primaryRole
-    ? (DASHBOARD_CARD_TITLES[primaryRole] ?? [])
-    : [];
-  const dashboardSections = primaryRole
-    ? (DASHBOARD_SECTION_TITLES[primaryRole] ?? [])
-    : [];
-  const canViewDashboard = primaryRole
-    ? DASHBOARD_ENABLED_ROLES.includes(primaryRole)
-    : false;
 
   return (
     <div className="space-y-6">
@@ -252,7 +303,7 @@ export function DashboardPage() {
               Perfil actual
             </span>
             <span className="mt-2 text-sm font-semibold text-slate-900">
-              {primaryRole || "Sin rol asignado"}
+              {primaryRoleDisplay}
             </span>
           </div>
         </div>
@@ -306,4 +357,27 @@ export function DashboardPage() {
 
 function normalizePropertyStatus(status?: string | null): string {
   return typeof status === "string" ? status.trim().toLowerCase() : "";
+}
+
+function getUserRoles(user: UserRecord): string[] {
+  const sourceRoles: UserRoleRecord[] = Array.isArray(user.roles)
+    ? user.roles
+    : user.rol
+      ? [user.rol]
+      : [];
+
+  const normalizedRoles = sourceRoles
+    .map((role) => {
+      if (typeof role === "string") return role.trim();
+      if (typeof role?.rol === "string") return role.rol.trim();
+      if (role?.rol && typeof role.rol === "object") {
+        if (typeof role.rol.rol === "string") return role.rol.rol.trim();
+        if (typeof role.rol.nombre === "string") return role.rol.nombre.trim();
+      }
+      if (typeof role?.nombre === "string") return role.nombre.trim();
+      return "";
+    })
+    .filter(Boolean);
+
+  return Array.from(new Set(normalizedRoles));
 }

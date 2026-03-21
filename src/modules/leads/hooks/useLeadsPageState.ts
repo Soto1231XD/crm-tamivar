@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CreateLeadPayload, LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import type { PropertyRecord } from '@/interfaces/property.interface';
+import type { RecordsReadScope } from '@/shared/auth/permissions/permissions.util';
 import toast from 'react-hot-toast';
 import { getProperties } from '../../properties/services/properties.api';
 import { useLeadsStore } from '../store/useLeadsStore';
 import { ALL_PROPERTIES, ALL_PRIORITIES, ALL_STATES, PAGE_SIZE } from '../utils/leads.constants';
 import {
-  downloadLeadAsExcel,
   downloadLeadsAsExcel,
   formatPhone,
   getComparableDate,
@@ -14,11 +14,11 @@ import {
 } from '../utils/leads.utils';
 
 type UseLeadsPageStateParams = {
-  primaryRole?: string | null;
+  recordsReadScope?: RecordsReadScope;
   userId?: number | null;
 };
 
-export function useLeadsPageState({ primaryRole, userId }: UseLeadsPageStateParams) {
+export function useLeadsPageState({ recordsReadScope = 'all', userId }: UseLeadsPageStateParams) {
   const { leads, isLoading, fetchLeads, addLead, editLead, removeLead } = useLeadsStore();
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [search, setSearch] = useState('');
@@ -74,7 +74,7 @@ export function useLeadsPageState({ primaryRole, userId }: UseLeadsPageStatePara
   const filteredLeads = useMemo(() => {
     const query = search.trim().toLowerCase();
     const visibleLeads =
-      primaryRole === 'ASESOR_VENTAS' && userId
+      recordsReadScope === 'own' && userId
         ? leads.filter((lead) => lead.creador?.id === userId)
         : leads;
 
@@ -97,7 +97,7 @@ export function useLeadsPageState({ primaryRole, userId }: UseLeadsPageStatePara
 
       return matchesSearch && matchesStatus && matchesPriority && matchesProperty && matchesAppointmentDate;
     });
-  }, [appointmentDateFilter, leads, primaryRole, propertyFilter, propertyTitleById, priorityFilter, search, statusFilter, userId]);
+  }, [appointmentDateFilter, leads, propertyFilter, propertyTitleById, priorityFilter, recordsReadScope, search, statusFilter, userId]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 
@@ -160,10 +160,6 @@ export function useLeadsPageState({ primaryRole, userId }: UseLeadsPageStatePara
     } catch (error) {
       return error instanceof Error ? error.message : 'No fue posible eliminar el registro.';
     }
-  }
-
-  function handleDownloadLead(lead: LeadRecord) {
-    downloadLeadAsExcel(lead, propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo');
   }
 
   function handleDownloadFilteredLeads() {
@@ -229,7 +225,6 @@ export function useLeadsPageState({ primaryRole, userId }: UseLeadsPageStatePara
     handleCreateLead,
     handleEditLead,
     handleDeleteLead,
-    handleDownloadLead,
     handleDownloadFilteredLeads,
     handleQuickLeadChange,
   };
