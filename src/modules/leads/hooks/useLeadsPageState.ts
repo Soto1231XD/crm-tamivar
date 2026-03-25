@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CreateLeadPayload, LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import type { PropertyRecord } from '@/interfaces/property.interface';
-import type { RecordsReadScope } from '@/shared/auth/permissions/permissions.util';
 import toast from 'react-hot-toast';
 import { getProperties } from '../../properties/services/properties.api';
 import { useLeadsStore } from '../store/useLeadsStore';
@@ -14,11 +13,10 @@ import {
 } from '../utils/leads.utils';
 
 type UseLeadsPageStateParams = {
-  recordsReadScope?: RecordsReadScope;
   userId?: number | null;
 };
 
-export function useLeadsPageState({ recordsReadScope = 'all', userId }: UseLeadsPageStateParams) {
+export function useLeadsPageState({ userId }: UseLeadsPageStateParams) {
   const { leads, isLoading, fetchLeads, addLead, editLead, removeLead } = useLeadsStore();
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [search, setSearch] = useState('');
@@ -73,12 +71,7 @@ export function useLeadsPageState({ recordsReadScope = 'all', userId }: UseLeads
 
   const filteredLeads = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const visibleLeads =
-      recordsReadScope === 'own' && userId
-        ? leads.filter((lead) => lead.creador?.id === userId)
-        : leads;
-
-    return visibleLeads.filter((lead) => {
+    return leads.filter((lead) => {
       const fullName = `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim().toLowerCase();
       const email = (lead.correo_electronico ?? '').toLowerCase();
       const phone = formatPhone(lead.lada, lead.telefono).toLowerCase();
@@ -97,7 +90,7 @@ export function useLeadsPageState({ recordsReadScope = 'all', userId }: UseLeads
 
       return matchesSearch && matchesStatus && matchesPriority && matchesProperty && matchesAppointmentDate;
     });
-  }, [appointmentDateFilter, leads, propertyFilter, propertyTitleById, priorityFilter, recordsReadScope, search, statusFilter, userId]);
+  }, [appointmentDateFilter, leads, propertyFilter, propertyTitleById, priorityFilter, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 

@@ -104,7 +104,7 @@ export function SystemRolesPage() {
         </button>
       </header>
 
-      <FilterCard description="Busca un rol por nombre para localizarlo mas rapido.">
+      <FilterCard description="Busca un rol por nombre para localizarlo mas rápido.">
         <div className="md:max-w-sm">
           <FilterSearchInput
             type="text"
@@ -139,7 +139,7 @@ export function SystemRolesPage() {
 
                 <div className="flex flex-col gap-5 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
                   <div className="grid flex-1 gap-4 md:grid-cols-[1.4fr_0.7fr]">
-                    <InfoBlock label="Descripcion del rol" value={getRoleDescription(role.rol)} />
+                    <InfoBlock label="Descripción del rol" value={getRoleDescription(role.rol)} />
                     <InfoBlock label="Usuarios asignados" value={String(getAssignedUsersCount(role, users))} />
                   </div>
 
@@ -149,7 +149,7 @@ export function SystemRolesPage() {
                       onClick={() => setSelectedRole(role)}
                       className="inline-flex items-center justify-center rounded-xl bg-[#5980FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#456df4]"
                     >
-                      Modulos asignados
+                      Módulos asignados
                     </button>
 
                     {isProtectedRole(role.rol) ? (
@@ -219,11 +219,11 @@ export function SystemRolesPage() {
 
   async function handleCreateRole(payload: CreateSystemRolePayload): Promise<string | null> {
     try {
-      if (!accessToken) throw new Error("No se encontro el token de acceso.");
+      if (!accessToken) throw new Error("No se encontró el token de acceso.");
 
       const createdRole = await createSystemRole(payload, accessToken);
       setRoles((prev) => [createdRole, ...prev]);
-      toast.success("El rol se creo con exito.");
+      toast.success("El rol se creo con éxito.");
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : "No fue posible crear el rol.";
@@ -232,13 +232,13 @@ export function SystemRolesPage() {
 
   async function handleEditRole(payload: UpdateSystemRolePayload): Promise<string | null> {
     try {
-      if (!accessToken) throw new Error("No se encontro el token de acceso.");
-      if (!editingRole) throw new Error("No se encontro el rol a editar.");
+      if (!accessToken) throw new Error("No se encontró el token de acceso.");
+      if (!editingRole) throw new Error("No se encontró el rol a editar.");
 
       const updatedRole = await updateSystemRole(editingRole.id, payload, accessToken);
       setRoles((prev) => prev.map((role) => (role.id === updatedRole.id ? updatedRole : role)));
       setEditingRole(null);
-      toast.success("El rol se actualizo con exito.");
+      toast.success("El rol se actualizo con éxito.");
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : "No fue posible actualizar el rol.";
@@ -247,12 +247,12 @@ export function SystemRolesPage() {
 
   async function handleDeleteRole(roleId: number): Promise<string | null> {
     try {
-      if (!accessToken) throw new Error("No se encontro el token de acceso.");
+      if (!accessToken) throw new Error("No se encontró el token de acceso.");
 
       await deleteSystemRole(roleId, accessToken);
       setRoles((prev) => prev.filter((role) => role.id !== roleId));
       setDeletingRole(null);
-      toast.success("El rol se elimino con exito.");
+      toast.success("El rol se elimino con éxito.");
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : "No fue posible eliminar el rol.";
@@ -279,22 +279,22 @@ function getAssignedUsersCount(role: SystemRoleRecord, users: UserRecord[]): num
 function getRoleDescription(roleName: string): string {
   const normalized = normalizeText(roleName);
   if (normalized === "super admin" || normalized === "super administrador") {
-    return "Control total del CRM y administracion completa del sistema.";
+    return "Control total del CRM y administración completa del sistema.";
   }
   if (normalized === "admin" || normalized === "administrador") {
-    return "Gestion operativa del CRM con acceso amplio a los modulos principales.";
+    return "Gestión operativa del CRM con acceso amplio a los módulos principales.";
   }
   if (normalized === "marketing") {
-    return "Gestion de contenido y apoyo en estrategias de difusion.";
+    return "Gestión de contenido y apoyo en estrategias de difusión.";
   }
   if (normalized === "rh" || normalized === "recursos humanos") {
-    return "Consulta y gestion enfocada al modulo de usuarios.";
+    return "Consulta y gestión enfocada al módulo de usuarios.";
   }
   if (normalized === "asesor ventas" || normalized === "asesor de ventas") {
     return "Seguimiento comercial de propiedades y registros.";
   }
   if (normalized === "coordinador ventas" || normalized === "coordinador de ventas") {
-    return "Supervision comercial y coordinacion del flujo de ventas.";
+    return "Supervision comercial y coordinación del flujo de ventas.";
   }
   return "Rol configurado dentro del CRM para controlar accesos y permisos.";
 }

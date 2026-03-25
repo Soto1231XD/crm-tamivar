@@ -3,7 +3,6 @@ import { AppShell } from "../layout/AppShell";
 import { LoginPage } from "@/app/LoginPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { DashboardPage } from "@/modules/dashboard/pages/DashboardPage";
-import { ModulePage } from "@/modules/dashboard/pages/ModulePage";
 import { PropertiesPage } from "@/modules/properties/pages/PropertiesPage";
 import { CreatePropertyPage } from "@/modules/properties/pages/CreatePropertyPage";
 import { EditPropertyPage } from "@/modules/properties/pages/EditPropertyPage";
@@ -12,6 +11,7 @@ import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
 import { ContentPage } from "@/modules/content/pages/ContentPage";
 import { PropertyDetailView } from "@/modules/properties/components/PropertyDetailView";
+import { MovementsPage } from "@/modules/movements/pages/MovementsPage";
 
 export function AppRoutes() {
   return (
@@ -51,7 +51,7 @@ export function AppRoutes() {
             <Route path="modulos/roles" element={<SystemRolesPage />} />
           </Route>
           <Route element={<ProtectedRoute module="movimientos" />}>
-            <Route path="modulos/movimientos" element={<ModulePage />} />
+            <Route path="modulos/movimientos" element={<MovementsPage />} />
           </Route>
         </Route>
       </Route>

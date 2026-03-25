@@ -1,5 +1,4 @@
 import agregarIcon from '../../../assets/images/Agregar.png';
-import { getRecordsReadScope } from '@/shared/auth/permissions/permissions.util';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import { TablePagination } from '../../../shared/components/TablePagination';
@@ -14,7 +13,6 @@ import { PAGE_SIZE } from '../utils/leads.constants';
 export function LeadsPage() {
   const user = useAuthStore((state) => state.user);
   const { can } = useHasPermission();
-  const recordsReadScope = getRecordsReadScope(user);
 
   const canCreate = can('registros', 'crear');
   const canEdit = can('registros', 'actualizar');
@@ -54,7 +52,6 @@ export function LeadsPage() {
     handleDownloadFilteredLeads,
     handleQuickLeadChange,
   } = useLeadsPageState({
-    recordsReadScope,
     userId: user?.id,
   });
 

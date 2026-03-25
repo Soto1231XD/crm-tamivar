@@ -268,3 +268,56 @@ export function PaymentMultiSelect({
     </div>
   );
 }
+
+type OperationMultiSelectProps = {
+  label: string;
+  selectedValues: string[];
+  options: readonly string[];
+  onToggle: (option: string) => void;
+  className?: string;
+  required?: boolean;
+  error?: string;
+};
+
+export function OperationMultiSelect({
+  label,
+  selectedValues,
+  options,
+  onToggle,
+  className,
+  required,
+  error,
+}: OperationMultiSelectProps) {
+  return (
+    <div className={`flex flex-col gap-2 ${className ?? ""}`}>
+      <LabelText label={label} required={required} />
+      <div
+        className={`rounded-2xl border p-3 ${
+          error ? "border-red-300 bg-red-50/60" : "border-slate-200 bg-slate-50"
+        }`}
+      >
+        <div className="flex flex-wrap gap-2">
+          {options.map((option) => {
+            const isSelected = selectedValues.includes(option);
+
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => onToggle(option)}
+                className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  isSelected
+                    ? "border-[#312C85] bg-[#312C85] text-white shadow-sm"
+                    : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-100"
+                }`}
+              >
+                {option}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {error ? <span className="text-xs font-medium text-red-500">{error}</span> : null}
+    </div>
+  );
+}

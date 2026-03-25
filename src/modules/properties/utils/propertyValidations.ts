@@ -2,10 +2,17 @@ export type FormState = {
   titulo: string;
   tipo_inmueble: string;
   tipo_operacion: string;
+  operaciones: string[];
   descripcion: string;
   precio: string;
   precio_condicionado_descripcion: string;
   precio_condicionado_monto: string;
+  precio_venta: string;
+  descuento_venta: string;
+  precio_renta: string;
+  descuento_renta: string;
+  precio_preventa: string;
+  descuento_preventa: string;
   tipos_pago: string[];
   estatus: string;
   etiquetas: string;
@@ -45,11 +52,10 @@ export type FormState = {
   pisos_tiene: string;
   servicios_instalaciones: string;
   amenidades: string;
-  imagenes: File[]; // El array de archivos
+  imagenes: File[];
   imagenes_existentes: any[];
 };
 
-// Interfaz para los números ya convertidos (parsed)
 export interface ParsedNumbers {
   precio: number;
   cp: number;
@@ -66,12 +72,14 @@ export interface ParsedNumbers {
   lote: number;
   num_int: number;
   precio_condicionado: number;
+  precio_venta: number;
+  descuento_venta: number;
+  precio_renta: number;
+  descuento_renta: number;
+  precio_preventa: number;
+  descuento_preventa: number;
 }
 
-/**
- * Valida los datos del formulario de propiedades.
- * Devuelve un objeto con los errores de cada campo, o un objeto vacío si todo está correcto.
- */
 export type FormErrors = Partial<Record<keyof FormState, string>>;
 
 export function validatePropertyForm(
@@ -79,32 +87,91 @@ export function validatePropertyForm(
   parsed: ParsedNumbers,
 ): FormErrors {
   const errors: FormErrors = {};
+  const isTerreno = form.tipo_inmueble.trim().toLowerCase() === "terreno";
 
-  // Validación de Precio
-  if (Number.isNaN(parsed.precio) || parsed.precio <= 0) {
-    errors.precio = "Debe ser un valor numérico mayor a 0.";
+  if (form.operaciones.length === 0) {
+    errors.operaciones = "Debes seleccionar al menos una operación.";
   }
 
-  // Validación de Código Postal
+  if (form.operaciones.includes("Venta")) {
+    if (Number.isNaN(parsed.precio_venta) || parsed.precio_venta <= 0) {
+      errors.precio_venta = "Ingresa un precio de venta valido mayor a 0.";
+    }
+    if (form.descuento_venta && Number.isNaN(parsed.descuento_venta)) {
+      errors.descuento_venta = "Ingresa un descuento de venta valido.";
+    }
+  }
+
+  if (form.operaciones.includes("Renta")) {
+    if (Number.isNaN(parsed.precio_renta) || parsed.precio_renta <= 0) {
+      errors.precio_renta = "Ingresa un precio de renta valido mayor a 0.";
+    }
+    if (form.descuento_renta && Number.isNaN(parsed.descuento_renta)) {
+      errors.descuento_renta = "Ingresa un descuento de renta valido.";
+    }
+  }
+
+  if (form.operaciones.includes("Preventa")) {
+    if (Number.isNaN(parsed.precio_preventa) || parsed.precio_preventa <= 0) {
+      errors.precio_preventa =
+        "Ingresa un precio de preventa valido mayor a 0.";
+    }
+    if (form.descuento_preventa && Number.isNaN(parsed.descuento_preventa)) {
+      errors.descuento_preventa = "Ingresa un descuento de preventa valido.";
+    }
+  }
+
   const cpString = String(parsed.cp);
   if (cpString.length !== 5 || Number.isNaN(parsed.cp)) {
     errors.cp = "El código postal debe tener exactamente 5 dígitos.";
   }
 
-  // Validación de Tipos de pago
   if (form.tipos_pago.length === 0) {
     errors.tipos_pago = "Debes seleccionar al menos un método de pago.";
   }
 
-  // Validaciones de números opcionales
-  if (form.smz && Number.isNaN(parsed.smz))
-    errors.smz = "Debe ser un número válido.";
-  if (form.mza && Number.isNaN(parsed.mza))
-    errors.mza = "Debe ser un número válido.";
-  if (form.lote && Number.isNaN(parsed.lote))
-    errors.lote = "Debe ser un número válido.";
-  if (form.num_int && Number.isNaN(parsed.num_int))
-    errors.num_int = "Debe ser un número válido.";
+  if (form.smz && Number.isNaN(parsed.smz)) {
+    errors.smz = "Debe ser un numero valido.";
+  }
+  if (form.mza && Number.isNaN(parsed.mza)) {
+    errors.mza = "Debe ser un numero valido.";
+  }
+  if (form.lote && Number.isNaN(parsed.lote)) {
+    errors.lote = "Debe ser un numero valido.";
+  }
+  if (form.num_int && Number.isNaN(parsed.num_int)) {
+    errors.num_int = "Debe ser un numero valido.";
+  }
+
+  if (Number.isNaN(parsed.terreno) || parsed.terreno <= 0) {
+    errors.terreno_m2 = "Ingresa una medida de terreno valida mayor a 0.";
+  }
+  if (Number.isNaN(parsed.frente) || parsed.frente <= 0) {
+    errors.frente = "Ingresa un frente valido mayor a 0.";
+  }
+  if (Number.isNaN(parsed.fondo) || parsed.fondo <= 0) {
+    errors.fondo = "Ingresa un fondo valido mayor a 0.";
+  }
+
+  if (!isTerreno) {
+    if (Number.isNaN(parsed.construccion) || parsed.construccion <= 0) {
+      errors.construccion_m2 =
+        "Ingresa una medida de construcción valida mayor a 0.";
+    }
+    if (Number.isNaN(parsed.banos) || parsed.banos < 0) {
+      errors.banos = "Ingresa un numero de baños valido.";
+    }
+    if (Number.isNaN(parsed.recamaras) || parsed.recamaras < 0) {
+      errors.recamaras = "Ingresa un numero de recamaras valido.";
+    }
+    if (
+      Number.isNaN(parsed.estacionamiento) ||
+      parsed.estacionamiento < 0
+    ) {
+      errors.estacionamiento =
+        "Ingresa un numero de estacionamientos valido.";
+    }
+  }
 
   return errors;
 }

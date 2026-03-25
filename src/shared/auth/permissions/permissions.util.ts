@@ -28,26 +28,13 @@ export const getRecordsReadScope = (
   if (
     permissions.includes("*:*") ||
     permissions.includes("registros:*") ||
-    permissions.includes("registros:leer:all") ||
-    permissions.includes("registros:all")
+    permissions.includes("registros:leer_todos")
   ) {
     return "all";
-  }
-
-  if (
-    permissions.includes("registros:leer:own") ||
-    permissions.includes("registros:own")
-  ) {
-    return "own";
   }
 
   if (checkPermission(permissions, "registros", "leer")) {
-    // Fallback temporal mientras backend no exponga own/all en permisos.
-    if (user.roles?.includes("Asesor de Ventas")) {
-      return "own";
-    }
-
-    return "all";
+    return "own";
   }
 
   return "none";

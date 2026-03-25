@@ -3,7 +3,6 @@ import type { BlogRecord } from "@/interfaces/blog.interface";
 import type { UserRecord, UserRoleRecord } from "@/interfaces/user.interface";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
-import { getRecordsReadScope } from "@/shared/auth/permissions/permissions.util";
 import { canAccessDashboard } from "@/shared/auth/navigation.util";
 import { getBlogs } from "../../content/services/content.api";
 import { getLeads } from "../../leads/services/leads.api";
@@ -64,7 +63,6 @@ export function DashboardPage() {
       user.correo_electronico
     : "Usuario";
   const primaryRoleDisplay = user?.roles?.[0] || "Sin rol asignado";
-  const recordsReadScope = getRecordsReadScope(user);
   const canViewDashboard = canAccessDashboard(userPermissions);
   const dashboardCards = getVisibleDashboardCards(can);
   const dashboardSections = getVisibleDashboardSections(can);
@@ -137,14 +135,7 @@ export function DashboardPage() {
               }))
           : [];
 
-        const ownLeads =
-          recordsReadScope === "own" && user?.id
-            ? leads.filter((lead) => lead.creador?.id === user.id)
-            : [];
-
-        const visibleLeads = recordsReadScope === "own" ? ownLeads : leads;
-
-        const visibleRecentLeads = visibleLeads
+        const visibleRecentLeads = leads
           .slice()
           .sort((left, right) => {
             const leftDate = left.creado_en
@@ -202,13 +193,12 @@ export function DashboardPage() {
         setSummary({
           propiedadesDisponibles: propiedadesDisponiblesActivas,
           propiedadesVendidas,
-          registros: visibleLeads.length,
+          registros: leads.length,
           blogs: Array.isArray(blogs) ? blogs.length : 0,
           rolesSistema: Array.isArray(roles) ? roles.length : 0,
           usuariosSistema: Array.isArray(users) ? users.length : 0,
           registrosRecientes: visibleRecentLeads,
-          misRegistrosRecientes:
-            recordsReadScope === "own" ? visibleRecentLeads : [],
+          misRegistrosRecientes: [],
           propiedadesRecientes,
           usuariosRecientes: recentUsers,
           misPublicaciones: recentPublications,
@@ -238,8 +228,6 @@ export function DashboardPage() {
     canReadRoles,
     canReadUsers,
     canViewDashboard,
-    recordsReadScope,
-    user?.id,
   ]);
 
   const cardValues = useMemo(
@@ -263,18 +251,13 @@ export function DashboardPage() {
 
   const sectionData = useMemo(
     () => ({
-      registrosRecientes:
-        recordsReadScope === "own"
-          ? summary.misRegistrosRecientes
-          : summary.registrosRecientes,
+      registrosRecientes: summary.registrosRecientes,
       propiedadesRecientes: summary.propiedadesRecientes,
       usuariosRecientes: summary.usuariosRecientes,
       misPublicaciones: summary.misPublicaciones,
     }),
     [
-      recordsReadScope,
       summary.misPublicaciones,
-      summary.misRegistrosRecientes,
       summary.propiedadesRecientes,
       summary.registrosRecientes,
       summary.usuariosRecientes,
