@@ -65,7 +65,7 @@ export function LeadsTable({
       cellClassName: 'min-w-[220px] whitespace-normal',
       render: (lead) => (
         <div className="max-w-[220px] break-words text-sm leading-6 text-slate-700">
-          {propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo'}
+          {lead.propiedad_id != null ? propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo' : 'Sin propiedad'}
         </div>
       ),
     },
@@ -147,7 +147,7 @@ export function LeadsTable({
       customActions={(lead) => (
         <DownloadLeadPdfButton
           lead={lead}
-          propertyTitle={propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo'}
+          propertyTitle={lead.propiedad_id != null ? propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo' : 'Sin propiedad'}
           className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-50"
         >
           {(loading) =>

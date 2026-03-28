@@ -1,4 +1,8 @@
 import { PROPERTY_STATUS_STYLES } from "./property-constants";
+import type {
+  CommercialSchemeRecord,
+  PropertyRecord,
+} from "@/interfaces/property.interface";
 
 export function getPropertyStatusStyles(estatus: string): {
   backgroundColor: string;
@@ -110,4 +114,32 @@ export function formatOptionalCurrency(value?: string | number): string {
 export function formatOptionalNumber(value?: string | number): string {
   if (value == null || value === "") return "No aplica";
   return String(value);
+}
+
+export function getCommercialSchemes(
+  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
+): CommercialSchemeRecord[] {
+  if (!property || !Array.isArray(property.esquema_comercial)) return [];
+  return property.esquema_comercial;
+}
+
+export function getPrimaryCommercialScheme(
+  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
+): CommercialSchemeRecord | null {
+  const schemes = getCommercialSchemes(property);
+  return schemes[0] ?? null;
+}
+
+export function getPropertyOperationLabel(
+  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
+): string {
+  const schemes = getCommercialSchemes(property);
+  if (schemes.length === 0) return "Sin operación";
+  return schemes.map((scheme) => scheme.tipo_operacion).join(" / ");
+}
+
+export function getPrimaryPropertyPrice(
+  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
+): number {
+  return getPrimaryCommercialScheme(property)?.precio ?? 0;
 }

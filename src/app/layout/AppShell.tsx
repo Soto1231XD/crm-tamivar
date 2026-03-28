@@ -5,6 +5,7 @@ import { useAuthStore } from "@/shared/auth/useAuthStore";
 import {
   getAvailableModules,
   MODULE_LABELS,
+  MODULE_PATHS,
 } from "@/shared/auth/navigation.util";
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
 import dashboardIcon from "@/assets/images/Dashboard.png";
@@ -22,6 +23,7 @@ const MODULE_ICONS: Record<ModuleKey, string> = {
   dashboard: dashboardIcon,
   propiedades: propiedadesIcon,
   registros: registrosIcon,
+  registros_leads: registrosIcon,
   blogs: contenidoIcon,
   usuarios: usuariosIcon,
   roles: rolIcon,
@@ -40,7 +42,7 @@ export function AppShell() {
 
   const navItems: Array<{ to: string; label: string; icon: string }> =
     availableModules.map((module: ModuleKey) => ({
-      to: module === "dashboard" ? "/dashboard" : `/modulos/${module}`,
+      to: MODULE_PATHS[module],
       label: MODULE_LABELS[module] || module,
       icon: MODULE_ICONS[module],
     }));
@@ -231,6 +233,14 @@ export function AppShell() {
 
 function getPageTitle(pathname: string): string {
   if (pathname === "/dashboard") return "Dashboard";
+
+  if (pathname.startsWith("/modulos/registros-visitas")) {
+    return MODULE_LABELS.registros;
+  }
+
+  if (pathname.startsWith("/modulos/registros-leads")) {
+    return MODULE_LABELS.registros_leads;
+  }
 
   if (pathname.startsWith("/modulos/")) {
     const rawModule = pathname

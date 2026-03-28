@@ -7,6 +7,7 @@ import { canAccessDashboard } from "@/shared/auth/navigation.util";
 import { getBlogs } from "../../content/services/content.api";
 import { getLeads } from "../../leads/services/leads.api";
 import { getProperties } from "../../properties/services/properties.api";
+import { getPrimaryPropertyPrice } from "../../properties/utils/formatters";
 import { getSystemRoles } from "../../systemRoles/services/systemRoles.api";
 import { getUsers } from "../../users/services/users.api";
 import { DashboardSectionCard } from "../components/DashboardSectionCard";
@@ -131,7 +132,7 @@ export function DashboardPage() {
                   fraccionamiento: property.direccion?.fraccionamiento ?? "",
                 },
                 estatus: property.estatus,
-                precio: String(property.precio ?? 0),
+                precio: String(getPrimaryPropertyPrice(property)),
               }))
           : [];
 

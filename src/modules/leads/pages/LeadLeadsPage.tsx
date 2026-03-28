@@ -2,47 +2,46 @@ import agregarIcon from '../../../assets/images/Agregar.png';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import { TablePagination } from '../../../shared/components/TablePagination';
-import { CreateLeadModal } from '../components/CreateLeadModal';
+import { LeadLeadsFilters } from '../components/LeadLeadsFilters';
+import { LeadLeadsTable } from '../components/LeadLeadsTable';
+import { CreateLeadLeadModal } from '../components/CreateLeadLeadModal';
+import { EditLeadLeadModal } from '../components/EditLeadLeadModal';
 import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
-import { EditLeadModal } from '../components/EditLeadModal';
-import { LeadFilters } from '../components/LeadFilters';
-import { LeadsTable } from '../components/LeadsTable';
 import { useLeadsPageState } from '../hooks/useLeadsPageState';
 import { PAGE_SIZE } from '../utils/leads.constants';
 
-export function LeadsPage() {
+export function LeadLeadsPage() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.token);
   const { can } = useHasPermission();
 
-  const canCreate = can('registros', 'crear');
-  const canEdit = can('registros', 'actualizar');
-  const canDelete = can('registros', 'eliminar');
+  const canCreate = can('registros_leads', 'crear');
+  const canEdit = can('registros_leads', 'actualizar');
+  const canDelete = can('registros_leads', 'eliminar');
 
   const {
     isLoading,
     search,
     statusFilter,
-    priorityFilter,
-    propertyFilter,
-    appointmentDateFilter,
+    leadDateFromFilter,
+    leadDateToFilter,
     updatingLeadId,
     isCreateModalOpen,
     editingLead,
     deletingLead,
     currentPage,
     statusOptions,
-    propertyTitleById,
-    propertyFilterOptions,
+    propertyAddressById,
     filteredLeads,
     paginatedLeads,
     totalPages,
     propertyChoices,
+    userNameById,
+    userChoices,
     setSearch,
     setStatusFilter,
-    setPriorityFilter,
-    setPropertyFilter,
-    setAppointmentDateFilter,
+    setLeadDateFromFilter,
+    setLeadDateToFilter,
     setIsCreateModalOpen,
     setEditingLead,
     setDeletingLead,
@@ -61,12 +60,10 @@ export function LeadsPage() {
     <div className="min-w-0 space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Seguimiento comercial
-          </p>
-          <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-[2rem]">Registros visitas</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Prospección comercial</p>
+          <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-[2rem]">Registros leads</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Administra el flujo comercial, revisa estados y da seguimiento puntual a cada prospecto desde un solo lugar.
+            Da seguimiento a los leads con contexto comercial completo, asignación de vendedor y datos de origen.
           </p>
         </div>
 
@@ -77,33 +74,31 @@ export function LeadsPage() {
           className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
-          <span>Nuevo registro visita</span>
+          <span>Nuevo registro lead</span>
         </button>
       </header>
 
-      <LeadFilters
+      <LeadLeadsFilters
         search={search}
         statusFilter={statusFilter}
-        priorityFilter={priorityFilter}
-        propertyFilter={propertyFilter}
-        appointmentDateFilter={appointmentDateFilter}
+        leadDateFromFilter={leadDateFromFilter}
+        leadDateToFilter={leadDateToFilter}
         statusOptions={statusOptions}
-        propertyFilterOptions={propertyFilterOptions}
         hasResults={filteredLeads.length > 0}
         onSearchChange={setSearch}
         onStatusChange={setStatusFilter}
-        onPriorityChange={setPriorityFilter}
-        onPropertyChange={setPropertyFilter}
-        onAppointmentDateChange={setAppointmentDateFilter}
+        onLeadDateFromChange={setLeadDateFromFilter}
+        onLeadDateToChange={setLeadDateToFilter}
         onDownload={handleDownloadFilteredLeads}
       />
 
       <section className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <LeadsTable
+        <LeadLeadsTable
           leads={paginatedLeads}
           isLoading={isLoading}
           updatingLeadId={updatingLeadId}
-          propertyTitleById={propertyTitleById}
+          propertyAddressById={propertyAddressById}
+          userNameById={userNameById}
           onQuickChange={handleQuickLeadChange}
           onEdit={setEditingLead}
           onDelete={setDeletingLead}
@@ -114,27 +109,29 @@ export function LeadsPage() {
           totalPages={totalPages}
           totalItems={filteredLeads.length}
           pageSize={PAGE_SIZE}
-          itemLabel="registros visitas"
+          itemLabel="registros leads"
           onPageChange={setCurrentPage}
         />
       </section>
 
       {canCreate ? (
-        <CreateLeadModal
+        <CreateLeadLeadModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onCreate={handleCreateLead}
           propertyOptions={propertyChoices}
+          userOptions={userChoices}
         />
       ) : null}
 
       {canEdit ? (
-        <EditLeadModal
+        <EditLeadLeadModal
           isOpen={Boolean(editingLead)}
           lead={editingLead}
           onClose={() => setEditingLead(null)}
           onEdit={handleEditLead}
           propertyOptions={propertyChoices}
+          userOptions={userChoices}
         />
       ) : null}
 

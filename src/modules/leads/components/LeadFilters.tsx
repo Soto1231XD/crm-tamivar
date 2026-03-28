@@ -36,11 +36,11 @@ export function LeadFilters({
   onDownload,
 }: LeadFiltersProps) {
   return (
-    <FilterCard description="Busca por cliente, estado, prioridad, propiedad o fecha de cita para ubicar registros mas rapido.">
+    <FilterCard description="Busca por cliente, estado, prioridad, propiedad o fecha de cita para ubicar registros más rápido.">
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]">
         <FilterSearchInput
           type="text"
-          placeholder="Buscar por nombre, email o telefono"
+          placeholder="Buscar por nombre, email o teléfono"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
         />

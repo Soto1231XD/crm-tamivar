@@ -7,7 +7,13 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import type { PropertyRecord } from "@/interfaces/property.interface";
-import { formatCurrency, formatFullDireccion } from "../utils/formatters";
+import {
+  formatCurrency,
+  formatFullDireccion,
+  getCommercialSchemes,
+  getPrimaryPropertyPrice,
+  getPropertyOperationLabel,
+} from "../utils/formatters";
 import { PROPERTY_STATUS_STYLES } from "../utils/property-constants";
 import Logo from "@/assets/images/Logo.png";
 
@@ -132,6 +138,10 @@ export const PropertyPdfDocument = ({
   const statusStyle =
     PROPERTY_STATUS_STYLES[property.estatus.toLowerCase()] ||
     PROPERTY_STATUS_STYLES["disponible"];
+  const commercialSchemes = getCommercialSchemes(property);
+  const primaryPrice = getPrimaryPropertyPrice(property);
+  const operationLabel = getPropertyOperationLabel(property);
+  const propertyFeatures = property.caracteristicas ?? {};
 
   return (
     <Document>
@@ -144,7 +154,7 @@ export const PropertyPdfDocument = ({
         <View style={styles.header}>
           <View style={styles.titleGroup}>
             <Text style={styles.title}>{property.titulo}</Text>
-            <Text style={styles.price}>{formatCurrency(property.precio)}</Text>
+            <Text style={styles.price}>{formatCurrency(primaryPrice)}</Text>
           </View>
           {/* Etiqueta con colores dinámicos */}
           <View
@@ -175,7 +185,7 @@ export const PropertyPdfDocument = ({
             <View style={styles.col4}>
               <Text style={styles.label}>Operación</Text>
               <Text style={[styles.value, { textTransform: "capitalize" }]}>
-                {property.tipo_operacion}
+                {operationLabel}
               </Text>
             </View>
             <View style={styles.col4}>
@@ -204,10 +214,25 @@ export const PropertyPdfDocument = ({
         </View>
 
         {/* DETALLES FINANCIEROS (Condicional) */}
-        {(property.cuota_mantenimiento || property.precio_condicionado) && (
+        {(property.cuota_mantenimiento || commercialSchemes.length > 0) && (
           <View style={styles.section} wrap={false}>
             <Text style={styles.sectionTitle}>Detalles Financieros</Text>
             <View style={styles.grid}>
+              {commercialSchemes.map((scheme) => (
+                <View style={styles.col6} key={scheme.tipo_operacion}>
+                  <Text style={styles.label}>{scheme.tipo_operacion}</Text>
+                  <Text style={styles.valueBold}>
+                    {formatCurrency(scheme.precio)}
+                  </Text>
+                  {scheme.descuento_porcentaje != null && (
+                    <Text
+                      style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}
+                    >
+                      Descuento: {scheme.descuento_porcentaje}%
+                    </Text>
+                  )}
+                </View>
+              ))}
               <View style={styles.col6}>
                 <Text style={styles.label}>Cuota de Mantenimiento</Text>
                 <Text style={styles.value}>
@@ -216,21 +241,6 @@ export const PropertyPdfDocument = ({
                     : "No especificada"}
                 </Text>
               </View>
-              {property.precio_condicionado && (
-                <View style={styles.col6}>
-                  <Text style={styles.label}>Precio Condicionado</Text>
-                  <Text style={styles.valueBold}>
-                    {formatCurrency(property.precio_condicionado.monto)}
-                  </Text>
-                  {property.precio_condicionado.descripcion && (
-                    <Text
-                      style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}
-                    >
-                      {property.precio_condicionado.descripcion}
-                    </Text>
-                  )}
-                </View>
-              )}
             </View>
           </View>
         )}
@@ -261,19 +271,19 @@ export const PropertyPdfDocument = ({
             <View style={styles.col3}>
               <Text style={styles.label}>Recámaras</Text>
               <Text style={styles.valueBold}>
-                {property.caracteristicas.recamaras}
+                {propertyFeatures.recamaras ?? 0}
               </Text>
             </View>
             <View style={styles.col3}>
               <Text style={styles.label}>Baños</Text>
               <Text style={styles.valueBold}>
-                {property.caracteristicas.banos}
+                {propertyFeatures.banos ?? 0}
               </Text>
             </View>
             <View style={styles.col3}>
               <Text style={styles.label}>Estacionamiento</Text>
               <Text style={styles.valueBold}>
-                {property.caracteristicas.estacionamiento}
+                {propertyFeatures.estacionamiento ?? 0}
               </Text>
             </View>
             <View style={styles.col3}>
@@ -284,7 +294,7 @@ export const PropertyPdfDocument = ({
 
           {/* Cuadrícula de Características Booleanas */}
           <View style={styles.booleanGrid}>
-            {Object.entries(property.caracteristicas).map(([key, value]) => {
+            {Object.entries(propertyFeatures).map(([key, value]) => {
               if (typeof value === "boolean" && value) {
                 return (
                   <View key={key} style={styles.booleanItem}>

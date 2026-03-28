@@ -78,7 +78,7 @@ export const BaseTable = <T extends { id: number | string }>({
             {isLoading ? (
               <tr>
                 <td colSpan={columns.length + (hasActions ? 1 : 0)} className="px-4 py-6 text-center text-sm text-slate-600">
-                  Cargando informacion...
+                  Cargando información...
                 </td>
               </tr>
             ) : data.length === 0 ? (

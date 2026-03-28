@@ -1,15 +1,20 @@
+export interface CommercialSchemeRecord {
+  tipo_operacion: string;
+  precio: number;
+  descuento_porcentaje?: number;
+}
+
 export interface PropertyRecord {
   id: number;
   slug: string;
+  carpeta_id: string;
   titulo: string;
   tipo_inmueble: string;
-  tipo_operacion: string;
   descripcion?: string;
-  precio: number;
-  precio_condicionado?: PrecioCondicionado;
+  esquema_comercial: CommercialSchemeRecord[];
   tipos_pago: string[];
   estatus: string;
-  etiquetas: string[]; 
+  etiquetas: string[];
   tiene_gravamen: boolean;
   cuota_mantenimiento?: number;
   comentarios?: string;
@@ -18,7 +23,7 @@ export interface PropertyRecord {
   amenidades?: string;
   medidas: Medidas;
   direccion: Direccion;
-  caracteristicas: Caracteristicas;
+  caracteristicas?: Caracteristicas;
   imagenes: Imagen[];
   creado_en: string;
   creado_por_id: number;
@@ -26,6 +31,7 @@ export interface PropertyRecord {
 }
 
 export interface Creador {
+  id?: number;
   nombres: string;
   apellido_paterno: string;
   apellido_materno: string;
@@ -33,17 +39,11 @@ export interface Creador {
   foto_url: string;
 }
 
-// Sub-interfaces
-export interface PrecioCondicionado {
-  descripcion?: string;
-  monto: number;
-}
-
 export interface Medidas {
-  terreno_m2: number;
-  construccion_m2: number;
-  frente: number;
-  fondo: number;
+  terreno_m2?: number;
+  construccion_m2?: number;
+  frente?: number;
+  fondo?: number;
 }
 
 export interface Direccion {
@@ -53,7 +53,7 @@ export interface Direccion {
   mza?: number;
   lote?: number;
   calle: string;
-  num_ext: number;
+  num_ext?: number;
   num_int?: number;
   municipio: string;
   estado: string;
@@ -61,19 +61,21 @@ export interface Direccion {
 }
 
 export interface Caracteristicas {
-  banos: number;
-  recamaras: number;
-  estacionamiento: number;
-  sala: boolean;
-  comedor: boolean;
-  cocina: boolean;
-  area_servicio: boolean;
-  patio: boolean;
-  jardin: boolean;
-  alberca: boolean;
-  terraza: boolean;
-  amueblado: boolean;
-  bodega: boolean;
+  banos?: number;
+  recamaras?: number;
+  estacionamiento?: number;
+  sala?: boolean;
+  comedor?: boolean;
+  cocina?: boolean;
+  area_servicio?: boolean;
+  patio?: boolean;
+  jardin?: boolean;
+  alberca?: boolean;
+  terraza?: boolean;
+  amueblado?: boolean;
+  bodega?: boolean;
+  aire_acondicionado?: boolean;
+  boiler?: boolean;
 }
 
 export interface Imagen {
@@ -82,8 +84,11 @@ export interface Imagen {
   principal: boolean;
 }
 
-// Payloads para peticiones
-export type CreatePropertyPayload = Omit<PropertyRecord, 'id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador'> & {
-  imagenes?: Imagen[]; 
+export type CreatePropertyPayload = Omit<
+  PropertyRecord,
+  "id" | "creado_por_id" | "slug" | "creado_en" | "imagenes" | "creador"
+> & {
+  imagenes?: Imagen[];
 };
+
 export type UpdatePropertyPayload = Partial<CreatePropertyPayload>;

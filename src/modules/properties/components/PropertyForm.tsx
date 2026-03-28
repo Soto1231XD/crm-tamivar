@@ -216,18 +216,9 @@ export function PropertyForm({
         <SectionCard
           step="2"
           title="Precio y condiciones"
-          description="Configura el valor por operacion, descuentos y formas de pago aceptadas."
+          description="Configura el valor por operación, descuentos y formas de pago aceptadas."
         >
           <div className="space-y-4">
-            {selectedOperationBlocks.length > 1 ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Puedes capturar varias operaciones desde la interfaz. Mientras
-                backend termina esa integracion, el guardado seguira usando la
-                primera operacion seleccionada como referencia principal para el
-                precio y el descuento.
-              </div>
-            ) : null}
-
             <div className="grid gap-4 md:grid-cols-2">
               {selectedOperationBlocks.map((operation) => (
                 <div
@@ -236,7 +227,7 @@ export function PropertyForm({
                 >
                   <div className="mb-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Operacion
+                      Operación
                     </p>
                     <h4 className="mt-1 text-base font-semibold text-slate-900">
                       {operation.title}
@@ -255,7 +246,7 @@ export function PropertyForm({
                       required
                     />
                     <FieldInput
-                      label="Descuento (MXN)"
+                      label="Descuento (%)"
                       name={operation.discountName}
                       value={form[operation.discountName]}
                       onChange={handleInputChange}
@@ -282,8 +273,8 @@ export function PropertyForm({
 
         <SectionCard
           step="3"
-          title="Direccion"
-          description="Ubica la propiedad con datos claros y referencias faciles de consultar."
+          title="Dirección"
+          description="Ubica la propiedad con datos claros y referencias fáciles de consultar."
         >
           <div className="grid gap-4 md:grid-cols-4">
             <FieldInput
@@ -358,7 +349,7 @@ export function PropertyForm({
               type="number"
             />
             <FieldInput
-              label="Codigo postal"
+              label="Código postal"
               name="cp"
               value={form.cp}
               onChange={handleInputChange}
@@ -379,11 +370,11 @@ export function PropertyForm({
 
         <SectionCard
           step="4"
-          title={isTerreno ? "Medidas del terreno" : "Medidas y distribucion"}
+          title={isTerreno ? "Medidas del terreno" : "Medidas y distribución"}
           description={
             isTerreno
               ? "Para terrenos solo se muestran las medidas y datos realmente necesarios."
-              : "Registra las dimensiones clave y las caracteristicas interiores de la propiedad."
+              : "Registra las dimensiones clave y las características interiores de la propiedad."
           }
         >
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -400,7 +391,7 @@ export function PropertyForm({
             />
             {!isTerreno ? (
               <FieldInput
-                label="Construccion (m2)"
+                label="Construcción (m2)"
                 name="construccion_m2"
                 value={form.construccion_m2}
                 onChange={handleInputChange}
@@ -482,10 +473,10 @@ export function PropertyForm({
             <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="mb-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Checks rapidos
+                  Checks rápidos
                 </p>
                 <h4 className="mt-1 text-base font-semibold text-slate-900">
-                  Caracteristicas adicionales
+                  Características adicionales
                 </h4>
               </div>
 
@@ -530,7 +521,7 @@ export function PropertyForm({
                   name="jardin"
                   checked={form.jardin}
                   onChange={handleInputChange}
-                  label="Jardin"
+                  label="Jardín"
                 />
                 <Toggle
                   name="alberca"
@@ -575,7 +566,7 @@ export function PropertyForm({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Ajuste automatico
+                    Ajuste automático
                   </p>
                   <h4 className="mt-1 text-base font-semibold text-slate-900">
                     Formulario simplificado para terreno
@@ -590,7 +581,7 @@ export function PropertyForm({
                 />
               </div>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Se ocultaron los campos de distribucion y habitabilidad porque
+                Se ocultaron los campos de distribución y habitabilidad porque
                 no aplican para este tipo de inmueble.
               </p>
             </div>
@@ -599,8 +590,8 @@ export function PropertyForm({
 
         <SectionCard
           step="5"
-          title="Extras e imagenes"
-          description="Agrega imagenes, amenidades, servicios e informacion complementaria para cerrar la ficha."
+          title="Extras e imágenes"
+          description="Agrega imágenes, amenidades, servicios e información complementaria para cerrar la ficha."
         >
           <div className="grid gap-4 md:grid-cols-2">
             <FieldInput

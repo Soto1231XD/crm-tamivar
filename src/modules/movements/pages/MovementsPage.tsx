@@ -11,6 +11,34 @@ import { getMovements } from "../services/movements.api";
 
 const PAGE_SIZE = 10;
 const METHOD_OPTIONS = ["Todos", "GET", "POST", "PATCH", "DELETE"];
+const MODULE_LABELS: Record<string, string> = {
+  auth: "Autenticacion",
+  users: "Usuarios",
+  roles: "Roles",
+  properties: "Propiedades",
+  registros: "Registros",
+  blogs: "Blogs",
+  dashboard: "Dashboard",
+  movimientos: "Movimientos",
+};
+
+function normalizeMovementText(value?: string | null): string {
+  if (!value) return "";
+
+  return value
+    .replaceAll("CreÃƒÂ³", "Creo")
+    .replaceAll("EditÃƒÂ³", "Edito")
+    .replaceAll("ActualizÃƒÂ³", "Actualizo")
+    .replaceAll("EliminÃƒÂ³", "Elimino")
+    .replaceAll("RealizÃƒÂ³", "Realizo")
+    .replaceAll("realizÃ³", "realizo")
+    .replaceAll("Ã¡", "a")
+    .replaceAll("Ã©", "e")
+    .replaceAll("Ã­", "i")
+    .replaceAll("Ã³", "o")
+    .replaceAll("Ãº", "u")
+    .replaceAll("Ã±", "n");
+}
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-MX", {
@@ -42,6 +70,33 @@ function getStatusBadgeClass(statusCode: number): string {
   }
 
   return "bg-slate-100 text-slate-700";
+}
+
+function getModuleLabel(module?: string | null): string {
+  if (!module) return "Sin modulo";
+  return MODULE_LABELS[module] ?? module;
+}
+
+function getActionLabel(action?: string | null): string {
+  if (!action) return "Accion";
+
+  const normalized = action.trim().toLowerCase();
+  if (normalized === "crear") return "Creacion";
+  if (normalized === "editar") return "Edicion";
+  if (normalized === "actualizar") return "Actualizacion";
+  if (normalized === "eliminar") return "Eliminacion";
+
+  return action;
+}
+
+function getMethodLabel(method: string): string {
+  const normalized = method.toUpperCase();
+  if (normalized === "POST") return "Creacion";
+  if (normalized === "PATCH") return "Edicion";
+  if (normalized === "PUT") return "Actualizacion";
+  if (normalized === "DELETE") return "Eliminacion";
+  if (normalized === "GET") return "Consulta";
+  return method;
 }
 
 export function MovementsPage() {
@@ -118,20 +173,23 @@ export function MovementsPage() {
       return movements;
     }
 
-    return movements.filter((movement) => {
-      const haystack = [
-        movement.ruta,
-        movement.modulo,
-        movement.accion,
-        movement.descripcion,
-        movement.usuario?.nombres,
-        movement.usuario?.correo_electronico,
-        movement.metodo,
-        String(movement.statusCode),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      return movements.filter((movement) => {
+        const haystack = [
+          movement.ruta,
+          movement.modulo,
+          getModuleLabel(movement.modulo),
+          movement.accion,
+          getActionLabel(movement.accion),
+          normalizeMovementText(movement.descripcion),
+          movement.usuario?.nombres,
+          movement.usuario?.correo_electronico,
+          movement.metodo,
+          getMethodLabel(movement.metodo),
+          String(movement.statusCode),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
 
       return haystack.includes(normalizedSearch);
     });
@@ -174,14 +232,14 @@ export function MovementsPage() {
         cellClassName: "whitespace-normal break-words",
       },
       {
-        header: "Metodo",
+        header: "Tipo",
         render: (movement) => (
           <span
             className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getMethodBadgeClass(
               movement.metodo,
             )}`}
           >
-            {movement.metodo}
+            {getMethodLabel(movement.metodo)}
           </span>
         ),
       },
@@ -189,28 +247,34 @@ export function MovementsPage() {
         header: "Modulo",
         render: (movement) => (
           <span className="font-medium text-slate-700">
-            {movement.modulo || "Sin modulo"}
+            {getModuleLabel(movement.modulo)}
           </span>
         ),
       },
       {
-        header: "Ruta / accion",
+        header: "Movimiento",
         render: (movement) => (
           <div className="min-w-[260px] text-left">
-            <p className="font-medium text-slate-900">{movement.ruta}</p>
+            <p className="font-medium text-slate-900">
+              {normalizeMovementText(movement.descripcion) || "Accion realizada"}
+            </p>
             <p className="mt-1 text-xs text-slate-500">
-              {movement.accion || "Sin accion registrada"}
+              {getActionLabel(movement.accion)} | {movement.ruta}
             </p>
           </div>
         ),
         cellClassName: "whitespace-normal break-words",
       },
       {
-        header: "Descripcion",
+        header: "Detalle",
         render: (movement) => (
           <div className="max-w-[320px] text-left">
             <p className="whitespace-normal break-words text-sm text-slate-600">
-              {movement.descripcion || "Sin descripcion adicional"}
+              {movement.usuario?.nombres
+                ? `${movement.usuario.nombres} realizó un movimiento en ${getModuleLabel(
+                    movement.modulo,
+                  ).toLowerCase()}.`
+                : "Movimiento ejecutado por el sistema."}
             </p>
           </div>
         ),
@@ -242,14 +306,13 @@ export function MovementsPage() {
           Movimientos
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          Consulta el historial de actividad del CRM, revisa peticiones
-          recientes y detecta rapidamente cambios por modulo, metodo o rango de
-          fecha.
+          Consulta el historial de actividad del CRM con descripciones claras
+          sobre lo que hizo cada usuario, en que modulo y cuando ocurrio.
         </p>
       </header>
 
       <FilterCard
-        description="Busca por ruta, modulo, accion o usuario y filtra por metodo y fechas para ubicar movimientos mas rapido."
+        description="Busca por usuario, modulo o accion realizada y filtra por tipo y fechas para ubicar movimientos mas rapido."
       >
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <FilterSearchInput

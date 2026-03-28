@@ -1,5 +1,12 @@
 import type { LeadRecord } from '@/interfaces/lead.interface';
-import { PRIORITY_STYLES, STATUS_STYLES } from './leads.constants';
+import {
+  CHANNEL_STYLES,
+  LEAD_SOURCE_STYLES,
+  OPERATION_STYLES,
+  PAYMENT_METHOD_STYLES,
+  PRIORITY_STYLES,
+  STATUS_STYLES,
+} from './leads.constants';
 
 export function getStatusStyles(estado: string): { backgroundColor: string; color: string } {
   const normalizedEstado = estado.trim().toLowerCase();
@@ -11,8 +18,36 @@ export function getPriorityStyles(prioridad: string): { backgroundColor: string;
   return PRIORITY_STYLES[normalizedPrioridad] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
 }
 
+export function getOperationStyles(operacion: string): { backgroundColor: string; color: string } {
+  const normalizedOperacion = normalizeOperation(operacion);
+  return OPERATION_STYLES[normalizedOperacion] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
+}
+
+export function getChannelStyles(canal: string): { backgroundColor: string; color: string } {
+  const normalizedChannel = normalizeOperation(canal);
+  return CHANNEL_STYLES[normalizedChannel] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
+}
+
+export function getPaymentMethodStyles(metodo: string): { backgroundColor: string; color: string } {
+  const normalizedMethod = normalizeOperation(metodo);
+  return PAYMENT_METHOD_STYLES[normalizedMethod] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
+}
+
+export function getLeadSourceStyles(origen: string): { backgroundColor: string; color: string } {
+  const normalizedSource = normalizeOperation(origen);
+  return LEAD_SOURCE_STYLES[normalizedSource] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
+}
+
 export function normalizePriority(prioridad: string): string {
   return prioridad
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+export function normalizeOperation(operacion: string): string {
+  return operacion
     .trim()
     .toLowerCase()
     .normalize('NFD')

@@ -97,8 +97,14 @@ export function validatePropertyForm(
     if (Number.isNaN(parsed.precio_venta) || parsed.precio_venta <= 0) {
       errors.precio_venta = "Ingresa un precio de venta valido mayor a 0.";
     }
-    if (form.descuento_venta && Number.isNaN(parsed.descuento_venta)) {
-      errors.descuento_venta = "Ingresa un descuento de venta valido.";
+    if (
+      form.descuento_venta &&
+      (Number.isNaN(parsed.descuento_venta) ||
+        parsed.descuento_venta < 0 ||
+        parsed.descuento_venta > 100)
+    ) {
+      errors.descuento_venta =
+        "Ingresa un descuento de venta valido entre 0 y 100.";
     }
   }
 
@@ -106,8 +112,14 @@ export function validatePropertyForm(
     if (Number.isNaN(parsed.precio_renta) || parsed.precio_renta <= 0) {
       errors.precio_renta = "Ingresa un precio de renta valido mayor a 0.";
     }
-    if (form.descuento_renta && Number.isNaN(parsed.descuento_renta)) {
-      errors.descuento_renta = "Ingresa un descuento de renta valido.";
+    if (
+      form.descuento_renta &&
+      (Number.isNaN(parsed.descuento_renta) ||
+        parsed.descuento_renta < 0 ||
+        parsed.descuento_renta > 100)
+    ) {
+      errors.descuento_renta =
+        "Ingresa un descuento de renta valido entre 0 y 100.";
     }
   }
 
@@ -116,8 +128,14 @@ export function validatePropertyForm(
       errors.precio_preventa =
         "Ingresa un precio de preventa valido mayor a 0.";
     }
-    if (form.descuento_preventa && Number.isNaN(parsed.descuento_preventa)) {
-      errors.descuento_preventa = "Ingresa un descuento de preventa valido.";
+    if (
+      form.descuento_preventa &&
+      (Number.isNaN(parsed.descuento_preventa) ||
+        parsed.descuento_preventa < 0 ||
+        parsed.descuento_preventa > 100)
+    ) {
+      errors.descuento_preventa =
+        "Ingresa un descuento de preventa valido entre 0 y 100.";
     }
   }
 

@@ -4,7 +4,13 @@ import { usePropertiesStore } from "../store/usePropertiesStore";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { PROPERTY_STATUS_STYLES } from "../utils/property-constants";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
-import { formatFullDireccion, formatCurrency } from "../utils/formatters";
+import {
+  formatFullDireccion,
+  formatCurrency,
+  getCommercialSchemes,
+  getPrimaryPropertyPrice,
+  getPropertyOperationLabel,
+} from "../utils/formatters";
 import { getFeatureIcon } from "../utils/featureIcons";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
 import "swiper/css";
@@ -68,6 +74,10 @@ export const PropertyDetailView = () => {
             : `${API_URL}/${img.url.replace(/^\//, "")}`,
         }))
       : [{ url: "/placeholder-image.jpg", titulo: "Sin imagen" }];
+  const commercialSchemes = getCommercialSchemes(currentProperty);
+  const primaryPrice = getPrimaryPropertyPrice(currentProperty);
+  const operationLabel = getPropertyOperationLabel(currentProperty);
+  const propertyFeatures = currentProperty.caracteristicas ?? {};
 
   return (
     <div className="mx-auto p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-screen">
@@ -156,7 +166,7 @@ export const PropertyDetailView = () => {
               Precio:
             </span>
             <p className="text-3xl sm:text-4xl font-black text-indigo-700">
-              {formatCurrency(currentProperty.precio)}
+              {formatCurrency(primaryPrice)}
             </p>
           </div>
         </div>
@@ -202,7 +212,7 @@ export const PropertyDetailView = () => {
                   Operación
                 </p>
                 <p className="text-base sm:text-lg font-semibold text-slate-900 capitalize">
-                  {currentProperty.tipo_operacion}
+                  {operationLabel}
                 </p>
               </div>
               <div>
@@ -350,23 +360,26 @@ export const PropertyDetailView = () => {
             Detalles Financieros
           </h3>
           <div className="space-y-4">
-            {currentProperty.precio_condicionado && (
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-2 gap-2">
+            {commercialSchemes.map((scheme) => (
+              <div
+                key={scheme.tipo_operacion}
+                className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-2 gap-2"
+              >
                 <span className="text-slate-600 font-medium">
-                  Precio Condicionado
+                  {scheme.tipo_operacion}
                 </span>
                 <div className="sm:text-right w-full sm:w-auto bg-slate-50 p-3 sm:bg-transparent sm:p-0 rounded-lg">
                   <span className="font-bold text-slate-900 text-base sm:text-lg block">
-                    {formatCurrency(currentProperty.precio_condicionado.monto)}
+                    {formatCurrency(scheme.precio)}
                   </span>
-                  {currentProperty.precio_condicionado.descripcion && (
+                  {scheme.descuento_porcentaje != null ? (
                     <p className="text-xs font-medium text-slate-500 mt-1">
-                      {currentProperty.precio_condicionado.descripcion}
+                      Descuento: {scheme.descuento_porcentaje}%
                     </p>
-                  )}
+                  ) : null}
                 </div>
               </div>
-            )}
+            ))}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 sm:py-2 border-t border-slate-100 gap-2">
               <span className="text-slate-600 font-medium">
                 Cuota de Mantenimiento
@@ -434,26 +447,26 @@ export const PropertyDetailView = () => {
             <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-1 sm:mb-2">
               Recámaras
             </p>
-            <p className="text-2xl sm:text-4xl font-black text-slate-900">
-              {currentProperty.caracteristicas.recamaras}
-            </p>
-          </div>
+              <p className="text-2xl sm:text-4xl font-black text-slate-900">
+                {propertyFeatures.recamaras ?? 0}
+              </p>
+            </div>
           <div className="bg-slate-50 p-4 sm:p-6 rounded-xl text-center border border-slate-200 shadow-sm flex flex-col justify-center">
             <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-1 sm:mb-2">
               Baños
             </p>
-            <p className="text-2xl sm:text-4xl font-black text-slate-900">
-              {currentProperty.caracteristicas.banos}
-            </p>
-          </div>
+              <p className="text-2xl sm:text-4xl font-black text-slate-900">
+                {propertyFeatures.banos ?? 0}
+              </p>
+            </div>
           <div className="bg-slate-50 p-4 sm:p-6 rounded-xl text-center border border-slate-200 shadow-sm flex flex-col justify-center">
             <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-1 sm:mb-2">
               Estacionamiento
             </p>
-            <p className="text-2xl sm:text-4xl font-black text-slate-900">
-              {currentProperty.caracteristicas.estacionamiento}
-            </p>
-          </div>
+              <p className="text-2xl sm:text-4xl font-black text-slate-900">
+                {propertyFeatures.estacionamiento ?? 0}
+              </p>
+            </div>
           <div className="bg-slate-50 p-4 sm:p-6 rounded-xl text-center border border-slate-200 shadow-sm flex flex-col justify-center">
             <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-1 sm:mb-2">
               Niveles / Pisos
@@ -466,7 +479,7 @@ export const PropertyDetailView = () => {
 
         {/* Booleanos*/}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
-          {Object.entries(currentProperty.caracteristicas).map(
+          {Object.entries(propertyFeatures).map(
             ([key, value]) => {
               if (typeof value === "boolean" && value) {
                 return (
