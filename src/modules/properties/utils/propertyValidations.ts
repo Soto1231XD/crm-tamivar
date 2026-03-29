@@ -44,8 +44,6 @@ export type FormState = {
   terraza: boolean;
   amueblado: boolean;
   bodega: boolean;
-  aire_acondicionado: boolean;
-  boiler: boolean;
   tiene_gravamen: boolean;
   cuota_mantenimiento: string;
   comentarios: string;

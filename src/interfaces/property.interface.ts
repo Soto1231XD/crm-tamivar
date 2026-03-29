@@ -74,8 +74,6 @@ export interface Caracteristicas {
   terraza?: boolean;
   amueblado?: boolean;
   bodega?: boolean;
-  aire_acondicionado?: boolean;
-  boiler?: boolean;
 }
 
 export interface Imagen {

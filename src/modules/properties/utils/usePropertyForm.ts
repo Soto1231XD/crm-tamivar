@@ -59,8 +59,6 @@ const TERRAIN_RESET_VALUES: Partial<FormState> = {
   terraza: false,
   amueblado: false,
   bodega: false,
-  aire_acondicionado: false,
-  boiler: false,
 };
 
 function parseFormattedNumber(value: string): number {
@@ -144,8 +142,6 @@ const INITIAL_FORM_STATE: FormState = {
   terraza: false,
   amueblado: false,
   bodega: false,
-  aire_acondicionado: false,
-  boiler: false,
   tiene_gravamen: false,
   cuota_mantenimiento: "",
   comentarios: "",
@@ -270,8 +266,6 @@ function toFormState(property?: PropertyRecord | null): FormState {
     terraza: Boolean(property.caracteristicas?.terraza),
     amueblado: Boolean(property.caracteristicas?.amueblado),
     bodega: Boolean(property.caracteristicas?.bodega),
-    aire_acondicionado: Boolean(property.caracteristicas?.aire_acondicionado),
-    boiler: Boolean(property.caracteristicas?.boiler),
     tiene_gravamen: Boolean(property.tiene_gravamen),
     cuota_mantenimiento:
       property.cuota_mantenimiento != null
@@ -523,8 +517,6 @@ export function usePropertyForm(
         terraza: isTerreno ? false : form.terraza,
         amueblado: isTerreno ? false : form.amueblado,
         bodega: isTerreno ? false : form.bodega,
-        aire_acondicionado: isTerreno ? false : form.aire_acondicionado,
-        boiler: isTerreno ? false : form.boiler,
       },
       imagenes: form.imagenes_existentes,
     };

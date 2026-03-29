@@ -547,18 +547,6 @@ export function PropertyForm({
                   onChange={handleInputChange}
                   label="Bodega"
                 />
-                <Toggle
-                  name="aire_acondicionado"
-                  checked={form.aire_acondicionado}
-                  onChange={handleInputChange}
-                  label="Aire acondicionado"
-                />
-                <Toggle
-                  name="boiler"
-                  checked={form.boiler}
-                  onChange={handleInputChange}
-                  label="Boiler"
-                />
               </div>
             </div>
           ) : (
