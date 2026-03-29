@@ -7,9 +7,15 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import type { PropertyRecord } from "@/interfaces/property.interface";
-import { formatCurrency, formatFullDireccion } from "../utils/formatters";
+import {
+  formatCurrency,
+  formatFullDireccion,
+  calculateFinalPrice,
+  getFullImageUrl,
+} from "../utils/formatters";
 import { PROPERTY_STATUS_STYLES } from "../utils/property-constants";
 import Logo from "@/assets/images/Logo.png";
+import { stripEmojis } from "../utils/formatters";
 
 // Estilos del PDF
 const styles = StyleSheet.create({
@@ -46,7 +52,32 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 6,
   },
-  price: { fontSize: 18, color: "#4f46e5", fontWeight: "bold" },
+
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    marginBottom: 4,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: "#475569",
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    marginRight: 6,
+  },
+  priceValue: {
+    fontSize: 18,
+    color: "#4f46e5",
+    fontWeight: "bold",
+  },
+  priceOriginal: {
+    fontSize: 12,
+    color: "#788495",
+    textDecoration: "line-through",
+    marginLeft: 8,
+    marginBottom: 1,
+  },
+
   statusBadge: {
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -77,6 +108,37 @@ const styles = StyleSheet.create({
     borderLeftColor: "#fbbf24",
   },
 
+  // Estilos para la tabla financiera
+  tableHeader: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#cbd5e1",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginTop: 10,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  thCol: {
+    width: "25%",
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "#334155",
+    textTransform: "uppercase",
+  },
+  tdCol: { width: "25%", fontSize: 10, color: "#0f172a" },
+  tdColBold: {
+    width: "25%",
+    fontSize: 10,
+    color: "#4f46e5",
+    fontWeight: "bold",
+  },
+
   // Sistema de Grid (usando porcentajes)
   grid: { flexDirection: "row", flexWrap: "wrap" },
   col12: { width: "100%", marginBottom: 18, paddingRight: 10 },
@@ -104,8 +166,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 6,
   },
-  booleanBullet: { fontSize: 10, color: "#10b981", marginRight: 5 },
   booleanText: { fontSize: 10, color: "#1e293b", textTransform: "capitalize" },
+
+  // Imagenes
+  galleryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  galleryCol: {
+    width: "48.5%",
+    marginBottom: 15,
+  },
+  galleryImage: {
+    height: 170,
+    objectFit: "cover",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
 
   // Footer
   footer: {
@@ -144,7 +223,29 @@ export const PropertyPdfDocument = ({
         <View style={styles.header}>
           <View style={styles.titleGroup}>
             <Text style={styles.title}>{property.titulo}</Text>
-            <Text style={styles.price}>{formatCurrency(property.precio)}</Text>
+
+            {property.esquema_comercial.map((esquema, idx) => {
+              const { finalPrice, originalPrice, hasDiscount } =
+                calculateFinalPrice(esquema.precio, esquema.descuento_cantidad);
+
+              return (
+                <View key={idx} style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>
+                    {esquema.tipo_operacion}:
+                  </Text>
+
+                  <Text style={styles.priceValue}>
+                    {formatCurrency(finalPrice)}
+                  </Text>
+
+                  {hasDiscount && (
+                    <Text style={styles.priceOriginal}>
+                      {formatCurrency(originalPrice)}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
           </View>
           {/* Etiqueta con colores dinámicos */}
           <View
@@ -175,7 +276,9 @@ export const PropertyPdfDocument = ({
             <View style={styles.col4}>
               <Text style={styles.label}>Operación</Text>
               <Text style={[styles.value, { textTransform: "capitalize" }]}>
-                {property.tipo_operacion}
+                {property.esquema_comercial
+                  .map((e) => e.tipo_operacion.toLowerCase())
+                  .join(" / ")}
               </Text>
             </View>
             <View style={styles.col4}>
@@ -203,37 +306,69 @@ export const PropertyPdfDocument = ({
           </View>
         </View>
 
-        {/* DETALLES FINANCIEROS (Condicional) */}
-        {(property.cuota_mantenimiento || property.precio_condicionado) && (
-          <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Detalles Financieros</Text>
-            <View style={styles.grid}>
-              <View style={styles.col6}>
-                <Text style={styles.label}>Cuota de Mantenimiento</Text>
-                <Text style={styles.value}>
-                  {property.cuota_mantenimiento
-                    ? formatCurrency(property.cuota_mantenimiento)
-                    : "No especificada"}
+        {/* DETALLES FINANCIEROS */}
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionTitle}>Desglose Financiero</Text>
+
+          {/* Cabecera de la Tabla */}
+          <View style={styles.tableHeader}>
+            <Text style={styles.thCol}>Esquema</Text>
+            <Text style={styles.thCol}>Precio Base</Text>
+            <Text style={styles.thCol}>Descuento</Text>
+            <Text style={styles.thCol}>Precio Final</Text>
+          </View>
+
+          {property.esquema_comercial.map((esquema, idx) => {
+            const {
+              hasDiscount,
+              originalPrice,
+              discountAmount,
+              finalPrice,
+              discountPercentage,
+            } = calculateFinalPrice(esquema.precio, esquema.descuento_cantidad);
+
+            return (
+              <View key={idx} style={styles.tableRow}>
+                <Text style={[styles.tdCol, { fontWeight: "bold" }]}>
+                  {esquema.tipo_operacion}
+                </Text>
+                <Text style={styles.tdCol}>
+                  {formatCurrency(originalPrice)}
+                </Text>
+                <Text
+                  style={[
+                    styles.tdCol,
+                    { color: hasDiscount ? "#10b981" : "#64748b" },
+                  ]}
+                >
+                  {hasDiscount
+                    ? `-${discountPercentage}% (${formatCurrency(discountAmount)})`
+                    : "-"}
+                </Text>
+                <Text style={styles.tdColBold}>
+                  {formatCurrency(finalPrice)}
                 </Text>
               </View>
-              {property.precio_condicionado && (
-                <View style={styles.col6}>
-                  <Text style={styles.label}>Precio Condicionado</Text>
-                  <Text style={styles.valueBold}>
-                    {formatCurrency(property.precio_condicionado.monto)}
-                  </Text>
-                  {property.precio_condicionado.descripcion && (
-                    <Text
-                      style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}
-                    >
-                      {property.precio_condicionado.descripcion}
-                    </Text>
-                  )}
-                </View>
-              )}
+            );
+          })}
+
+          {/* Fila extra para Cuota de Mantenimiento si existe */}
+          {property.cuota_mantenimiento && (
+            <View style={[styles.tableRow, { backgroundColor: "#f8fafc" }]}>
+              <Text
+                style={[
+                  styles.tdCol,
+                  { width: "75%", fontStyle: "italic", color: "#64748b" },
+                ]}
+              >
+                * Cuota de mantenimiento mensual (No incluida en precio)
+              </Text>
+              <Text style={[styles.tdColBold, { color: "#334155" }]}>
+                {formatCurrency(property.cuota_mantenimiento)}
+              </Text>
             </View>
-          </View>
-        )}
+          )}
+        </View>
 
         {/* DISTRIBUCIÓN Y DIMENSIONES */}
         <View style={styles.section} wrap={false}>
@@ -261,19 +396,19 @@ export const PropertyPdfDocument = ({
             <View style={styles.col3}>
               <Text style={styles.label}>Recámaras</Text>
               <Text style={styles.valueBold}>
-                {property.caracteristicas.recamaras}
+                {property.caracteristicas?.recamaras}
               </Text>
             </View>
             <View style={styles.col3}>
               <Text style={styles.label}>Baños</Text>
               <Text style={styles.valueBold}>
-                {property.caracteristicas.banos}
+                {property.caracteristicas?.banos}
               </Text>
             </View>
             <View style={styles.col3}>
               <Text style={styles.label}>Estacionamiento</Text>
               <Text style={styles.valueBold}>
-                {property.caracteristicas.estacionamiento}
+                {property.caracteristicas?.estacionamiento}
               </Text>
             </View>
             <View style={styles.col3}>
@@ -283,28 +418,32 @@ export const PropertyPdfDocument = ({
           </View>
 
           {/* Cuadrícula de Características Booleanas */}
-          <View style={styles.booleanGrid}>
-            {Object.entries(property.caracteristicas).map(([key, value]) => {
-              if (typeof value === "boolean" && value) {
-                return (
-                  <View key={key} style={styles.booleanItem}>
-                    <Text style={styles.booleanBullet}>•</Text>
-                    <Text style={styles.booleanText}>
-                      {key.replace(/_/g, " ")}
-                    </Text>
-                  </View>
-                );
-              }
-              return null;
-            })}
-          </View>
+          {property.caracteristicas && (
+            <View style={styles.col12}>
+              <Text style={styles.label}>Cuenta con</Text>
+              <Text
+                style={[
+                  styles.value,
+                  { textTransform: "capitalize", lineHeight: 1.5 },
+                ]}
+              >
+                {Object.entries(property.caracteristicas)
+                  // Filtramos solo las que son true
+                  .filter(([_, value]) => typeof value === "boolean" && value)
+                  // Limpiamos los guiones bajos
+                  .map(([key]) => key.replace(/_/g, " "))
+                  // Las unimos con coma y espacio
+                  .join(", ")}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Descripción */}
         <View style={styles.section} wrap={false}>
           <Text style={styles.sectionTitle}>Descripción General</Text>
           <Text style={styles.textParagraph}>
-            {property.descripcion || "Sin descripción proporcionada."}
+            {stripEmojis(property.descripcion || "") || "Sin descripción proporcionada."}
           </Text>
         </View>
 
@@ -314,7 +453,7 @@ export const PropertyPdfDocument = ({
             <Text style={styles.sectionTitle}>
               Amenidades de la Zona/Complejo
             </Text>
-            <Text style={styles.textParagraph}>{property.amenidades}</Text>
+            <Text style={styles.textParagraph}>{stripEmojis(property.amenidades)}</Text>
           </View>
         )}
 
@@ -323,7 +462,7 @@ export const PropertyPdfDocument = ({
           <View style={styles.section} wrap={false}>
             <Text style={styles.sectionTitle}>Servicios e Instalaciones</Text>
             <Text style={styles.textParagraph}>
-              {property.servicios_instalaciones}
+              {stripEmojis(property.servicios_instalaciones)}
             </Text>
           </View>
         )}
@@ -338,8 +477,26 @@ export const PropertyPdfDocument = ({
                 { fontStyle: "italic", color: "#353d49" },
               ]}
             >
-              {property.comentarios}
+              {stripEmojis(property.comentarios)}
             </Text>
+          </View>
+        )}
+
+        {/* Galería de imágenes */}
+        {property.imagenes && property.imagenes.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Anexo Fotográfico</Text>
+
+            <View style={styles.galleryGrid}>
+              {property.imagenes.map((img, idx) => (
+                <View key={idx} style={styles.galleryCol} wrap={false}>
+                  <Image
+                    src={getFullImageUrl(img.url)}
+                    style={styles.galleryImage}
+                  />
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
