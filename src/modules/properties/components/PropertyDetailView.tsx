@@ -4,14 +4,18 @@ import { usePropertiesStore } from "../store/usePropertiesStore";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { PROPERTY_STATUS_STYLES } from "../utils/property-constants";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
-import { formatFullDireccion, formatCurrency } from "../utils/formatters";
+import {
+  formatFullDireccion,
+  formatCurrency,
+  calculateFinalPrice,
+  formatDate,
+  getFullImageUrl
+} from "../utils/formatters";
 import { getFeatureIcon } from "../utils/featureIcons";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const PropertyDetailView = () => {
   const { id } = useParams();
@@ -62,10 +66,8 @@ export const PropertyDetailView = () => {
   const imagenesFormateadas =
     currentProperty.imagenes && currentProperty.imagenes.length > 0
       ? currentProperty.imagenes.map((img) => ({
-          ...img,
-          url: img.url.startsWith("http")
-            ? img.url
-            : `${API_URL}/${img.url.replace(/^\//, "")}`,
+        ...img,
+        url: getFullImageUrl(img.url),
         }))
       : [{ url: "/placeholder-image.jpg", titulo: "Sin imagen" }];
 
@@ -74,7 +76,7 @@ export const PropertyDetailView = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -150,20 +152,52 @@ export const PropertyDetailView = () => {
               {currentProperty.estatus}
             </span>
           </div>
-          {/* Precio con label */}
-          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2">
-            <span className="text-slate-500 font-bold uppercase tracking-wide text-sm">
-              Precio:
-            </span>
-            <p className="text-3xl sm:text-4xl font-black text-indigo-700">
-              {formatCurrency(currentProperty.precio)}
-            </p>
+
+          <div className="flex flex-col gap-3 mt-4">
+            {currentProperty.esquema_comercial.map((esquema, idx) => {
+              const {
+                hasDiscount,
+                finalPrice,
+                originalPrice,
+                discountPercentage,
+              } = calculateFinalPrice(
+                esquema.precio,
+                esquema.descuento_cantidad,
+              );
+
+              return (
+                <div
+                  key={idx}
+                  className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3"
+                >
+                  <span className="text-slate-500 font-bold uppercase tracking-widest text-sm min-w-[80px]">
+                    {esquema.tipo_operacion}:
+                  </span>
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <p className="text-3xl sm:text-4xl font-black text-indigo-700">
+                      {formatCurrency(finalPrice)}
+                    </p>
+                    {/* Precio original tachado si hay descuento */}
+                    {hasDiscount && (
+                      <span className="text-lg sm:text-xl text-slate-400 line-through font-semibold decoration-2">
+                        {formatCurrency(originalPrice)}
+                      </span>
+                    )}
+                    {/* Badge de porcentaje de descuento */}
+                    {hasDiscount && (
+                      <span className="bg-green-100 text-green-700 text-xs font-black px-2 py-1 rounded-md tracking-wider ml-1 sm:ml-2">
+                        -{discountPercentage}% OFF
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Cuerpo principal de la ficha */}
-        <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10">
-          {/* Info Core (Izquierda y Centro) */}
+        <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10 items-start">
           <div className="lg:col-span-2 space-y-8">
             {/* Dirección */}
             <div>
@@ -202,7 +236,9 @@ export const PropertyDetailView = () => {
                   Operación
                 </p>
                 <p className="text-base sm:text-lg font-semibold text-slate-900 capitalize">
-                  {currentProperty.tipo_operacion}
+                  {currentProperty.esquema_comercial
+                    .map((e) => e.tipo_operacion.toLowerCase())
+                    .join(" / ")}
                 </p>
               </div>
               <div>
@@ -218,53 +254,69 @@ export const PropertyDetailView = () => {
                   Registro
                 </p>
                 <p className="text-base sm:text-lg font-semibold text-slate-900">
-                  {new Date(currentProperty.creado_en).toLocaleDateString(
-                    "es-MX",
-                    { year: "numeric", month: "short", day: "numeric" },
-                  )}
+                  {formatDate(currentProperty.creado_en)}
                 </p>
+              </div>
+            </div>
+
+            {/* Dimensiones */}
+            <div className="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">
+                Dimensiones del Inmueble
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 divide-x-0 sm:divide-x divide-slate-200">
+                <div className="sm:px-4 first:pl-0">
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">
+                    Terreno
+                  </p>
+                  <p className="text-base sm:text-lg font-black text-slate-900">
+                    {currentProperty.medidas.terreno_m2} m²
+                  </p>
+                </div>
+                <div className="sm:px-4">
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">
+                    Construcción
+                  </p>
+                  <p className="text-base sm:text-lg font-black text-slate-900">
+                    {currentProperty.medidas.construccion_m2} m²
+                  </p>
+                </div>
+                <div className="sm:px-4">
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">
+                    Frente
+                  </p>
+                  <p className="text-base sm:text-lg font-black text-slate-900">
+                    {currentProperty.medidas.frente} m
+                  </p>
+                </div>
+                <div className="sm:px-4">
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase mb-1">
+                    Fondo
+                  </p>
+                  <p className="text-base sm:text-lg font-black text-slate-900">
+                    {currentProperty.medidas.fondo} m
+                  </p>
+                </div>
               </div>
             </div>
 
             {/* Etiquetas, Pagos y Gravamen */}
             <div className="space-y-6 pt-6 border-t border-slate-200">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Tipos de pago */}
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">
-                    Tipos de Pago
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {currentProperty.tipos_pago.map((pago, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-slate-100 text-slate-800 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-semibold border border-slate-300"
-                      >
-                        {pago}
-                      </span>
-                    ))}
-                  </div>
+              {/* Tipos de pago */}
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">
+                  Tipos de Pago
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {currentProperty.tipos_pago.map((pago, idx) => (
+                    <span
+                      key={idx}
+                      className="bg-slate-100 text-slate-800 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-semibold border border-slate-300"
+                    >
+                      {pago}
+                    </span>
+                  ))}
                 </div>
-
-                {/* Etiquetas Adicionales */}
-                {currentProperty.etiquetas &&
-                  currentProperty.etiquetas.length > 0 && (
-                    <div>
-                      <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">
-                        Etiquetas
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {currentProperty.etiquetas.map((etiqueta, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-blue-50 text-blue-800 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-semibold border border-blue-200"
-                          >
-                            {etiqueta}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
               </div>
 
               {/* Gravamen */}
@@ -314,28 +366,36 @@ export const PropertyDetailView = () => {
           </div>
 
           {/* Asesor (Derecha) */}
-          <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col items-center text-center justify-center h-full w-full max-w-sm mx-auto lg:max-w-none">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 w-full text-left">
+          {/* Asesor (Derecha) - Ajustado para no estirarse y leer URL correcta */}
+          <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col items-center text-center w-full max-w-sm mx-auto lg:max-w-none sticky top-6">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6 w-full text-left">
               Registrado por
             </p>
-            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden bg-white border-4 border-slate-200 shadow-md mb-4 shrink-0">
+            
+            {/* Contenedor de la foto */}
+            <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-full overflow-hidden bg-white border-4 border-slate-200 shadow-md mb-5 shrink-0">
               {currentProperty.creador.foto_url ? (
                 <img
-                  src={currentProperty.creador.foto_url}
-                  alt="Asesor"
+                  // APLICAMOS LA FUNCIÓN CENTRALIZADA AQUÍ:
+                  src={getFullImageUrl(currentProperty.creador.foto_url)}
+                  alt={`Foto de ${currentProperty.creador.nombres}`}
                   className="h-full w-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-3xl sm:text-4xl font-bold text-slate-400 bg-slate-100">
-                  {currentProperty.creador.nombres[0]}
+                  {currentProperty.creador.nombres[0].toUpperCase()}
                 </div>
               )}
             </div>
-            <p className="font-extrabold text-slate-900 text-lg sm:text-xl">
+            
+            {/* Datos del Asesor */}
+            <p className="font-extrabold text-slate-900 text-lg sm:text-xl leading-tight">
               {currentProperty.creador.nombres}{" "}
-              {currentProperty.creador.apellido_paterno}
+              {currentProperty.creador.apellido_paterno}{" "}
+              {currentProperty.creador.apellido_materno}
             </p>
-            <p className="text-xs sm:text-sm font-medium text-slate-600 mt-1 break-all">
+            <p className="text-xs sm:text-sm font-medium text-slate-600 mt-2 break-all px-4 py-1.5 bg-white border border-slate-200 rounded-full w-fit mx-auto shadow-sm">
               {currentProperty.creador.correo_electronico}
             </p>
           </div>
@@ -350,23 +410,68 @@ export const PropertyDetailView = () => {
             Detalles Financieros
           </h3>
           <div className="space-y-4">
-            {currentProperty.precio_condicionado && (
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-2 gap-2">
-                <span className="text-slate-600 font-medium">
-                  Precio Condicionado
-                </span>
-                <div className="sm:text-right w-full sm:w-auto bg-slate-50 p-3 sm:bg-transparent sm:p-0 rounded-lg">
-                  <span className="font-bold text-slate-900 text-base sm:text-lg block">
-                    {formatCurrency(currentProperty.precio_condicionado.monto)}
-                  </span>
-                  {currentProperty.precio_condicionado.descripcion && (
-                    <p className="text-xs font-medium text-slate-500 mt-1">
-                      {currentProperty.precio_condicionado.descripcion}
-                    </p>
-                  )}
+            {currentProperty.esquema_comercial.map((esquema, idx) => {
+              const {
+                hasDiscount,
+                finalPrice,
+                originalPrice,
+                discountAmount,
+                discountPercentage,
+              } = calculateFinalPrice(
+                esquema.precio,
+                esquema.descuento_cantidad,
+              );
+
+              return (
+                <div
+                  key={idx}
+                  className="border-b border-slate-100 pb-5 last:border-0 last:pb-0"
+                >
+                  <p className="text-sm font-bold text-indigo-700 uppercase mb-3">
+                    Esquema de {esquema.tipo_operacion}
+                  </p>
+
+                  <div className="space-y-3 text-sm sm:text-base">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-600 font-medium">
+                        Precio de lista
+                      </span>
+                      <span className="font-bold text-slate-900">
+                        {formatCurrency(originalPrice)}
+                      </span>
+                    </div>
+
+                    {hasDiscount ? (
+                      <>
+                        <div className="flex justify-between items-center text-green-600">
+                          <span className="font-medium">
+                            Descuento ({discountPercentage}%)
+                          </span>
+                          <span className="font-bold">
+                            - {formatCurrency(discountAmount)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl mt-2 border border-slate-100">
+                          <span className="text-slate-800 font-bold uppercase text-xs tracking-wider">
+                            Precio Final
+                          </span>
+                          <span className="font-black text-indigo-700 text-lg">
+                            {formatCurrency(finalPrice)}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 italic">Descuento</span>
+                        <span className="text-slate-400 italic font-medium">
+                          No aplica descuento
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 sm:py-2 border-t border-slate-100 gap-2">
               <span className="text-slate-600 font-medium">
                 Cuota de Mantenimiento
@@ -380,109 +485,77 @@ export const PropertyDetailView = () => {
           </div>
         </div>
 
-        {/* Medidas */}
+        {/* Características del Inmueble (Diseño Compacto y Circular) */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
           <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-6 border-b border-slate-200 pb-4">
-            Dimensiones
+            Características
           </h3>
-          <div className="grid grid-cols-2 gap-4 sm:gap-6">
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 sm:border-none sm:bg-transparent sm:p-0">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
-                Terreno
-              </p>
-              <p className="text-lg sm:text-xl font-bold text-slate-900">
-                {currentProperty.medidas.terreno_m2} m²
-              </p>
-            </div>
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 sm:border-none sm:bg-transparent sm:p-0">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
-                Construcción
-              </p>
-              <p className="text-lg sm:text-xl font-bold text-slate-900">
-                {currentProperty.medidas.construccion_m2} m²
-              </p>
-            </div>
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 sm:border-none sm:bg-transparent sm:p-0">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
-                Frente
-              </p>
-              <p className="text-lg sm:text-xl font-bold text-slate-900">
-                {currentProperty.medidas.frente} m
-              </p>
-            </div>
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 sm:border-none sm:bg-transparent sm:p-0">
-              <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
-                Fondo
-              </p>
-              <p className="text-lg sm:text-xl font-bold text-slate-900">
-                {currentProperty.medidas.fondo} m
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* CARACTERÍSTICAS (Contadores y Booleanos con Iconos) */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
-        <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-6 sm:mb-8 border-b border-slate-200 pb-4">
-          Características del Inmueble
-        </h3>
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            <div className="bg-slate-50 p-2 sm:p-3 rounded-lg text-center border border-slate-200">
+              <p className="text-[10px] font-bold text-slate-500 uppercase">
+                Recám.
+              </p>
+              <p className="text-xl font-black text-slate-900">
+                {currentProperty.caracteristicas?.recamaras}
+              </p>
+            </div>
+            <div className="bg-slate-50 p-2 sm:p-3 rounded-lg text-center border border-slate-200">
+              <p className="text-[10px] font-bold text-slate-500 uppercase">
+                Baños
+              </p>
+              <p className="text-xl font-black text-slate-900">
+                {currentProperty.caracteristicas?.banos}
+              </p>
+            </div>
+            <div className="bg-slate-50 p-2 sm:p-3 rounded-lg text-center border border-slate-200">
+              <p className="text-[10px] font-bold text-slate-500 uppercase">
+                Estac.
+              </p>
+              <p className="text-xl font-black text-slate-900">
+                {currentProperty.caracteristicas?.estacionamiento}
+              </p>
+            </div>
+            <div className="bg-slate-50 p-2 sm:p-3 rounded-lg text-center border border-slate-200">
+              <p className="text-[10px] font-bold text-slate-500 uppercase">
+                Pisos
+              </p>
+              <p className="text-xl font-black text-slate-900">
+                {currentProperty.pisos_tiene || 1}
+              </p>
+            </div>
+          </div>
 
-        {/* Contadores */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10">
-          <div className="bg-slate-50 p-4 sm:p-6 rounded-xl text-center border border-slate-200 shadow-sm flex flex-col justify-center">
-            <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-1 sm:mb-2">
-              Recámaras
-            </p>
-            <p className="text-2xl sm:text-4xl font-black text-slate-900">
-              {currentProperty.caracteristicas.recamaras}
-            </p>
-          </div>
-          <div className="bg-slate-50 p-4 sm:p-6 rounded-xl text-center border border-slate-200 shadow-sm flex flex-col justify-center">
-            <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-1 sm:mb-2">
-              Baños
-            </p>
-            <p className="text-2xl sm:text-4xl font-black text-slate-900">
-              {currentProperty.caracteristicas.banos}
-            </p>
-          </div>
-          <div className="bg-slate-50 p-4 sm:p-6 rounded-xl text-center border border-slate-200 shadow-sm flex flex-col justify-center">
-            <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-1 sm:mb-2">
-              Estacionamiento
-            </p>
-            <p className="text-2xl sm:text-4xl font-black text-slate-900">
-              {currentProperty.caracteristicas.estacionamiento}
-            </p>
-          </div>
-          <div className="bg-slate-50 p-4 sm:p-6 rounded-xl text-center border border-slate-200 shadow-sm flex flex-col justify-center">
-            <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-1 sm:mb-2">
-              Niveles / Pisos
-            </p>
-            <p className="text-2xl sm:text-4xl font-black text-slate-900">
-              {currentProperty.pisos_tiene || 1}
-            </p>
-          </div>
-        </div>
+          {/* Booleanos */}
+          {currentProperty.caracteristicas && (
+            <div className="border-t border-slate-100">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 text-center sm:text-left">
+                El Inmueble Incluye
+              </h4>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-6">
+                {Object.entries(currentProperty.caracteristicas).map(
+                  ([key, value]) => {
+                    if (typeof value === "boolean" && value) {
+                      return (
+                        <div
+                          key={key}
+                          className="flex flex-col items-center justify-center h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 rounded-full bg-white border border-slate-200 shadow-sm text-center hover:bg-slate-50 transition-all p-2"
+                        >
+                          <div className="flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 mb-1">
+                            {getFeatureIcon(key)}
+                          </div>
 
-        {/* Booleanos*/}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
-          {Object.entries(currentProperty.caracteristicas).map(
-            ([key, value]) => {
-              if (typeof value === "boolean" && value) {
-                return (
-                  <div
-                    key={key}
-                    className="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm text-center hover:bg-slate-50 transition-colors"
-                  >
-                    {getFeatureIcon(key)}
-                    <span className="text-xs sm:text-sm font-bold text-slate-700 capitalize mt-2 break-words w-full">
-                      {key.replace(/_/g, " ")}
-                    </span>
-                  </div>
-                );
-              }
-              return null;
-            },
+                          <span className="text-[7px] sm:text-[9px] font-extrabold text-slate-700 capitalize leading-tight px-1">
+                            {key.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  },
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -564,17 +637,14 @@ export const PropertyDetailView = () => {
             slidesPerView={1}
             breakpoints={{
               640: {
-                // sm
                 slidesPerView: 2,
                 spaceBetween: 20,
               },
               1024: {
-                // lg
                 slidesPerView: 3,
                 spaceBetween: 24,
               },
               1280: {
-                // xl
                 slidesPerView: 4,
                 spaceBetween: 24,
               },
