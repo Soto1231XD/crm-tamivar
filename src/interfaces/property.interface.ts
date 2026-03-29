@@ -1,13 +1,12 @@
 export interface PropertyRecord {
   id: number;
   slug: string;
+  carpeta_id: string;
   titulo: string;
   tipo_inmueble: string;
-  tipo_operacion: string;
+  esquema_comercial: EsquemaComercial[];
   descripcion?: string;
-  precio: number;
-  precio_condicionado?: PrecioCondicionado;
-  tipos_pago: string[];
+  tipos_pago: string[]; 
   estatus: string;
   etiquetas: string[]; 
   tiene_gravamen: boolean;
@@ -18,11 +17,17 @@ export interface PropertyRecord {
   amenidades?: string;
   medidas: Medidas;
   direccion: Direccion;
-  caracteristicas: Caracteristicas;
+  caracteristicas?: Caracteristicas;
   imagenes: Imagen[];
   creado_en: string;
   creado_por_id: number;
   creador: Creador;
+}
+
+export interface EsquemaComercial {
+  tipo_operacion: string;
+  precio: number;
+  descuento_cantidad?: number;
 }
 
 export interface Creador {
@@ -53,7 +58,7 @@ export interface Direccion {
   mza?: number;
   lote?: number;
   calle: string;
-  num_ext: number;
+  num_ext?: number;
   num_int?: number;
   municipio: string;
   estado: string;
@@ -61,19 +66,21 @@ export interface Direccion {
 }
 
 export interface Caracteristicas {
-  banos: number;
-  recamaras: number;
-  estacionamiento: number;
-  sala: boolean;
-  comedor: boolean;
-  cocina: boolean;
-  area_servicio: boolean;
-  patio: boolean;
-  jardin: boolean;
-  alberca: boolean;
-  terraza: boolean;
-  amueblado: boolean;
-  bodega: boolean;
+  banos?: number;
+  recamaras?: number;
+  estacionamiento?: number;
+  sala?: boolean;
+  comedor?: boolean;
+  cocina?: boolean;
+  area_servicio?: boolean;
+  patio?: boolean;
+  jardin?: boolean;
+  alberca?: boolean;
+  terraza?: boolean;
+  amueblado?: boolean;
+  bodega?: boolean;
+  aire_acondicionado?: boolean;
+  boiler?: boolean;
 }
 
 export interface Imagen {
@@ -83,7 +90,10 @@ export interface Imagen {
 }
 
 // Payloads para peticiones
-export type CreatePropertyPayload = Omit<PropertyRecord, 'id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador'> & {
+export type CreatePropertyPayload = 
+  Omit<PropertyRecord, 'id' | 'carpeta_id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador'> & {
   imagenes?: Imagen[]; 
 };
-export type UpdatePropertyPayload = Partial<CreatePropertyPayload>;
+export type UpdatePropertyPayload = Partial<CreatePropertyPayload> & {
+  carpeta_id?: string;
+};

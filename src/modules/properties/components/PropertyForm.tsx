@@ -219,15 +219,6 @@ export function PropertyForm({
           description="Configura el valor por operacion, descuentos y formas de pago aceptadas."
         >
           <div className="space-y-4">
-            {selectedOperationBlocks.length > 1 ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Puedes capturar varias operaciones desde la interfaz. Mientras
-                backend termina esa integracion, el guardado seguira usando la
-                primera operacion seleccionada como referencia principal para el
-                precio y el descuento.
-              </div>
-            ) : null}
-
             <div className="grid gap-4 md:grid-cols-2">
               {selectedOperationBlocks.map((operation) => (
                 <div
@@ -236,7 +227,7 @@ export function PropertyForm({
                 >
                   <div className="mb-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Operacion
+                      Operación
                     </p>
                     <h4 className="mt-1 text-base font-semibold text-slate-900">
                       {operation.title}
@@ -255,7 +246,7 @@ export function PropertyForm({
                       required
                     />
                     <FieldInput
-                      label="Descuento (MXN)"
+                      label="Descuento ($)"
                       name={operation.discountName}
                       value={form[operation.discountName]}
                       onChange={handleInputChange}
@@ -649,7 +640,7 @@ export function PropertyForm({
           </div>
         ) : null}
 
-        <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+        <div className="flex items-center justify-end gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
           <button
             type="button"
             onClick={onCancel}
