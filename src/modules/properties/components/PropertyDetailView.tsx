@@ -366,17 +366,14 @@ export const PropertyDetailView = () => {
           </div>
 
           {/* Asesor (Derecha) */}
-          {/* Asesor (Derecha) - Ajustado para no estirarse y leer URL correcta */}
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col items-center text-center w-full max-w-sm mx-auto lg:max-w-none sticky top-6">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6 w-full text-left">
               Registrado por
             </p>
             
-            {/* Contenedor de la foto */}
             <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-full overflow-hidden bg-white border-4 border-slate-200 shadow-md mb-5 shrink-0">
               {currentProperty.creador.foto_url ? (
                 <img
-                  // APLICAMOS LA FUNCIÓN CENTRALIZADA AQUÍ:
                   src={getFullImageUrl(currentProperty.creador.foto_url)}
                   alt={`Foto de ${currentProperty.creador.nombres}`}
                   className="h-full w-full object-cover"

@@ -76,7 +76,7 @@ export function UsersPage() {
         </button>
       </header>
 
-      <FilterCard description="Busca usuarios por nombre y filtra por estado para ubicar informacion mas rapido.">
+      <FilterCard description="Busca usuarios por nombre y filtra por estado para ubicar información más rápido.">
         <div className="grid gap-3 md:grid-cols-2 lg:max-w-[540px]">
           <FilterSearchInput
             type="text"
@@ -128,7 +128,7 @@ export function UsersPage() {
                         {getUserFullName(user)}
                       </h3>
                       <p className="mt-1 truncate text-sm text-slate-600">
-                        {user.correo_electronico?.trim() || 'Sin correo electronico'}
+                        {user.correo_electronico?.trim() || 'Sin correo electrónico'}
                       </p>
                     </div>
                     <span

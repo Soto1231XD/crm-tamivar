@@ -1,4 +1,5 @@
 import { PROPERTY_STATUS_STYLES } from "./property-constants";
+import type { EsquemaComercial, PropertyRecord } from "@/interfaces/property.interface";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -170,3 +171,31 @@ export const stripEmojis = (text: string): string => {
     .replace(/ +(?= )/g, '')
     .trim();
 };
+
+export function getCommercialSchemes(
+  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
+): EsquemaComercial[] {
+  if (!property || !Array.isArray(property.esquema_comercial)) return [];
+  return property.esquema_comercial;
+}
+
+export function getPrimaryCommercialScheme(
+  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
+): EsquemaComercial | null {
+  const schemes = getCommercialSchemes(property);
+  return schemes[0] ?? null;
+}
+
+export function getPropertyOperationLabel(
+  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
+): string {
+  const schemes = getCommercialSchemes(property);
+  if (schemes.length === 0) return "Sin operación";
+  return schemes.map((scheme) => scheme.tipo_operacion).join(" / ");
+}
+
+export function getPrimaryPropertyPrice(
+  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
+): number {
+  return getPrimaryCommercialScheme(property)?.precio ?? 0;
+}

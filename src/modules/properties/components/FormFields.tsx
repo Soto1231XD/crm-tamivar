@@ -1,5 +1,5 @@
-import type { ChangeEvent } from "react";
 import type { OperationOption } from "../utils/usePropertyForm";
+import { useId, type ChangeEvent } from "react";
 
 export function LabelText({
   label,
@@ -48,10 +48,15 @@ export function FieldInput({
   className,
   error,
 }: FieldInputProps) {
+  const inputId = useId();
+
   return (
-    <label className={`flex flex-col gap-1.5 ${className ?? ""}`}>
-      <LabelText label={label} required={required} />
+    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
+      <label htmlFor={inputId}>
+        <LabelText label={label} required={required} />
+      </label>
       <input
+        id={inputId}
         name={name}
         type={type}
         inputMode={inputMode}
@@ -67,7 +72,7 @@ export function FieldInput({
         }`}
       />
       {error ? <span className="text-xs font-medium text-red-500">{error}</span> : null}
-    </label>
+    </div>
   );
 }
 
@@ -94,11 +99,16 @@ export function FieldSelect({
   className,
   error,
 }: FieldSelectProps) {
+  const selectId = useId();
+
   return (
-    <label className={`flex flex-col gap-1.5 ${className ?? ""}`}>
-      <LabelText label={label} required={required} />
+    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
+      <label htmlFor={selectId}>
+        <LabelText label={label} required={required} />
+      </label>
       <div className="relative">
         <select
+          id={selectId}
           name={name}
           value={value}
           onChange={onChange}
@@ -123,7 +133,7 @@ export function FieldSelect({
         </span>
       </div>
       {error ? <span className="text-xs font-medium text-red-500">{error}</span> : null}
-    </label>
+    </div>
   );
 }
 
@@ -144,16 +154,21 @@ export function FieldTextarea({
   onChange,
   className,
 }: FieldTextareaProps) {
+  const textareaId = useId();
+
   return (
-    <label className={`flex flex-col gap-1.5 ${className ?? ""}`}>
-      <LabelText label={label} />
+    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
+      <label htmlFor={textareaId}>
+        <LabelText label={label} />
+      </label>
       <textarea
+        id={textareaId}
         name={name}
         value={value}
         onChange={onChange}
         className={`${baseFieldClassName} min-h-28 resize-y border-slate-300 focus:border-[#312C85]`}
       />
-    </label>
+    </div>
   );
 }
 
@@ -174,12 +189,28 @@ export function Toggle({
   onChange,
   className,
 }: ToggleProps) {
+  function handleToggle() {
+    onChange(
+      {
+        target: {
+          name,
+          type: "checkbox",
+          checked: !checked,
+          value: !checked,
+        },
+      } as unknown as ChangeEvent<HTMLInputElement>,
+    );
+  }
+
   return (
-    <label
-      className={`flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 ${className ?? ""}`}
+    <button
+      type="button"
+      onClick={handleToggle}
+      aria-pressed={checked}
+      className={`flex min-h-[52px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 ${className ?? ""}`}
     >
       <span
-        className={`relative flex h-5 w-5 items-center justify-center rounded-md border transition ${
+        className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
           checked
             ? "border-[#312C85] bg-[#312C85] text-white"
             : "border-slate-300 bg-white text-transparent"
@@ -193,15 +224,8 @@ export function Toggle({
           />
         </svg>
       </span>
-      <input
-        type="checkbox"
-        name={name}
-        checked={checked}
-        onChange={onChange}
-        className="sr-only"
-      />
       <span className="font-medium">{label}</span>
-    </label>
+    </button>
   );
 }
 

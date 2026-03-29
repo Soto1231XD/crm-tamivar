@@ -7,9 +7,21 @@ import type {
 
 const PATH = "/properties";
 
+export type PropertySearchParams = {
+  tipo_operacion?: string;
+};
+
 // Obtener todas las propiedades
 export async function getProperties(): Promise<PropertyRecord[]> {
   return apiRequest<PropertyRecord[]>(PATH);
+}
+
+export async function searchProperties(
+  params: PropertySearchParams,
+): Promise<PropertyRecord[]> {
+  return apiRequest<PropertyRecord[]>(`${PATH}/search`, {
+    params,
+  });
 }
 
 // Obtener una propiedad por ID
@@ -26,11 +38,9 @@ export async function createProperty(
 
   // Agregar archivos al FormData
   files.forEach((file) => formData.append("files", file));
-
   // Agregar todo el JSON empaquetado en un solo campo llamado "datos"
   formData.append("datos", JSON.stringify(payload));
-
-  console.log("Archivos a punto de enviarse:", files.length, files);
+  
   return apiRequest<PropertyRecord>(PATH, {
     method: "POST",
     data: formData,

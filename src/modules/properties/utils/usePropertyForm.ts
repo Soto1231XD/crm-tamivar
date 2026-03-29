@@ -46,8 +46,6 @@ const TERRAIN_RESET_VALUES: Partial<FormState> = {
   terraza: false,
   amueblado: false,
   bodega: false,
-  aire_acondicionado: false,
-  boiler: false,
 };
 
 function parseFormattedNumber(value: string): number {
@@ -376,7 +374,7 @@ export function usePropertyForm(
       form.operaciones.length > 0
         ? (form.operaciones as OperationOption[])
         : ["Venta"];
-
+    
     const isTerreno = form.tipo_inmueble.trim().toLowerCase() === "terreno";
 
     const parsedNumbers = {

@@ -3,16 +3,29 @@ import type { ModuleKey } from "./interfaces/rbac.interface";
 export const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard: "Dashboard",
   propiedades: "Propiedades",
-  registros: "Registros",
+  registros: "Registros visitas",
+  registros_leads: "Registros leads",
   blogs: "Blogs",
   usuarios: "Usuarios",
   roles: "Roles del sistema",
   movimientos: "Movimientos",
 };
 
+export const MODULE_PATHS: Record<ModuleKey, string> = {
+  dashboard: "/dashboard",
+  propiedades: "/modulos/propiedades",
+  registros: "/modulos/registros-visitas",
+  registros_leads: "/modulos/registros-leads",
+  blogs: "/modulos/blogs",
+  usuarios: "/modulos/usuarios",
+  roles: "/modulos/roles",
+  movimientos: "/modulos/movimientos",
+};
+
 const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
   "propiedades",
   "registros",
+  "registros_leads",
   "blogs",
   "usuarios",
   "roles",
@@ -35,6 +48,7 @@ export function getAvailableModules(permissions: string[]): ModuleKey[] {
     "dashboard",
     "propiedades",
     "registros",
+    "registros_leads",
     "blogs",
     "usuarios",
     "roles",
@@ -55,5 +69,5 @@ export function getDefaultDashboardPath(permissions: string[]): string {
   if (canAccessDashboard(permissions)) return "/dashboard";
 
   const firstAvailable = availableModules.filter((module) => module !== "dashboard")[0];
-  return firstAvailable ? `/modulos/${firstAvailable}` : "/login";
+  return firstAvailable ? MODULE_PATHS[firstAvailable] : "/login";
 }

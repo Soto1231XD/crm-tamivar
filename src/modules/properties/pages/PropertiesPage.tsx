@@ -7,7 +7,11 @@ import descInfIcon from "@/assets/images/DescInf.png";
 import agregarIcon from "@/assets/images/Agregar.png";
 import desArcIcon from "@/assets/images/DesArc.png";
 import verIcon from "@/assets/images/Ver.png";
-import { STATUS_OPTIONS, TYPE_OPTIONS } from "../utils/property-constants";
+import {
+  PROPERTY_OPERATION_FILTER_OPTIONS,
+  STATUS_OPTIONS,
+  TYPE_OPTIONS,
+} from "../utils/property-constants";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
@@ -19,6 +23,7 @@ import {
   getFullImageUrl
 } from "../utils/formatters";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
+import { searchProperties } from "../services/properties.api";
 import {
   FilterCard,
   FilterSearchInput,
@@ -42,9 +47,17 @@ export function PropertiesPage() {
     useState<(typeof STATUS_OPTIONS)[number]>("Todos los estados");
   const [typeFilter, setTypeFilter] =
     useState<(typeof TYPE_OPTIONS)[number]>("Todos los tipos");
+  const [operationFilter, setOperationFilter] =
+    useState<(typeof PROPERTY_OPERATION_FILTER_OPTIONS)[number]>(
+      "Todas las operaciones",
+    );
   const [deletingProperty, setDeletingProperty] =
     useState<PropertyRecord | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
+  const [operationProperties, setOperationProperties] = useState<PropertyRecord[]>(
+    [],
+  );
+  const [isFilteringByOperation, setIsFilteringByOperation] = useState(false);
 
   const canEdit = can("propiedades", "actualizar");
   const canCreate = can("propiedades", "crear");
@@ -53,6 +66,40 @@ export function PropertiesPage() {
   useEffect(() => {
     fetchProperties();
   }, [fetchProperties]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function syncOperationFilter() {
+      if (operationFilter === "Todas las operaciones") {
+        setOperationProperties([]);
+        setIsFilteringByOperation(false);
+        return;
+      }
+
+      setIsFilteringByOperation(true);
+
+      try {
+        const data = await searchProperties({ tipo_operacion: operationFilter });
+        if (!active) return;
+        setOperationProperties(data);
+      } catch {
+        if (!active) return;
+        toast.error("No fue posible filtrar por tipo de operación.");
+        setOperationProperties([]);
+      } finally {
+        if (active) {
+          setIsFilteringByOperation(false);
+        }
+      }
+    }
+
+    void syncOperationFilter();
+
+    return () => {
+      active = false;
+    };
+  }, [operationFilter]);
 
   // Configuración dinámica de las columnas de la tabla
   const columns: ColumnDef<PropertyRecord>[] = useMemo(
@@ -197,8 +244,11 @@ export function PropertiesPage() {
     [updatingStatusId, canEdit],
   );
 
+  const sourceProperties =
+    operationFilter === "Todas las operaciones" ? properties : operationProperties;
+
   const filteredProperties = useMemo(() => {
-    return properties.filter((property) => {
+    return sourceProperties.filter((property) => {
       const matchesStatus =
         statusFilter === "Todos los estados" ||
         property.estatus.toLowerCase() === statusFilter.toLowerCase();
@@ -216,7 +266,7 @@ export function PropertiesPage() {
 
       return matchesStatus && matchesType && matchesSearch;
     });
-  }, [properties, search, statusFilter, typeFilter]);
+  }, [search, sourceProperties, statusFilter, typeFilter]);
 
   function openDeleteModal(property: PropertyRecord) {
     setDeletingProperty(property);
@@ -230,7 +280,7 @@ export function PropertiesPage() {
     try {
       await removeProperty(propertyId);
       setDeletingProperty(null);
-      toast.success("La propiedad se elimino con exito.");
+      toast.success("La propiedad se elimino con éxito.");
       return null;
     } catch (error) {
       toast.error("No fue posible eliminar la propiedad.");
@@ -264,7 +314,7 @@ export function PropertiesPage() {
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             Gestiona el catalogo de propiedades, revisa su estado y encuentra
-            inmuebles mas rapido con filtros claros.
+            inmuebles más rápido con filtros claros.
           </p>
         </div>
 
@@ -284,8 +334,8 @@ export function PropertiesPage() {
         </button>
       </header>
 
-      <FilterCard description="Busca propiedades por titulo y combina los filtros para ubicar resultados mas rapido.">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_auto]">
+      <FilterCard description="Busca propiedades por titulo y combina los filtros para ubicar resultados más rápido.">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(0,0.95fr)_auto]">
           <FilterSearchInput
             type="text"
             placeholder="Buscar por titulo, calle o asesor"
@@ -321,8 +371,24 @@ export function PropertiesPage() {
             ))}
           </FilterSelect>
 
+          <FilterSelect
+            value={operationFilter}
+            onChange={(event) =>
+              setOperationFilter(
+                event.target.value as (typeof PROPERTY_OPERATION_FILTER_OPTIONS)[number],
+              )
+            }
+          >
+            {PROPERTY_OPERATION_FILTER_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </FilterSelect>
+
           <button
             type="button"
+            disabled={isFilteringByOperation}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d]"
           >
             <img
@@ -339,7 +405,7 @@ export function PropertiesPage() {
       <BaseTable
         data={filteredProperties}
         columns={columns}
-        isLoading={isLoading}
+        isLoading={isLoading || isFilteringByOperation}
         emptyMessage="No se encontraron propiedades"
         wrapperClassName="rounded-2xl"
         tableClassName="min-w-full text-left"

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const PROPERTY_IMAGES_INPUT_ID = "property-images-input";
 
 function ImagePreview({
   file,
@@ -72,16 +73,19 @@ export function ImageGridUploader({
   onRemoveImage,
   existingImages = [],
   onRemoveExistingImage,
-  label = "Imágenes de la propiedad",
+  label = "Imagenes de la propiedad",
 }: ImageGridUploaderProps) {
   return (
     <div className="md:col-span-2 flex flex-col gap-3 text-sm text-slate-700">
-      <label className="font-medium">
+      <label htmlFor={PROPERTY_IMAGES_INPUT_ID} className="font-medium">
         {label} <span className="font-semibold text-red-600">*</span>
       </label>
 
       <div className="flex w-full items-center justify-center">
-        <label className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 transition-colors hover:bg-slate-100">
+        <label
+          htmlFor={PROPERTY_IMAGES_INPUT_ID}
+          className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 transition-colors hover:bg-slate-100"
+        >
           <div className="flex flex-col items-center justify-center pb-6 pt-5 text-slate-500">
             <svg
               className="mb-3 h-8 w-8"
@@ -100,11 +104,12 @@ export function ImageGridUploader({
             </svg>
             <p className="mb-1 text-sm">
               <span className="font-semibold">Haz clic para seleccionar</span>{" "}
-              imágenes
+              imagenes
             </p>
             <p className="text-xs">Formatos soportados: JPG, PNG, WEBP</p>
           </div>
           <input
+            id={PROPERTY_IMAGES_INPUT_ID}
             type="file"
             name="imagenes"
             accept="image/jpeg, image/png, image/webp"

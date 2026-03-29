@@ -8,7 +8,7 @@ export interface PropertyRecord {
   descripcion?: string;
   tipos_pago: string[]; 
   estatus: string;
-  etiquetas: string[]; 
+  etiquetas: string[];
   tiene_gravamen: boolean;
   cuota_mantenimiento?: number;
   comentarios?: string;
@@ -31,6 +31,7 @@ export interface EsquemaComercial {
 }
 
 export interface Creador {
+  id?: number;
   nombres: string;
   apellido_paterno: string;
   apellido_materno: string;
@@ -38,17 +39,11 @@ export interface Creador {
   foto_url: string;
 }
 
-// Sub-interfaces
-export interface PrecioCondicionado {
-  descripcion?: string;
-  monto: number;
-}
-
 export interface Medidas {
-  terreno_m2: number;
-  construccion_m2: number;
-  frente: number;
-  fondo: number;
+  terreno_m2?: number;
+  construccion_m2?: number;
+  frente?: number;
+  fondo?: number;
 }
 
 export interface Direccion {
@@ -94,6 +89,7 @@ export type CreatePropertyPayload =
   Omit<PropertyRecord, 'id' | 'carpeta_id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador'> & {
   imagenes?: Imagen[]; 
 };
+
 export type UpdatePropertyPayload = Partial<CreatePropertyPayload> & {
   carpeta_id?: string;
 };

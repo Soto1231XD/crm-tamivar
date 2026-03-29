@@ -27,6 +27,10 @@ export const PROPERTY_STATUS_STYLES: Record<
 };
 
 export const OPERATION_OPTIONS = ["Venta", "Renta", "Preventa"] as const;
+export const PROPERTY_OPERATION_FILTER_OPTIONS = [
+  "Todas las operaciones",
+  ...OPERATION_OPTIONS,
+] as const;
 
 export const PAYMENT_OPTIONS = [
   "Efectivo",

@@ -7,6 +7,7 @@ import { PropertiesPage } from "@/modules/properties/pages/PropertiesPage";
 import { CreatePropertyPage } from "@/modules/properties/pages/CreatePropertyPage";
 import { EditPropertyPage } from "@/modules/properties/pages/EditPropertyPage";
 import { LeadsPage } from "@/modules/leads/pages/LeadsPage";
+import { LeadLeadsPage } from "@/modules/leads/pages/LeadLeadsPage";
 import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
 import { ContentPage } from "@/modules/content/pages/ContentPage";
@@ -39,7 +40,14 @@ export function AppRoutes() {
             <Route path="modulos/propiedades/:id" element={<PropertyDetailView />} />
           </Route>
           <Route element={<ProtectedRoute module="registros" />}>
-            <Route path="modulos/registros" element={<LeadsPage />} />
+            <Route
+              path="modulos/registros"
+              element={<Navigate to="/modulos/registros-visitas" replace />}
+            />
+            <Route path="modulos/registros-visitas" element={<LeadsPage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="registros_leads" />}>
+            <Route path="modulos/registros-leads" element={<LeadLeadsPage />} />
           </Route>
           <Route element={<ProtectedRoute module="usuarios" />}>
             <Route path="modulos/usuarios" element={<UsersPage />} />
