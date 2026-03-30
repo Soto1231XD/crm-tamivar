@@ -35,16 +35,12 @@ export async function createProperty(
   files: File[],
 ): Promise<PropertyRecord> {
   const formData = new FormData();
-  const carpetaId = payload.carpeta_id || crypto.randomUUID();
 
   // Agregar archivos al FormData
   files.forEach((file) => formData.append("files", file));
-
   // Agregar todo el JSON empaquetado en un solo campo llamado "datos"
-  formData.append("datos", JSON.stringify({ ...payload, carpeta_id: carpetaId }));
-  formData.append("carpeta_id", carpetaId);
-
-  console.log("Archivos a punto de enviarse:", files.length, files);
+  formData.append("datos", JSON.stringify(payload));
+  
   return apiRequest<PropertyRecord>(PATH, {
     method: "POST",
     data: formData,

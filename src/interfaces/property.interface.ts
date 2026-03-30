@@ -1,18 +1,12 @@
-export interface CommercialSchemeRecord {
-  tipo_operacion: string;
-  precio: number;
-  descuento_porcentaje?: number;
-}
-
 export interface PropertyRecord {
   id: number;
   slug: string;
   carpeta_id: string;
   titulo: string;
   tipo_inmueble: string;
+  esquema_comercial: EsquemaComercial[];
   descripcion?: string;
-  esquema_comercial: CommercialSchemeRecord[];
-  tipos_pago: string[];
+  tipos_pago: string[]; 
   estatus: string;
   etiquetas: string[];
   tiene_gravamen: boolean;
@@ -28,6 +22,12 @@ export interface PropertyRecord {
   creado_en: string;
   creado_por_id: number;
   creador: Creador;
+}
+
+export interface EsquemaComercial {
+  tipo_operacion: string;
+  precio: number;
+  descuento_cantidad?: number;
 }
 
 export interface Creador {
@@ -74,6 +74,8 @@ export interface Caracteristicas {
   terraza?: boolean;
   amueblado?: boolean;
   bodega?: boolean;
+  aire_acondicionado?: boolean;
+  boiler?: boolean;
 }
 
 export interface Imagen {
@@ -82,11 +84,12 @@ export interface Imagen {
   principal: boolean;
 }
 
-export type CreatePropertyPayload = Omit<
-  PropertyRecord,
-  "id" | "creado_por_id" | "slug" | "creado_en" | "imagenes" | "creador"
-> & {
-  imagenes?: Imagen[];
+// Payloads para peticiones
+export type CreatePropertyPayload = 
+  Omit<PropertyRecord, 'id' | 'carpeta_id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador'> & {
+  imagenes?: Imagen[]; 
 };
 
-export type UpdatePropertyPayload = Partial<CreatePropertyPayload>;
+export type UpdatePropertyPayload = Partial<CreatePropertyPayload> & {
+  carpeta_id?: string;
+};

@@ -88,12 +88,15 @@ export const usePropertiesStore = create<PropertiesState>((set) => ({
       const updatedProperty = await updateProperty(id, payload, files);
       // Actualizamos la propiedad específica en la lista en memoria
       set((state) => ({
+        // Actualizamos la lista de la tabla combinando la data vieja con la nueva
         properties: state.properties.map((prop) => 
           prop.id === id ? { ...prop, ...updatedProperty } : prop
         ),
+        
         currentProperty: state.currentProperty?.id === id 
           ? { ...state.currentProperty, ...updatedProperty }
-          : updatedProperty,
+          : state.currentProperty, 
+          
         isLoading: false,
       }));
     } catch (error) {

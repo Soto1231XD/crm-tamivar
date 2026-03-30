@@ -246,7 +246,7 @@ export function PropertyForm({
                       required
                     />
                     <FieldInput
-                      label="Descuento (%)"
+                      label="Descuento ($)"
                       name={operation.discountName}
                       value={form[operation.discountName]}
                       onChange={handleInputChange}
@@ -323,7 +323,6 @@ export function PropertyForm({
               onChange={handleInputChange}
               required
             />
-
             <FieldInput
               label="Region (SMZ)"
               name="smz"
@@ -357,7 +356,6 @@ export function PropertyForm({
               type="number"
               required
             />
-
             <FieldTextarea
               label="Referencias"
               name="referencias"
@@ -547,6 +545,18 @@ export function PropertyForm({
                   onChange={handleInputChange}
                   label="Bodega"
                 />
+                <Toggle
+                  name="aire_acondicionado"
+                  checked={form.aire_acondicionado}
+                  onChange={handleInputChange}
+                  label="Aire acondicionado"
+                />
+                <Toggle
+                  name="boiler"
+                  checked={form.boiler}
+                  onChange={handleInputChange}
+                  label="Boiler"
+                />
               </div>
             </div>
           ) : (
@@ -628,7 +638,7 @@ export function PropertyForm({
           </div>
         ) : null}
 
-        <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+        <div className="flex items-center justify-end gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
           <button
             type="button"
             onClick={onCancel}

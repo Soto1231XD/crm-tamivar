@@ -1,3 +1,4 @@
+import type { OperationOption } from "../utils/usePropertyForm";
 import { useId, type ChangeEvent } from "react";
 
 export function LabelText({
@@ -296,8 +297,8 @@ export function PaymentMultiSelect({
 type OperationMultiSelectProps = {
   label: string;
   selectedValues: string[];
-  options: readonly string[];
-  onToggle: (option: string) => void;
+  options: readonly OperationOption[];
+  onToggle: (option: OperationOption) => void;
   className?: string;
   required?: boolean;
   error?: string;

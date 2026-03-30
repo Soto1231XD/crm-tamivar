@@ -1,12 +1,8 @@
 export type FormState = {
   titulo: string;
   tipo_inmueble: string;
-  tipo_operacion: string;
   operaciones: string[];
   descripcion: string;
-  precio: string;
-  precio_condicionado_descripcion: string;
-  precio_condicionado_monto: string;
   precio_venta: string;
   descuento_venta: string;
   precio_renta: string;
@@ -44,6 +40,8 @@ export type FormState = {
   terraza: boolean;
   amueblado: boolean;
   bodega: boolean;
+  aire_acondicionado: boolean;
+  boiler: boolean;
   tiene_gravamen: boolean;
   cuota_mantenimiento: string;
   comentarios: string;
@@ -55,7 +53,6 @@ export type FormState = {
 };
 
 export interface ParsedNumbers {
-  precio: number;
   cp: number;
   num_ext: number;
   terreno: number;
@@ -69,7 +66,6 @@ export interface ParsedNumbers {
   mza: number;
   lote: number;
   num_int: number;
-  precio_condicionado: number;
   precio_venta: number;
   descuento_venta: number;
   precio_renta: number;
@@ -91,49 +87,49 @@ export function validatePropertyForm(
     errors.operaciones = "Debes seleccionar al menos una operación.";
   }
 
+  // Validación de venta
   if (form.operaciones.includes("Venta")) {
     if (Number.isNaN(parsed.precio_venta) || parsed.precio_venta <= 0) {
       errors.precio_venta = "Ingresa un precio de venta valido mayor a 0.";
     }
-    if (
-      form.descuento_venta &&
-      (Number.isNaN(parsed.descuento_venta) ||
-        parsed.descuento_venta < 0 ||
-        parsed.descuento_venta > 100)
-    ) {
-      errors.descuento_venta =
-        "Ingresa un descuento de venta valido entre 0 y 100.";
+
+    if (form.descuento_venta) {
+      if (Number.isNaN(parsed.descuento_venta)) {
+        errors.descuento_venta = "Ingresa un descuento de venta valido.";
+      } else if (parsed.descuento_venta >= parsed.precio_venta) {
+        errors.descuento_venta = "El descuento no puede ser mayor o igual al precio base.";
+      }
     }
   }
 
+  // Validación de renta
   if (form.operaciones.includes("Renta")) {
     if (Number.isNaN(parsed.precio_renta) || parsed.precio_renta <= 0) {
       errors.precio_renta = "Ingresa un precio de renta valido mayor a 0.";
     }
-    if (
-      form.descuento_renta &&
-      (Number.isNaN(parsed.descuento_renta) ||
-        parsed.descuento_renta < 0 ||
-        parsed.descuento_renta > 100)
-    ) {
-      errors.descuento_renta =
-        "Ingresa un descuento de renta valido entre 0 y 100.";
+
+    if (form.descuento_renta) {
+      if (Number.isNaN(parsed.descuento_renta)) {
+        errors.descuento_renta = "Ingresa un descuento de renta valido.";
+      } else if (parsed.descuento_renta >= parsed.precio_renta) {
+        errors.descuento_renta = "El descuento no puede ser mayor o igual al precio base.";
+      }
     }
   }
 
+  // Validación de preventa
   if (form.operaciones.includes("Preventa")) {
     if (Number.isNaN(parsed.precio_preventa) || parsed.precio_preventa <= 0) {
       errors.precio_preventa =
         "Ingresa un precio de preventa valido mayor a 0.";
     }
-    if (
-      form.descuento_preventa &&
-      (Number.isNaN(parsed.descuento_preventa) ||
-        parsed.descuento_preventa < 0 ||
-        parsed.descuento_preventa > 100)
-    ) {
-      errors.descuento_preventa =
-        "Ingresa un descuento de preventa valido entre 0 y 100.";
+
+    if (form.descuento_preventa) {
+      if (Number.isNaN(parsed.descuento_preventa)) {
+        errors.descuento_preventa = "Ingresa un descuento de preventa valido.";
+      } else if (parsed.descuento_preventa >= parsed.precio_preventa) {
+        errors.descuento_preventa = "El descuento no puede ser mayor o igual al precio base.";
+      }
     }
   }
 

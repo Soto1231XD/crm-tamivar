@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type {
   PropertyRecord,
   CreatePropertyPayload,
+  EsquemaComercial,
 } from "@/interfaces/property.interface";
 import {
   validatePropertyForm,
@@ -18,8 +19,6 @@ const NON_NEGATIVE_INTEGER_FIELD_NAMES = new Set([
 ]);
 
 const CURRENCY_FIELD_NAMES = new Set([
-  "precio",
-  "precio_condicionado_monto",
   "cuota_mantenimiento",
   "precio_venta",
   "descuento_venta",
@@ -29,19 +28,7 @@ const CURRENCY_FIELD_NAMES = new Set([
   "descuento_preventa",
 ]);
 
-const OPERATION_PRICE_FIELD_MAP = {
-  Venta: "precio_venta",
-  Renta: "precio_renta",
-  Preventa: "precio_preventa",
-} as const;
-
-const OPERATION_DISCOUNT_FIELD_MAP = {
-  Venta: "descuento_venta",
-  Renta: "descuento_renta",
-  Preventa: "descuento_preventa",
-} as const;
-
-type OperationOption = keyof typeof OPERATION_PRICE_FIELD_MAP;
+export type OperationOption = "Venta" | "Renta" | "Preventa";
 
 const TERRAIN_RESET_VALUES: Partial<FormState> = {
   construccion_m2: "0",
@@ -79,32 +66,11 @@ function formatCurrencyInput(value: string): string {
     : formattedInteger;
 }
 
-function getOperationsFromProperty(
-  property?: Pick<PropertyRecord, "esquema_comercial"> | null,
-): OperationOption[] {
-  if (!property || !Array.isArray(property.esquema_comercial)) {
-    return ["Venta"];
-  }
-
-  const operations = property.esquema_comercial
-    .map((scheme) => scheme?.tipo_operacion?.trim())
-    .filter(
-      (item): item is OperationOption =>
-        item === "Venta" || item === "Renta" || item === "Preventa",
-    );
-
-  return operations.length > 0 ? operations : ["Venta"];
-}
-
 const INITIAL_FORM_STATE: FormState = {
   titulo: "",
   tipo_inmueble: "Casa",
-  tipo_operacion: "Venta",
   operaciones: ["Venta"],
   descripcion: "",
-  precio: "",
-  precio_condicionado_descripcion: "",
-  precio_condicionado_monto: "",
   precio_venta: "",
   descuento_venta: "",
   precio_renta: "",
@@ -142,6 +108,8 @@ const INITIAL_FORM_STATE: FormState = {
   terraza: false,
   amueblado: false,
   bodega: false,
+  aire_acondicionado: false,
+  boiler: false,
   tiene_gravamen: false,
   cuota_mantenimiento: "",
   comentarios: "",
@@ -157,58 +125,55 @@ function toFormState(property?: PropertyRecord | null): FormState {
     return INITIAL_FORM_STATE;
   }
 
-  const operaciones = getOperationsFromProperty(property);
-  const operationValues = property.esquema_comercial.reduce(
-    (accumulator, scheme) => {
-      const operation = scheme.tipo_operacion?.trim() as OperationOption;
-      if (
-        operation !== "Venta" &&
-        operation !== "Renta" &&
-        operation !== "Preventa"
-      ) {
-        return accumulator;
+  // Extraemos las operaciones y precios del arreglo esquema_comercial
+  const operaciones: OperationOption[] = [];
+  let precio_venta = "",
+    descuento_venta = "";
+  let precio_renta = "",
+    descuento_renta = "";
+  let precio_preventa = "",
+    descuento_preventa = "";
+
+  if (Array.isArray(property.esquema_comercial)) {
+    property.esquema_comercial.forEach((esquema: EsquemaComercial) => {
+      const tipo = esquema.tipo_operacion as OperationOption;
+
+      if (tipo === "Venta" || tipo === "Renta" || tipo === "Preventa") {
+        operaciones.push(tipo);
+
+        const precioStr = esquema.precio != null ? String(esquema.precio) : "";
+        const descStr =
+          esquema.descuento_cantidad != null
+            ? String(esquema.descuento_cantidad)
+            : "";
+
+        if (tipo === "Venta") {
+          precio_venta = precioStr;
+          descuento_venta = descStr;
+        } else if (tipo === "Renta") {
+          precio_renta = precioStr;
+          descuento_renta = descStr;
+        } else if (tipo === "Preventa") {
+          precio_preventa = precioStr;
+          descuento_preventa = descStr;
+        }
       }
+    });
+  }
 
-      const priceField = OPERATION_PRICE_FIELD_MAP[operation];
-      const discountField = OPERATION_DISCOUNT_FIELD_MAP[operation];
-
-      accumulator[priceField] =
-        scheme.precio != null ? String(scheme.precio) : "";
-      accumulator[discountField] =
-        scheme.descuento_porcentaje != null
-          ? String(scheme.descuento_porcentaje)
-          : "";
-
-      return accumulator;
-    },
-    {
-      precio_venta: "",
-      descuento_venta: "",
-      precio_renta: "",
-      descuento_renta: "",
-      precio_preventa: "",
-      descuento_preventa: "",
-    } satisfies Pick<
-      FormState,
-      | "precio_venta"
-      | "descuento_venta"
-      | "precio_renta"
-      | "descuento_renta"
-      | "precio_preventa"
-      | "descuento_preventa"
-    >,
-  );
+  if (operaciones.length === 0) operaciones.push("Venta");
 
   return {
     titulo: property.titulo ?? "",
     tipo_inmueble: property.tipo_inmueble ?? "Casa",
-    tipo_operacion: operaciones.join(" / "),
     operaciones,
     descripcion: property.descripcion ?? "",
-    precio: "",
-    precio_condicionado_descripcion: "",
-    precio_condicionado_monto: "",
-    ...operationValues,
+    precio_venta,
+    descuento_venta,
+    precio_renta,
+    descuento_renta,
+    precio_preventa,
+    descuento_preventa,
     tipos_pago: Array.isArray(property.tipos_pago) ? property.tipos_pago : [],
     estatus: property.estatus ?? "Disponible",
     etiquetas: Array.isArray(property.etiquetas)
@@ -266,6 +231,8 @@ function toFormState(property?: PropertyRecord | null): FormState {
     terraza: Boolean(property.caracteristicas?.terraza),
     amueblado: Boolean(property.caracteristicas?.amueblado),
     bodega: Boolean(property.caracteristicas?.bodega),
+    aire_acondicionado: Boolean(property.caracteristicas?.aire_acondicionado),
+    boiler: Boolean(property.caracteristicas?.boiler),
     tiene_gravamen: Boolean(property.tiene_gravamen),
     cuota_mantenimiento:
       property.cuota_mantenimiento != null
@@ -357,7 +324,7 @@ export function usePropertyForm(
     }));
   }
 
-  function handleOperationToggle(option: string) {
+  function handleOperationToggle(option: OperationOption) {
     setForm((prev) => {
       const alreadySelected = prev.operaciones.includes(option);
       const operaciones = alreadySelected
@@ -367,7 +334,6 @@ export function usePropertyForm(
       return {
         ...prev,
         operaciones,
-        tipo_operacion: operaciones.join(" / "),
       };
     });
   }
@@ -408,29 +374,10 @@ export function usePropertyForm(
       form.operaciones.length > 0
         ? (form.operaciones as OperationOption[])
         : ["Venta"];
-    const primaryOperation = selectedOperations[0];
+    
     const isTerreno = form.tipo_inmueble.trim().toLowerCase() === "terreno";
-    const commercialSchemes = selectedOperations.map((operation) => {
-      const priceField = OPERATION_PRICE_FIELD_MAP[operation];
-      const discountField = OPERATION_DISCOUNT_FIELD_MAP[operation];
-      const price = parseFormattedNumber(form[priceField] as string);
-      const discountValue = form[discountField] as string;
-      const parsedDiscount = parseFormattedNumber(discountValue);
-
-      return {
-        tipo_operacion: operation,
-        precio: price,
-        ...(discountValue && !Number.isNaN(parsedDiscount)
-          ? { descuento_porcentaje: parsedDiscount }
-          : {}),
-      };
-    });
 
     const parsedNumbers = {
-      precio:
-        commercialSchemes.find(
-          (scheme) => scheme.tipo_operacion === primaryOperation,
-        )?.precio ?? 0,
       cp: Number(form.cp),
       num_ext: Number(form.num_ext),
       terreno: Number(form.terreno_m2),
@@ -444,7 +391,6 @@ export function usePropertyForm(
       mza: Number(form.mza),
       lote: Number(form.lote),
       num_int: Number(form.num_int),
-      precio_condicionado: 0,
       precio_venta: parseFormattedNumber(form.precio_venta),
       descuento_venta: parseFormattedNumber(form.descuento_venta),
       precio_renta: parseFormattedNumber(form.precio_renta),
@@ -461,15 +407,45 @@ export function usePropertyForm(
       return;
     }
 
+    // CONSTRUIMOS EL ESQUEMA COMERCIAL DINÁMICAMENTE
+    const esquema_comercial: EsquemaComercial[] = selectedOperations.map(
+      (op) => {
+        let precio = 0;
+        let descuento_cantidad: number | undefined = undefined; // <-- Cambio aquí
+
+        if (op === "Venta") {
+          precio = parsedNumbers.precio_venta;
+          descuento_cantidad = form.descuento_venta
+            ? parsedNumbers.descuento_venta
+            : undefined;
+        } else if (op === "Renta") {
+          precio = parsedNumbers.precio_renta;
+          descuento_cantidad = form.descuento_renta
+            ? parsedNumbers.descuento_renta
+            : undefined;
+        } else if (op === "Preventa") {
+          precio = parsedNumbers.precio_preventa;
+          descuento_cantidad = form.descuento_preventa
+            ? parsedNumbers.descuento_preventa
+            : undefined;
+        }
+
+        return {
+          tipo_operacion: op,
+          precio,
+          descuento_cantidad,
+        };
+      },
+    );
+
     const propertyData: Omit<
       CreatePropertyPayload,
-      "creado_por_id" | "creador"
+      "creado_por_id" | "creador" | "carpeta_id"
     > = {
-      carpeta_id: property?.carpeta_id ?? "",
       titulo: form.titulo.trim(),
       tipo_inmueble: form.tipo_inmueble.trim(),
       descripcion: form.descripcion.trim() || undefined,
-      esquema_comercial: commercialSchemes,
+      esquema_comercial,
       tipos_pago: form.tipos_pago,
       estatus: form.estatus.trim(),
       tiene_gravamen: form.tiene_gravamen,
@@ -497,27 +473,31 @@ export function usePropertyForm(
         mza: form.mza ? parsedNumbers.mza : undefined,
         lote: form.lote ? parsedNumbers.lote : undefined,
         calle: form.calle.trim(),
-        num_ext: parsedNumbers.num_ext,
+        num_ext: isTerreno && !form.num_ext ? undefined : parsedNumbers.num_ext,
         num_int: form.num_int ? parsedNumbers.num_int : undefined,
         municipio: form.municipio.trim(),
         estado: form.estado.trim(),
         referencias: form.referencias.trim() || undefined,
       },
-      caracteristicas: {
-        banos: isTerreno ? 0 : parsedNumbers.banos,
-        recamaras: isTerreno ? 0 : parsedNumbers.recamaras,
-        estacionamiento: isTerreno ? 0 : parsedNumbers.estacionamiento,
-        sala: isTerreno ? false : form.sala,
-        comedor: isTerreno ? false : form.comedor,
-        cocina: isTerreno ? false : form.cocina,
-        area_servicio: isTerreno ? false : form.area_servicio,
-        patio: isTerreno ? false : form.patio,
-        jardin: isTerreno ? false : form.jardin,
-        alberca: isTerreno ? false : form.alberca,
-        terraza: isTerreno ? false : form.terraza,
-        amueblado: isTerreno ? false : form.amueblado,
-        bodega: isTerreno ? false : form.bodega,
-      },
+      caracteristicas: isTerreno
+        ? undefined
+        : {
+            banos: parsedNumbers.banos,
+            recamaras: parsedNumbers.recamaras,
+            estacionamiento: parsedNumbers.estacionamiento,
+            sala: form.sala,
+            comedor: form.comedor,
+            cocina: form.cocina,
+            area_servicio: form.area_servicio,
+            patio: form.patio,
+            jardin: form.jardin,
+            alberca: form.alberca,
+            terraza: form.terraza,
+            amueblado: form.amueblado,
+            bodega: form.bodega,
+            aire_acondicionado: form.aire_acondicionado,
+            boiler: form.boiler,
+          },
       imagenes: form.imagenes_existentes,
     };
 

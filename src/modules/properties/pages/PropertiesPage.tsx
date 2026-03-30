@@ -19,8 +19,8 @@ import {
   formatDireccion,
   getPropertyStatusStyles,
   formatCurrency,
-  getPrimaryPropertyPrice,
-  getPropertyOperationLabel,
+  calculateFinalPrice,
+  getFullImageUrl
 } from "../utils/formatters";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
 import { searchProperties } from "../services/properties.api";
@@ -106,6 +106,8 @@ export function PropertiesPage() {
     () => [
       {
         header: "Propiedad",
+        headerClassName: "min-w-[200px]",
+        cellClassName: "min-w-[200px] whitespace-normal align-top",
         render: (property) => (
           <span className="font-medium text-slate-800">
             {property.titulo || "Sin título"}
@@ -123,9 +125,16 @@ export function PropertiesPage() {
       {
         header: "Operación",
         render: (property) => (
-          <span className="inline-flex items-center rounded-md bg-slate-100 p-2 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
-            {getPropertyOperationLabel(property)}
-          </span>
+          <div className="flex flex-col gap-1.5 items-start">
+            {property.esquema_comercial.map((esquema, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 ring-1 ring-inset ring-slate-200"
+              >
+                {esquema.tipo_operacion}
+              </span>
+            ))}
+          </div>
         ),
       },
       {
@@ -143,19 +152,38 @@ export function PropertiesPage() {
         headerClassName: "w-[160px]",
         cellClassName: "w-[160px] align-top",
         render: (property) => (
-          <span className="whitespace-nowrap font-semibold text-[#4F5EF8]">
-            {formatCurrency(getPrimaryPropertyPrice(property))}
-          </span>
+          <div className="flex flex-col gap-2 justify-center mt-0.5">
+            {property.esquema_comercial.map((esquema, idx) => {
+              const { finalPrice } = calculateFinalPrice(
+                esquema.precio,
+                esquema.descuento_cantidad,
+              );
+
+              return (
+                <span
+                  key={idx}
+                  className="whitespace-nowrap font-semibold text-[#4F5EF8] leading-tight"
+                >
+                  <span className="text-xs text-slate-400 font-medium mr-1.5">
+                    {esquema.tipo_operacion.charAt(0).toUpperCase()}:
+                  </span>
+                  {formatCurrency(finalPrice)}
+                </span>
+              );
+            })}
+          </div>
         ),
       },
       {
-        header: "Asesor",
+        header: "Registrado por",
+        headerClassName: "min-w-[250px]",
+        cellClassName: "min-w-[250px] align-top",
         render: (property) => (
           <div className="flex items-center justify-center gap-2 text-slate-700">
             <div className="h-6 w-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold uppercase overflow-hidden">
               {property.creador?.foto_url ? (
                 <img
-                  src={property.creador.foto_url}
+                  src={getFullImageUrl(property.creador.foto_url)}
                   alt=""
                   className="h-full w-full object-cover"
                 />
