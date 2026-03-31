@@ -26,6 +26,8 @@ export interface LeadRecord {
   estado?: string | null;
   prioridad?: string | null;
   fecha_cita?: string | null;
+  asesor_externo?: boolean | null;
+  asesor_externo_nombre?: string | null;
   creado_en?: string;
   propiedad_id?: number | null;
   vendedor_asignado_id?: number | null;
@@ -53,6 +55,8 @@ export interface CreateLeadPayload {
   estado?: string;
   prioridad: string;
   fecha_cita?: string;
+  asesor_externo?: boolean;
+  asesor_externo_nombre?: string;
   vendedor_asignado_id?: number;
   operacion?: string;
   canal?: string;
@@ -74,6 +78,8 @@ export interface UpdateLeadPayload {
   estado?: string;
   prioridad?: string;
   fecha_cita?: string;
+  asesor_externo?: boolean;
+  asesor_externo_nombre?: string;
   vendedor_asignado_id?: number;
   operacion?: string;
   canal?: string;

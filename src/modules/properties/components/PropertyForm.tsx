@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import type {
-  CreatePropertyPayload,
   PropertyRecord,
 } from "@/interfaces/property.interface";
 import { ImageGridUploader } from "./ImageGridUploader";
@@ -20,6 +19,7 @@ import {
   STATUS_OPTIONS,
   TYPE_OPTIONS,
 } from "../utils/property-constants";
+import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 
 type PropertyFormProps = {
   property?: PropertyRecord | null;
@@ -28,7 +28,7 @@ type PropertyFormProps = {
   isSubmitting?: boolean;
   onCancel: () => void;
   onSubmit: (data: {
-    payload: Omit<CreatePropertyPayload, "creado_por_id">;
+    payload: PropertySubmitPayload;
     files: File[];
   }) => Promise<string | null>;
 };

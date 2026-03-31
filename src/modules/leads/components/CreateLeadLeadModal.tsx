@@ -360,7 +360,7 @@ export function CreateLeadLeadModal({
             </div>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Presupuesto</FieldLabel>
+              <FieldLabel>Presupuesto (MXN)</FieldLabel>
               <input
                 type="text"
                 inputMode="decimal"

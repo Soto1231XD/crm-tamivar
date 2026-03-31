@@ -36,6 +36,8 @@ const INITIAL_FORM = {
   estado: 'En seguimiento',
   prioridad: 'Normal',
   fecha_cita: '',
+  asesor_externo: 'no' as const,
+  asesor_externo_nombre: '',
 };
 
 const createLeadSchema = z.object({
@@ -54,6 +56,16 @@ const createLeadSchema = z.object({
   estado: z.string().optional(),
   prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
   fecha_cita: z.string().optional(),
+  asesor_externo: z.enum(['si', 'no']),
+  asesor_externo_nombre: z.string().optional(),
+}).superRefine((values, ctx) => {
+  if (values.asesor_externo === 'si' && !values.asesor_externo_nombre?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['asesor_externo_nombre'],
+      message: 'El nombre del asesor externo es obligatorio.',
+    });
+  }
 });
 
 type CreateLeadFormInput = z.input<typeof createLeadSchema>;
@@ -76,6 +88,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
     register,
     reset,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<CreateLeadFormInput, unknown, CreateLeadFormValues>({
     resolver: zodResolver(createLeadSchema),
@@ -106,6 +119,8 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
     onClose();
   }
 
+  const asesorExterno = watch('asesor_externo');
+
   async function onSubmit(values: CreateLeadFormValues) {
     setSubmitError('');
 
@@ -120,6 +135,11 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
       estado: values.estado?.trim() || undefined,
       prioridad: values.prioridad.trim(),
       fecha_cita: values.fecha_cita?.trim() || undefined,
+      asesor_externo: values.asesor_externo === 'si',
+      asesor_externo_nombre:
+        values.asesor_externo === 'si'
+          ? values.asesor_externo_nombre?.trim() || undefined
+          : undefined,
     };
 
     setIsSubmitting(true);
@@ -247,6 +267,28 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
             <label className="flex flex-col gap-1.5">
               <FieldLabel>Fecha de cita</FieldLabel>
               <input type="datetime-local" {...register('fecha_cita')} className={fieldClassName} />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <FieldLabel>Asesor externo</FieldLabel>
+              <select {...register('asesor_externo')} className={fieldClassName}>
+                <option value="no">No</option>
+                <option value="si">Si</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <FieldLabel required={asesorExterno === 'si'}>Nombre del asesor externo</FieldLabel>
+              <input
+                type="text"
+                {...register('asesor_externo_nombre')}
+                className={fieldClassName}
+                disabled={asesorExterno !== 'si'}
+                placeholder={asesorExterno === 'si' ? 'Nombre del broker externo' : 'N/A'}
+              />
+              {errors.asesor_externo_nombre ? (
+                <span className="text-xs text-red-600">{errors.asesor_externo_nombre.message}</span>
+              ) : null}
             </label>
 
             <label className="flex flex-col gap-1.5">

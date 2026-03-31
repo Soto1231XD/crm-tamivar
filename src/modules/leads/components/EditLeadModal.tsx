@@ -42,6 +42,16 @@ const editLeadSchema = z.object({
   estado: z.string().optional(),
   prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
   fecha_cita: z.string().optional(),
+  asesor_externo: z.enum(['si', 'no']),
+  asesor_externo_nombre: z.string().optional(),
+}).superRefine((values, ctx) => {
+  if (values.asesor_externo === 'si' && !values.asesor_externo_nombre?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['asesor_externo_nombre'],
+      message: 'El nombre del asesor externo es obligatorio.',
+    });
+  }
 });
 
 type EditLeadFormInput = z.input<typeof editLeadSchema>;
@@ -95,6 +105,8 @@ function toDefaultValues(lead: LeadRecord | null): EditLeadFormInput {
     estado: lead?.estado ?? 'En seguimiento',
     prioridad: lead?.prioridad ?? 'Normal',
     fecha_cita: toDateTimeLocalValue(lead?.fecha_cita),
+    asesor_externo: lead?.asesor_externo ? 'si' : 'no',
+    asesor_externo_nombre: lead?.asesor_externo_nombre ?? '',
   };
 }
 
@@ -106,7 +118,8 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
     register,
     reset,
     handleSubmit,
-    formState: { errors },
+    watch,
+    formState: { errors, dirtyFields },
   } = useForm<EditLeadFormInput, unknown, EditLeadFormValues>({
     resolver: zodResolver(editLeadSchema),
     defaultValues: toDefaultValues(lead),
@@ -120,6 +133,7 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
 
   if (!lead) return null;
   const currentLead = lead;
+  const asesorExterno = watch('asesor_externo');
 
   function closeModal() {
     setSubmitError('');
@@ -131,18 +145,51 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
     setSubmitError('');
     setIsSubmitting(true);
 
-    const payload: UpdateLeadPayload = {
-      nombres: values.nombres.trim(),
-      apellidos: values.apellidos.trim(),
-      telefono: values.telefono,
-      propiedad_id: values.propiedad_id,
-      lada: values.lada?.trim() || undefined,
-      correo_electronico: values.correo_electronico?.trim() || undefined,
-      comentarios: values.comentarios?.trim() || undefined,
-      estado: values.estado?.trim() || undefined,
-      prioridad: values.prioridad.trim(),
-      fecha_cita: values.fecha_cita?.trim() || undefined,
-    };
+    const payload: UpdateLeadPayload = {};
+
+    if (dirtyFields.nombres) {
+      payload.nombres = values.nombres.trim();
+    }
+    if (dirtyFields.apellidos) {
+      payload.apellidos = values.apellidos.trim();
+    }
+    if (dirtyFields.telefono) {
+      payload.telefono = values.telefono;
+    }
+    if (dirtyFields.propiedad_id) {
+      payload.propiedad_id = values.propiedad_id;
+    }
+    if (dirtyFields.lada) {
+      payload.lada = values.lada?.trim() || undefined;
+    }
+    if (dirtyFields.correo_electronico) {
+      payload.correo_electronico = values.correo_electronico?.trim() || undefined;
+    }
+    if (dirtyFields.comentarios) {
+      payload.comentarios = values.comentarios?.trim() || undefined;
+    }
+    if (dirtyFields.estado) {
+      payload.estado = values.estado?.trim() || undefined;
+    }
+    if (dirtyFields.prioridad) {
+      payload.prioridad = values.prioridad.trim();
+    }
+    if (dirtyFields.fecha_cita) {
+      payload.fecha_cita = values.fecha_cita?.trim() || undefined;
+    }
+    if (dirtyFields.asesor_externo || dirtyFields.asesor_externo_nombre) {
+      payload.asesor_externo = values.asesor_externo === 'si';
+      payload.asesor_externo_nombre =
+        values.asesor_externo === 'si'
+          ? values.asesor_externo_nombre?.trim() || undefined
+          : undefined;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      setIsSubmitting(false);
+      closeModal();
+      return;
+    }
 
     const error = await onEdit(currentLead.id, payload);
     setIsSubmitting(false);
@@ -264,6 +311,28 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
             <label className="flex flex-col gap-1.5">
               <FieldLabel>Fecha de cita</FieldLabel>
               <input type="datetime-local" {...register('fecha_cita')} className={fieldClassName} />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <FieldLabel>Asesor externo</FieldLabel>
+              <select {...register('asesor_externo')} className={fieldClassName}>
+                <option value="no">No</option>
+                <option value="si">Si</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <FieldLabel required={asesorExterno === 'si'}>Nombre del asesor externo</FieldLabel>
+              <input
+                type="text"
+                {...register('asesor_externo_nombre')}
+                className={fieldClassName}
+                disabled={asesorExterno !== 'si'}
+                placeholder={asesorExterno === 'si' ? 'Nombre del broker externo' : 'N/A'}
+              />
+              {errors.asesor_externo_nombre ? (
+                <span className="text-xs text-red-600">{errors.asesor_externo_nombre.message}</span>
+              ) : null}
             </label>
 
             <label className="flex flex-col gap-1.5">

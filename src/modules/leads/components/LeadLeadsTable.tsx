@@ -12,6 +12,7 @@ import {
   getStatusStyles,
 } from '../utils/leads.utils';
 import { LEAD_LEADS_PRIORITY_OPTIONS, LEAD_LEADS_STATUS_OPTIONS } from './leadLeads.shared';
+import { formatCurrency } from '@/modules/properties/utils/formatters';
 
 type LeadLeadsTableProps = {
   leads: LeadRecord[];
@@ -23,16 +24,6 @@ type LeadLeadsTableProps = {
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
 };
-
-function formatCurrency(value?: string | number | null): string {
-  if (value == null || Number.isNaN(Number(value))) return 'Sin presupuesto';
-
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    maximumFractionDigits: 0,
-  }).format(Number(value));
-}
 
 function QuickBadgeSelect({
   value,
@@ -187,7 +178,14 @@ export function LeadLeadsTable({
     {
       header: 'Presupuesto',
       cellClassName: 'min-w-[150px]',
-      render: (lead) => <span className="text-sm text-slate-700">{formatCurrency(lead.presupuesto)}</span>,
+      render: (lead) =>
+        lead.presupuesto == null || Number.isNaN(Number(lead.presupuesto)) ? (
+          <span className="text-sm text-slate-700">Sin presupuesto</span>
+        ) : (
+          <span className="whitespace-nowrap font-semibold text-[#4F5EF8]">
+            {formatCurrency(lead.presupuesto)}
+          </span>
+        ),
     },
     {
       header: 'Ubicacion de la propiedad',

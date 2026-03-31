@@ -125,7 +125,7 @@ export function EditLeadLeadModal({
     register,
     reset,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<EditLeadLeadFormInput, unknown, EditLeadLeadFormValues>({
     resolver: zodResolver(editLeadLeadSchema),
     defaultValues: toDefaultValues(lead),
@@ -156,25 +156,69 @@ export function EditLeadLeadModal({
     setSubmitError('');
     setIsSubmitting(true);
 
-    const payload: UpdateLeadPayload = {
-      nombres: values.nombres.trim(),
-      apellidos: values.apellidos.trim(),
-      telefono: values.telefono,
-      propiedad_id: values.propiedad_id ? Number(values.propiedad_id) : undefined,
-      lada: values.lada?.trim() || undefined,
-      comentarios: values.comentarios?.trim() || undefined,
-      estado: values.estado?.trim() || undefined,
-      prioridad: values.prioridad.trim(),
-      fecha_cita: values.fecha_cita?.trim() || undefined,
-      vendedor_asignado_id: Number(values.vendedor_asignado_id),
-      operacion: values.operacion.trim(),
-      canal: values.canal.trim(),
-      solicitud: values.solicitud?.trim() || undefined,
-      presupuesto: presupuestoValue ? Number(presupuestoValue) : undefined,
-      metodo_pago: values.metodo_pago.join(', '),
-      caracteristicas: values.caracteristicas?.trim() || undefined,
-      origen_lead: values.origen_lead.trim(),
-    };
+    const payload: UpdateLeadPayload = {};
+
+    if (dirtyFields.nombres) {
+      payload.nombres = values.nombres.trim();
+    }
+    if (dirtyFields.apellidos) {
+      payload.apellidos = values.apellidos.trim();
+    }
+    if (dirtyFields.telefono) {
+      payload.telefono = values.telefono;
+    }
+    if (dirtyFields.propiedad_id) {
+      payload.propiedad_id = values.propiedad_id
+        ? Number(values.propiedad_id)
+        : undefined;
+    }
+    if (dirtyFields.lada) {
+      payload.lada = values.lada?.trim() || undefined;
+    }
+    if (dirtyFields.comentarios) {
+      payload.comentarios = values.comentarios?.trim() || undefined;
+    }
+    if (dirtyFields.estado) {
+      payload.estado = values.estado?.trim() || undefined;
+    }
+    if (dirtyFields.prioridad) {
+      payload.prioridad = values.prioridad.trim();
+    }
+    if (dirtyFields.fecha_cita) {
+      payload.fecha_cita = values.fecha_cita?.trim() || undefined;
+    }
+    if (dirtyFields.vendedor_asignado_id) {
+      payload.vendedor_asignado_id = Number(values.vendedor_asignado_id);
+    }
+    if (dirtyFields.operacion) {
+      payload.operacion = values.operacion.trim();
+    }
+    if (dirtyFields.canal) {
+      payload.canal = values.canal.trim();
+    }
+    if (dirtyFields.solicitud) {
+      payload.solicitud = values.solicitud?.trim() || undefined;
+    }
+    if (dirtyFields.presupuesto) {
+      payload.presupuesto = presupuestoValue
+        ? Number(presupuestoValue)
+        : undefined;
+    }
+    if (dirtyFields.metodo_pago) {
+      payload.metodo_pago = values.metodo_pago.join(', ');
+    }
+    if (dirtyFields.caracteristicas) {
+      payload.caracteristicas = values.caracteristicas?.trim() || undefined;
+    }
+    if (dirtyFields.origen_lead) {
+      payload.origen_lead = values.origen_lead.trim();
+    }
+
+    if (Object.keys(payload).length === 0) {
+      setIsSubmitting(false);
+      closeModal();
+      return;
+    }
 
     const error = await onEdit(currentLead.id, payload);
     setIsSubmitting(false);

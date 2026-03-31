@@ -3,6 +3,7 @@ import type {
   PropertyRecord,
   CreatePropertyPayload,
   EsquemaComercial,
+  UpdatePropertyPayload,
 } from "@/interfaces/property.interface";
 import {
   validatePropertyForm,
@@ -29,6 +30,9 @@ const CURRENCY_FIELD_NAMES = new Set([
 ]);
 
 export type OperationOption = "Venta" | "Renta" | "Preventa";
+export type PropertySubmitPayload =
+  | Omit<CreatePropertyPayload, "creado_por_id">
+  | UpdatePropertyPayload;
 
 const TERRAIN_RESET_VALUES: Partial<FormState> = {
   construccion_m2: "0",
@@ -250,10 +254,133 @@ function toFormState(property?: PropertyRecord | null): FormState {
   };
 }
 
+function buildInitialPayload(
+  property: PropertyRecord,
+): Omit<CreatePropertyPayload, "creado_por_id" | "creador" | "carpeta_id"> {
+  const isTerreno = property.tipo_inmueble.trim().toLowerCase() === "terreno";
+
+  return {
+    titulo: property.titulo,
+    tipo_inmueble: property.tipo_inmueble,
+    descripcion: property.descripcion || undefined,
+    esquema_comercial: Array.isArray(property.esquema_comercial)
+      ? property.esquema_comercial.map((item) => ({
+          tipo_operacion: item.tipo_operacion,
+          precio: item.precio,
+          descuento_cantidad: item.descuento_cantidad ?? undefined,
+        }))
+      : [],
+    tipos_pago: Array.isArray(property.tipos_pago) ? property.tipos_pago : [],
+    estatus: property.estatus,
+    tiene_gravamen: Boolean(property.tiene_gravamen),
+    etiquetas: Array.isArray(property.etiquetas) ? property.etiquetas : [],
+    cuota_mantenimiento: property.cuota_mantenimiento ?? undefined,
+    comentarios: property.comentarios || undefined,
+    pisos_tiene: property.pisos_tiene ?? undefined,
+    servicios_instalaciones: property.servicios_instalaciones || undefined,
+    amenidades: property.amenidades || undefined,
+    medidas: {
+      terreno_m2: property.medidas?.terreno_m2,
+      construccion_m2: isTerreno
+        ? 0
+        : (property.medidas?.construccion_m2 ?? undefined),
+      frente: property.medidas?.frente,
+      fondo: property.medidas?.fondo,
+    },
+    direccion: {
+      cp: property.direccion.cp,
+      fraccionamiento: property.direccion.fraccionamiento,
+      smz: property.direccion.smz ?? undefined,
+      mza: property.direccion.mza ?? undefined,
+      lote: property.direccion.lote ?? undefined,
+      calle: property.direccion.calle,
+      num_ext: property.direccion.num_ext ?? undefined,
+      num_int: property.direccion.num_int ?? undefined,
+      municipio: property.direccion.municipio,
+      estado: property.direccion.estado,
+      referencias: property.direccion.referencias || undefined,
+    },
+    caracteristicas: isTerreno
+      ? undefined
+      : {
+          banos: property.caracteristicas?.banos ?? undefined,
+          recamaras: property.caracteristicas?.recamaras ?? undefined,
+          estacionamiento: property.caracteristicas?.estacionamiento ?? undefined,
+          sala: Boolean(property.caracteristicas?.sala),
+          comedor: Boolean(property.caracteristicas?.comedor),
+          cocina: Boolean(property.caracteristicas?.cocina),
+          area_servicio: Boolean(property.caracteristicas?.area_servicio),
+          patio: Boolean(property.caracteristicas?.patio),
+          jardin: Boolean(property.caracteristicas?.jardin),
+          alberca: Boolean(property.caracteristicas?.alberca),
+          terraza: Boolean(property.caracteristicas?.terraza),
+          amueblado: Boolean(property.caracteristicas?.amueblado),
+          bodega: Boolean(property.caracteristicas?.bodega),
+          aire_acondicionado: Boolean(
+            property.caracteristicas?.aire_acondicionado,
+          ),
+          boiler: Boolean(property.caracteristicas?.boiler),
+        },
+    imagenes: Array.isArray(property.imagenes) ? property.imagenes : [],
+  };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function areValuesEqual(left: unknown, right: unknown): boolean {
+  if (left === right) {
+    return true;
+  }
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return (
+      left.length === right.length &&
+      left.every((value, index) => areValuesEqual(value, right[index]))
+    );
+  }
+
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+    return Array.from(keys).every((key) =>
+      areValuesEqual(left[key], right[key]),
+    );
+  }
+
+  return false;
+}
+
+function getChangedPayload(
+  current: Record<string, unknown>,
+  initial: Record<string, unknown>,
+): Record<string, unknown> {
+  const changed: Record<string, unknown> = {};
+
+  for (const key of Object.keys(current)) {
+    const currentValue = current[key];
+    const initialValue = initial[key];
+
+    if (isPlainObject(currentValue) && isPlainObject(initialValue)) {
+      const nestedChanges = getChangedPayload(currentValue, initialValue);
+      if (Object.keys(nestedChanges).length > 0) {
+        changed[key] = nestedChanges;
+      }
+      continue;
+    }
+
+    if (!areValuesEqual(currentValue, initialValue)) {
+      changed[key] = currentValue;
+    }
+  }
+
+  return changed;
+}
+
 export function usePropertyForm(
   property: PropertyRecord | null | undefined,
   onSubmit: (data: {
-    payload: Omit<CreatePropertyPayload, "creado_por_id">;
+    payload: PropertySubmitPayload;
     files: File[];
   }) => Promise<string | null>,
 ) {
@@ -374,7 +501,6 @@ export function usePropertyForm(
       form.operaciones.length > 0
         ? (form.operaciones as OperationOption[])
         : ["Venta"];
-    
     const isTerreno = form.tipo_inmueble.trim().toLowerCase() === "terreno";
 
     const parsedNumbers = {
@@ -501,8 +627,25 @@ export function usePropertyForm(
       imagenes: form.imagenes_existentes,
     };
 
+    let payload: PropertySubmitPayload = propertyData;
+
+    if (property) {
+      const initialPayload = buildInitialPayload(property);
+      const changedPayload = getChangedPayload(
+        propertyData as Record<string, unknown>,
+        initialPayload as Record<string, unknown>,
+      ) as UpdatePropertyPayload;
+
+      if (Object.keys(changedPayload).length === 0 && form.imagenes.length === 0) {
+        setSubmitError("No se detectaron cambios para guardar.");
+        return;
+      }
+
+      payload = changedPayload;
+    }
+
     const submitResult = await onSubmit({
-      payload: propertyData,
+      payload,
       files: form.imagenes,
     });
 

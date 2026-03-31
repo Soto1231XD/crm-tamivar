@@ -2,6 +2,7 @@ import { Document, Image, Page, StyleSheet, Text, View } from '@react-pdf/render
 import Logo from '@/assets/images/Logo.png';
 import type { LeadRecord } from '@/interfaces/lead.interface';
 import {
+  formatAsesorExterno,
   formatCreatorName,
   formatDate,
   formatDateTime,
@@ -212,6 +213,12 @@ export function LeadPdfDocument({ lead, propertyTitle }: LeadPdfDocumentProps) {
             <View style={styles.col6}>
               <Text style={styles.label}>Fecha de cita</Text>
               <Text style={styles.value}>{formatDateTime(lead.fecha_cita)}</Text>
+            </View>
+            <View style={styles.col12}>
+              <Text style={styles.label}>Asesor externo</Text>
+              <Text style={styles.value}>
+                {formatAsesorExterno(lead.asesor_externo, lead.asesor_externo_nombre)}
+              </Text>
             </View>
           </View>
         </View>

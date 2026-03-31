@@ -5,6 +5,7 @@ import descInfIcon from '../../../assets/images/DescInf.png';
 import { DownloadLeadPdfButton } from './DownloadLeadPdfButton';
 import { LEAD_PRIORITY_OPTIONS, LEAD_STATUS_OPTIONS } from '../utils/leads.constants';
 import {
+  formatAsesorExterno,
   formatCreatorName,
   formatDate,
   formatDateTime,
@@ -121,6 +122,15 @@ export function LeadsTable({
       header: 'Fecha de cita',
       cellClassName: 'min-w-[180px]',
       render: (lead) => <span className="text-sm text-slate-700">{formatDateTime(lead.fecha_cita)}</span>,
+    },
+    {
+      header: 'Asesor externo',
+      cellClassName: 'min-w-[220px]',
+      render: (lead) => (
+        <span className="text-sm text-slate-700">
+          {formatAsesorExterno(lead.asesor_externo, lead.asesor_externo_nombre)}
+        </span>
+      ),
     },
     {
       header: 'Comentarios',

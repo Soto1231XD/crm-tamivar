@@ -1,4 +1,5 @@
 import type { LeadRecord } from '@/interfaces/lead.interface';
+import { downloadTableAsExcel } from '@/components/ui/excelExport';
 import {
   CHANNEL_STYLES,
   LEAD_SOURCE_STYLES,
@@ -101,22 +102,32 @@ export function formatCreatorName(
   return parts.length > 0 ? parts.join(' ') : 'Sin asignar';
 }
 
+export function formatAsesorExterno(
+  asesorExterno?: boolean | null,
+  asesorExternoNombre?: string | null,
+): string {
+  if (!asesorExterno) return 'N/A';
+  const nombre = asesorExternoNombre?.trim();
+  return nombre || 'Sin nombre';
+}
+
 export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string[]) {
-  const rows = [
-    [
-      'ID',
-      'Cliente',
-      'Correo electronico',
-      'Telefono',
-      'Propiedad',
-      'Estado',
-      'Prioridad',
-      'Creado por',
-      'Fecha de creacion',
-      'Fecha de cita',
-      'Comentarios',
-    ],
-    ...leads.map((lead, index) => [
+  const headers = [
+    'ID',
+    'Cliente',
+    'Correo electronico',
+    'Telefono',
+    'Propiedad',
+    'Estado',
+    'Prioridad',
+    'Creado por',
+    'Fecha de creacion',
+    'Fecha de cita',
+    'Asesor externo',
+    'Comentarios',
+  ];
+
+  const rows = leads.map((lead, index) => [
       String(lead.id ?? ''),
       `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre',
       lead.correo_electronico?.trim() || 'Sin correo',
@@ -127,68 +138,15 @@ export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string
       formatCreatorName(lead.creador),
       formatDate(lead.creado_en),
       formatDateTime(lead.fecha_cita),
+      formatAsesorExterno(lead.asesor_externo, lead.asesor_externo_nombre),
       lead.comentarios?.trim() || 'Sin comentarios',
-    ]),
-  ];
+    ]);
 
-  const tableRows = rows
-    .map(
-      (columns, rowIndex) => `
-        <tr>
-          ${columns
-            .map(
-              (column) =>
-                `<td style="${rowIndex === 0 ? HEADER_CELL_STYLE : VALUE_CELL_STYLE}">${escapeHtml(column)}</td>`,
-            )
-            .join('')}
-        </tr>`,
-    )
-    .join('');
-
-  const excelContent = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-      <head>
-        <meta charset="UTF-8" />
-        <!--[if gte mso 9]>
-          <xml>
-            <x:ExcelWorkbook>
-              <x:ExcelWorksheets>
-                <x:ExcelWorksheet>
-                  <x:Name>Registros</x:Name>
-                  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-                </x:ExcelWorksheet>
-              </x:ExcelWorksheets>
-            </x:ExcelWorkbook>
-          </xml>
-        <![endif]-->
-      </head>
-      <body>
-        <table border="1" cellspacing="0" cellpadding="0">
-          ${tableRows}
-        </table>
-      </body>
-    </html>`;
-
-  const blob = new Blob([`\ufeff${excelContent}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'registros-filtrados.xls';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-const HEADER_CELL_STYLE =
-  'background:#E2E8F0;font-weight:700;color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
-const VALUE_CELL_STYLE = 'color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  downloadTableAsExcel({
+    title: 'Registros exportados',
+    sheetName: 'Registros',
+    fileName: 'registros-filtrados.xls',
+    headers,
+    rows,
+  });
 }

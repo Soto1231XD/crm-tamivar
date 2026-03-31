@@ -40,6 +40,7 @@ export function EditRoleModal({ isOpen, role, permissions, onClose, onEdit }: Ed
   }, [isOpen, role]);
 
   if (!role) return null;
+  const currentRole = role;
 
   function closeModal() {
     setRoleName('');
@@ -72,11 +73,31 @@ export function EditRoleModal({ isOpen, role, permissions, onClose, onEdit }: Ed
       return;
     }
 
+    const initialRoleName = currentRole.rol.trim();
+    const initialPermissionIds = getSelectedPermissionIds(currentRole);
+    const sortedCurrentPermissionIds = [...selectedPermissionIds].sort((a, b) => a - b);
+    const sortedInitialPermissionIds = [...initialPermissionIds].sort((a, b) => a - b);
+
+    const payload: { rol?: string; permisosIds?: number[] } = {};
+
+    if (normalizedRoleName !== initialRoleName) {
+      payload.rol = normalizedRoleName;
+    }
+
+    if (
+      sortedCurrentPermissionIds.length !== sortedInitialPermissionIds.length ||
+      sortedCurrentPermissionIds.some((value, index) => value !== sortedInitialPermissionIds[index])
+    ) {
+      payload.permisosIds = selectedPermissionIds;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      closeModal();
+      return;
+    }
+
     setIsSubmitting(true);
-    const error = await onEdit({
-      rol: normalizedRoleName,
-      permisosIds: selectedPermissionIds,
-    });
+    const error = await onEdit(payload as { rol: string; permisosIds: number[] });
     setIsSubmitting(false);
 
     if (error) {

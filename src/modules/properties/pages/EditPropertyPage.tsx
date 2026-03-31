@@ -3,10 +3,7 @@ import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
 import { usePropertiesStore } from "../store/usePropertiesStore";
-import type {
-  CreatePropertyPayload,
-  UpdatePropertyPayload,
-} from "@/interfaces/property.interface";
+import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 
 export function EditPropertyPage() {
   const navigate = useNavigate();
@@ -44,7 +41,7 @@ export function EditPropertyPage() {
     payload,
     files,
   }: {
-    payload: Omit<CreatePropertyPayload, "creado_por_id">;
+    payload: PropertySubmitPayload;
     files: File[];
   }): Promise<string | null> {
     if (!currentProperty) return "No se encontró la propiedad.";
@@ -54,7 +51,7 @@ export function EditPropertyPage() {
 
       await editProperty(
         currentProperty.id,
-        payload as UpdatePropertyPayload,
+        payload,
         files,
       );
 

@@ -119,27 +119,25 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
       return;
     }
 
-    const basePayload = {
-      nombres: form.nombres.trim(),
-      apellido_paterno: form.apellido_paterno.trim(),
-      apellido_materno: form.apellido_materno.trim(),
-      telefono: form.telefono.trim(),
-      correo_electronico: form.correo_electronico.trim(),
-      foto_url: form.foto_url.trim() || undefined,
-      folio_certificacion: form.folio_certificacion.trim() || undefined,
-      roles_ids: form.roles_ids,
-    };
-
     const payload =
       mode === 'create'
         ? {
-            ...basePayload,
+            nombres: form.nombres.trim(),
+            apellido_paterno: form.apellido_paterno.trim(),
+            apellido_materno: form.apellido_materno.trim(),
+            telefono: form.telefono.trim(),
+            correo_electronico: form.correo_electronico.trim(),
+            foto_url: form.foto_url.trim() || undefined,
+            folio_certificacion: form.folio_certificacion.trim() || undefined,
+            roles_ids: form.roles_ids,
             contrasena: form.contrasena.trim(),
           }
-        : {
-            ...basePayload,
-            contrasena: form.contrasena.trim() || undefined,
-          };
+        : buildUpdatePayload(form, user);
+
+    if (mode === 'edit' && Object.keys(payload).length === 0) {
+      onClose();
+      return;
+    }
 
     setIsSubmitting(true);
     const error = await onSubmit(payload);
@@ -312,6 +310,53 @@ function getRoleIds(user: UserRecord): number[] {
       return null;
     })
     .filter((roleId): roleId is number => roleId !== null);
+}
+
+function arraysEqual(left: number[], right: number[]): boolean {
+  if (left.length !== right.length) return false;
+
+  const sortedLeft = [...left].sort((a, b) => a - b);
+  const sortedRight = [...right].sort((a, b) => a - b);
+
+  return sortedLeft.every((value, index) => value === sortedRight[index]);
+}
+
+function buildUpdatePayload(form: FormState, user?: UserRecord | null): UpdateUserPayload {
+  const initial = getInitialForm(user);
+  const payload: UpdateUserPayload = {};
+
+  if (form.nombres.trim() !== initial.nombres.trim()) {
+    payload.nombres = form.nombres.trim();
+  }
+  if (form.apellido_paterno.trim() !== initial.apellido_paterno.trim()) {
+    payload.apellido_paterno = form.apellido_paterno.trim();
+  }
+  if (form.apellido_materno.trim() !== initial.apellido_materno.trim()) {
+    payload.apellido_materno = form.apellido_materno.trim();
+  }
+  if (form.telefono.trim() !== initial.telefono.trim()) {
+    payload.telefono = form.telefono.trim();
+  }
+  if (form.correo_electronico.trim() !== initial.correo_electronico.trim()) {
+    payload.correo_electronico = form.correo_electronico.trim();
+  }
+  if ((form.foto_url.trim() || '') !== (initial.foto_url.trim() || '')) {
+    payload.foto_url = form.foto_url.trim() || undefined;
+  }
+  if (
+    (form.folio_certificacion.trim() || '') !==
+    (initial.folio_certificacion.trim() || '')
+  ) {
+    payload.folio_certificacion = form.folio_certificacion.trim() || undefined;
+  }
+  if (!arraysEqual(form.roles_ids, initial.roles_ids)) {
+    payload.roles_ids = form.roles_ids;
+  }
+  if (form.contrasena.trim()) {
+    payload.contrasena = form.contrasena.trim();
+  }
+
+  return payload;
 }
 
 function sanitizeName(value: string): string {
