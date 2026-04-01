@@ -151,7 +151,6 @@ export function DashboardPage() {
           .map((lead) => ({
             nombre: lead.nombres,
             apellido: lead.apellidos,
-            correo: lead.correo_electronico ?? "Sin correo",
             estado: lead.estado ?? "Sin estado",
           }));
 

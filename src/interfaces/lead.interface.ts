@@ -53,7 +53,7 @@ export interface CreateLeadPayload {
   correo_electronico?: string;
   comentarios?: string;
   estado?: string;
-  prioridad: string;
+  prioridad?: string;
   fecha_cita?: string;
   asesor_externo?: boolean;
   asesor_externo_nombre?: string;

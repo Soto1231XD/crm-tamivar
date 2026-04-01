@@ -60,6 +60,15 @@ export function formatPhone(lada?: string | null, telefono?: string | number): s
   return parts.length ? parts.join(' ') : 'Sin telefono';
 }
 
+export function formatPhoneLastFour(telefono?: string | number): string {
+  const digits = String(telefono ?? '')
+    .replace(/\D/g, '')
+    .slice(-4);
+
+  if (!digits) return 'Sin telefono';
+  return `**** ${digits}`;
+}
+
 export function formatDate(value?: string): string {
   if (!value) return 'Sin fecha';
   const date = new Date(value);
@@ -113,13 +122,10 @@ export function formatAsesorExterno(
 
 export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string[]) {
   const headers = [
-    'ID',
     'Cliente',
-    'Correo electronico',
     'Telefono',
     'Propiedad',
     'Estado',
-    'Prioridad',
     'Creado por',
     'Fecha de creacion',
     'Fecha de cita',
@@ -128,13 +134,10 @@ export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string
   ];
 
   const rows = leads.map((lead, index) => [
-      String(lead.id ?? ''),
       `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre',
-      lead.correo_electronico?.trim() || 'Sin correo',
       formatPhone(lead.lada, lead.telefono),
       propertyTitles[index] ?? 'Sin titulo',
       lead.estado?.trim() || 'Sin estado',
-      lead.prioridad?.trim() || 'Sin prioridad',
       formatCreatorName(lead.creador),
       formatDate(lead.creado_en),
       formatDateTime(lead.fecha_cita),
@@ -146,6 +149,56 @@ export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string
     title: 'Registros exportados',
     sheetName: 'Registros',
     fileName: 'registros-filtrados.xls',
+    headers,
+    rows,
+  });
+}
+
+export function downloadLeadLeadsAsExcel(
+  leads: LeadRecord[],
+  propertyAddresses: string[],
+  userNames: string[],
+) {
+  const headers = [
+    'Fecha de lead',
+    'Estatus',
+    'Nombre',
+    'Prioridad',
+    'Vendedor asignado',
+    'Celular',
+    'Operacion',
+    'Canal',
+    'Solicitud',
+    'Presupuesto',
+    'Ubicacion de la propiedad',
+    'Metodo de pago',
+    'Caracteristicas',
+    'Comentarios',
+    'Origen de lead',
+  ];
+
+  const rows = leads.map((lead, index) => [
+    formatDate(lead.creado_en),
+    lead.estado?.trim() || 'Sin estatus',
+    `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre',
+    lead.prioridad?.trim() || 'Sin prioridad',
+    userNames[index] ?? 'Sin asignar',
+    formatPhone(lead.lada, lead.telefono),
+    lead.operacion?.trim() || 'Sin operacion',
+    lead.canal?.trim() || 'Sin canal',
+    lead.solicitud?.trim() || 'Sin solicitud',
+    lead.presupuesto != null ? String(lead.presupuesto) : 'Sin presupuesto',
+    propertyAddresses[index] ?? 'Sin ubicacion',
+    lead.metodo_pago?.trim() || 'Sin metodo',
+    lead.caracteristicas?.trim() || 'Sin caracteristicas',
+    lead.comentarios?.trim() || 'Sin comentarios',
+    lead.origen_lead?.trim() || 'Sin origen',
+  ]);
+
+  downloadTableAsExcel({
+    title: 'Registros leads exportados',
+    sheetName: 'Registros leads',
+    fileName: 'registros-leads-filtrados.xls',
     headers,
     rows,
   });

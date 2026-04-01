@@ -3,14 +3,13 @@ import type { LeadRecord } from '@/interfaces/lead.interface';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import descInfIcon from '../../../assets/images/DescInf.png';
 import { DownloadLeadPdfButton } from './DownloadLeadPdfButton';
-import { LEAD_PRIORITY_OPTIONS, LEAD_STATUS_OPTIONS } from '../utils/leads.constants';
+import { VISIT_STATUS_OPTIONS } from '../utils/leads.constants';
 import {
   formatAsesorExterno,
   formatCreatorName,
   formatDate,
   formatDateTime,
-  formatPhone,
-  getPriorityStyles,
+  formatPhoneLastFour,
   getStatusStyles,
 } from '../utils/leads.utils';
 
@@ -19,7 +18,7 @@ type LeadsTableProps = {
   isLoading: boolean;
   updatingLeadId: number | null;
   propertyTitleById: Map<number, string>;
-  onQuickChange: (leadId: number, field: 'estado' | 'prioridad', value: string) => void;
+  onQuickChange: (leadId: number, field: 'estado', value: string) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
 };
@@ -47,19 +46,13 @@ export function LeadsTable({
           <p className="font-semibold text-slate-900">
             {`${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'}
           </p>
-          <p className="mt-1 text-xs text-slate-500">{lead.correo_electronico || 'Sin correo'}</p>
         </div>
       ),
     },
     {
-      header: 'Correo electronico',
-      cellClassName: 'min-w-[220px]',
-      render: (lead) => <span className="text-sm text-slate-700">{lead.correo_electronico || 'Sin correo'}</span>,
-    },
-    {
       header: 'Telefono',
       cellClassName: 'min-w-[150px]',
-      render: (lead) => <span className="text-sm text-slate-700">{formatPhone(lead.lada, lead.telefono)}</span>,
+      render: (lead) => <span className="text-sm text-slate-700">{formatPhoneLastFour(lead.telefono)}</span>,
     },
     {
       header: 'Propiedad',
@@ -75,32 +68,13 @@ export function LeadsTable({
       cellClassName: 'min-w-[150px]',
       render: (lead) => (
         <select
-          value={lead.estado || LEAD_STATUS_OPTIONS[0]}
+          value={lead.estado || VISIT_STATUS_OPTIONS[0]}
           onChange={(event) => onQuickChange(lead.id, 'estado', event.target.value)}
           disabled={updatingLeadId === lead.id}
           className="min-w-32 rounded-full border-0 px-3 py-1 text-xs font-semibold outline-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
           style={getStatusStyles(lead.estado ?? '')}
         >
-          {LEAD_STATUS_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      ),
-    },
-    {
-      header: 'Prioridad',
-      cellClassName: 'min-w-[150px]',
-      render: (lead) => (
-        <select
-          value={lead.prioridad || LEAD_PRIORITY_OPTIONS[1]}
-          onChange={(event) => onQuickChange(lead.id, 'prioridad', event.target.value)}
-          disabled={updatingLeadId === lead.id}
-          className="min-w-32 rounded-full border-0 px-3 py-1 text-xs font-semibold outline-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-          style={getPriorityStyles(lead.prioridad ?? '')}
-        >
-          {LEAD_PRIORITY_OPTIONS.map((option) => (
+          {VISIT_STATUS_OPTIONS.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
@@ -150,7 +124,7 @@ export function LeadsTable({
       isLoading={isLoading}
       emptyMessage="No se encontraron registros"
       wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
-      tableClassName="w-max min-w-[1520px] text-left"
+      tableClassName="w-max min-w-[1320px] text-left"
       actionsClassName="flex items-center gap-2"
       onEdit={canEdit ? onEdit : undefined}
       onDelete={canDelete ? onDelete : undefined}
@@ -162,7 +136,7 @@ export function LeadsTable({
         >
           {(loading) =>
             loading ? (
-              <div className="h-6 w-6 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
             ) : (
               <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />
             )

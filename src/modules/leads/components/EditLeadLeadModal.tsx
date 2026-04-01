@@ -19,7 +19,6 @@ import {
   sanitizeLeadLeadLada,
   sanitizeLeadLeadName,
   sanitizeLeadLeadPhone,
-  toLeadDateTimeLocalValue,
 } from './leadLeads.shared';
 
 const LADA_REGEX = /^\+?[0-9]+$/;
@@ -65,7 +64,6 @@ const editLeadLeadSchema = z.object({
   comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
   estado: z.string().optional(),
   prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
-  fecha_cita: z.string().optional(),
   vendedor_asignado_id: z.string().trim().min(1, 'Vendedor asignado es obligatorio.'),
   operacion: z.string().trim().min(1, 'Operacion es obligatoria.'),
   canal: z.string().trim().min(1, 'Canal es obligatorio.'),
@@ -98,7 +96,6 @@ function toDefaultValues(lead: LeadRecord | null): EditLeadLeadFormInput {
     comentarios: lead?.comentarios ?? '',
     estado: lead?.estado ?? 'En seguimiento',
     prioridad: lead?.prioridad ?? 'Normal',
-    fecha_cita: toLeadDateTimeLocalValue(lead?.fecha_cita),
     vendedor_asignado_id: lead?.vendedor_asignado_id != null ? String(lead.vendedor_asignado_id) : '',
     operacion: lead?.operacion ?? '',
     canal: lead?.canal ?? '',
@@ -183,9 +180,6 @@ export function EditLeadLeadModal({
     }
     if (dirtyFields.prioridad) {
       payload.prioridad = values.prioridad.trim();
-    }
-    if (dirtyFields.fecha_cita) {
-      payload.fecha_cita = values.fecha_cita?.trim() || undefined;
     }
     if (dirtyFields.vendedor_asignado_id) {
       payload.vendedor_asignado_id = Number(values.vendedor_asignado_id);
@@ -362,11 +356,6 @@ export function EditLeadLeadModal({
                 ))}
               </select>
               {errors.prioridad ? <span className="text-xs text-red-600">{errors.prioridad.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <FieldLabel>Fecha de cita</FieldLabel>
-              <input type="datetime-local" {...register('fecha_cita')} className={leadLeadFieldClassName} />
             </label>
 
             <label className="flex flex-col gap-1.5">

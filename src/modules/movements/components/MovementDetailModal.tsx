@@ -10,6 +10,7 @@ import {
   getMovementSnapshotSections,
   getMovementSummaryItems,
   getStatusBadgeClass,
+  getStatusLabel,
   normalizeMovementText,
 } from "../utils/movements.utils";
 
@@ -72,7 +73,7 @@ export function MovementDetailModal({
             </h3>
             <p className="mt-2 text-sm text-slate-600">
               Aquí puedes revisar el contexto completo del movimiento y los
-              cambios registrados de forma clara.
+              datos guardados de una forma mas clara y fácil de entender.
             </p>
           </div>
 
@@ -122,7 +123,7 @@ export function MovementDetailModal({
                   movement.statusCode,
                 )}`}
               >
-                Status {movement.statusCode}
+                {getStatusLabel(movement.statusCode)}
               </span>
             </div>
           </section>
@@ -139,9 +140,9 @@ export function MovementDetailModal({
 
             {changedFields.length === 0 ? (
               <p className="text-sm text-slate-600">
-                Este movimiento no trae suficiente información para mostrar los
-                cambios a detalle. Aun asi puedes revisar el contexto general y
-                la información guardada.
+                Este movimiento no trae suficiente información para comparar un
+                antes y un después con precision. Aun asi puedes revisar el
+                resumen general y los datos guardados mas abajo.
               </p>
             ) : (
               <div className="space-y-3">

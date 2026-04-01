@@ -104,10 +104,9 @@ export function LeadLeadsTable({
       header: 'Nombre',
       cellClassName: 'min-w-[220px]',
       render: (lead) => (
-        <div>
-          <p className="font-semibold text-slate-900">{`${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'}</p>
-          <p className="mt-1 text-xs text-slate-500">{lead.correo_electronico || 'Sin correo'}</p>
-        </div>
+        <span className="font-semibold text-slate-900">
+          {`${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'}
+        </span>
       ),
     },
     {

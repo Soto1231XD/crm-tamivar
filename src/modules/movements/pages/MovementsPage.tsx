@@ -13,6 +13,7 @@ import {
   getModuleLabel,
   getMovementDetailText,
   getStatusBadgeClass,
+  getStatusLabel,
   normalizeMovementText,
 } from "../utils/movements.utils";
 
@@ -174,13 +175,18 @@ export function MovementsPage() {
       {
         header: "Status",
         render: (movement) => (
-          <span
-            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(
-              movement.statusCode,
-            )}`}
-          >
-            {movement.statusCode}
-          </span>
+          <div className="flex min-w-[120px] flex-col items-center gap-1">
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(
+                movement.statusCode,
+              )}`}
+            >
+              {getStatusLabel(movement.statusCode)}
+            </span>
+            <span className="text-[11px] font-medium text-slate-500">
+              Codigo {movement.statusCode}
+            </span>
+          </div>
         ),
       },
     ],

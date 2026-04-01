@@ -49,7 +49,6 @@ const INITIAL_FORM = {
   comentarios: '',
   estado: 'En seguimiento',
   prioridad: 'Normal',
-  fecha_cita: '',
   vendedor_asignado_id: '',
   operacion: '',
   canal: '',
@@ -82,7 +81,6 @@ const createLeadLeadSchema = z.object({
   comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
   estado: z.string().optional(),
   prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
-  fecha_cita: z.string().optional(),
   vendedor_asignado_id: z.string().trim().min(1, 'Vendedor asignado es obligatorio.'),
   operacion: z.string().trim().min(1, 'Operación es obligatoria.'),
   canal: z.string().trim().min(1, 'Canal es obligatorio.'),
@@ -150,7 +148,6 @@ export function CreateLeadLeadModal({
       comentarios: values.comentarios?.trim() || undefined,
       estado: values.estado?.trim() || undefined,
       prioridad: values.prioridad.trim(),
-      fecha_cita: values.fecha_cita?.trim() || undefined,
       vendedor_asignado_id: Number(values.vendedor_asignado_id),
       operacion: values.operacion.trim(),
       canal: values.canal.trim(),
@@ -308,11 +305,6 @@ export function CreateLeadLeadModal({
                 ))}
               </select>
               {errors.prioridad ? <span className="text-xs text-red-600">{errors.prioridad.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <FieldLabel>Fecha de cita</FieldLabel>
-              <input type="datetime-local" {...register('fecha_cita')} className={leadLeadFieldClassName} />
             </label>
 
             <label className="flex flex-col gap-1.5">

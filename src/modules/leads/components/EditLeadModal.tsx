@@ -4,9 +4,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import { AppModal } from '@/components/ui/AppModal';
+import { VISIT_STATUS_OPTIONS } from '../utils/leads.constants';
 
-const LEAD_STATUS_OPTIONS = ['En seguimiento', 'Cancelado', 'Cita agendada', 'En proceso', 'Cerrado'] as const;
-const LEAD_PRIORITY_OPTIONS = ['Urgente', 'Normal', 'Bajo Interés'] as const;
 const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/;
 const LADA_REGEX = /^\+?[0-9]+$/;
 
@@ -26,33 +25,47 @@ type EditLeadModalProps = {
   propertyOptions: PropertyOption[];
 };
 
-const editLeadSchema = z.object({
-  nombres: z.string().trim().min(1, 'Nombres es obligatorio.').regex(NAME_REGEX, 'Nombres solo permite letras y espacios.'),
-  apellidos: z.string().trim().min(1, 'Apellidos es obligatorio.').regex(NAME_REGEX, 'Apellidos solo permite letras y espacios.'),
-  telefono: z.string().trim().regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos numéricos.'),
-  propiedad_id: z.coerce.number().int().positive('Propiedad es obligatoria.'),
-  lada: z
-    .string()
-    .trim()
-    .max(6, 'Lada no puede exceder 6 caracteres.')
-    .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no valida.')
-    .optional(),
-  correo_electronico: z.union([z.literal(''), z.string().email('Correo electrónico no valido.')]).optional(),
-  comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
-  estado: z.string().optional(),
-  prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
-  fecha_cita: z.string().optional(),
-  asesor_externo: z.enum(['si', 'no']),
-  asesor_externo_nombre: z.string().optional(),
-}).superRefine((values, ctx) => {
-  if (values.asesor_externo === 'si' && !values.asesor_externo_nombre?.trim()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['asesor_externo_nombre'],
-      message: 'El nombre del asesor externo es obligatorio.',
-    });
-  }
-});
+const editLeadSchema = z
+  .object({
+    nombres: z
+      .string()
+      .trim()
+      .min(1, 'Nombres es obligatorio.')
+      .regex(NAME_REGEX, 'Nombres solo permite letras y espacios.'),
+    apellidos: z
+      .string()
+      .trim()
+      .min(1, 'Apellidos es obligatorio.')
+      .regex(NAME_REGEX, 'Apellidos solo permite letras y espacios.'),
+    telefono: z
+      .string()
+      .trim()
+      .regex(/^\d{4}$/, 'El telefono debe tener exactamente 4 digitos numericos.'),
+    propiedad_id: z.coerce.number().int().positive('Propiedad es obligatoria.'),
+    lada: z
+      .string()
+      .trim()
+      .max(6, 'Lada no puede exceder 6 caracteres.')
+      .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no valida.')
+      .optional(),
+    comentarios: z
+      .string()
+      .max(500, 'Comentarios no puede exceder 500 caracteres.')
+      .optional(),
+    estado: z.string().optional(),
+    fecha_cita: z.string().optional(),
+    asesor_externo: z.enum(['si', 'no']),
+    asesor_externo_nombre: z.string().optional(),
+  })
+  .superRefine((values, ctx) => {
+    if (values.asesor_externo === 'si' && !values.asesor_externo_nombre?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['asesor_externo_nombre'],
+        message: 'El nombre del asesor externo es obligatorio.',
+      });
+    }
+  });
 
 type EditLeadFormInput = z.input<typeof editLeadSchema>;
 type EditLeadFormValues = z.output<typeof editLeadSchema>;
@@ -71,7 +84,7 @@ function sanitizeName(value: string): string {
 }
 
 function sanitizePhone(value: string): string {
-  return value.replace(/\D/g, '').slice(0, 10);
+  return value.replace(/\D/g, '').slice(0, 4);
 }
 
 function sanitizeLada(value: string): string {
@@ -100,17 +113,21 @@ function toDefaultValues(lead: LeadRecord | null): EditLeadFormInput {
     telefono: lead?.telefono != null ? String(lead.telefono) : '',
     propiedad_id: lead?.propiedad_id != null ? String(lead.propiedad_id) : '',
     lada: lead?.lada ?? '+52',
-    correo_electronico: lead?.correo_electronico ?? '',
     comentarios: lead?.comentarios ?? '',
-    estado: lead?.estado ?? 'En seguimiento',
-    prioridad: lead?.prioridad ?? 'Normal',
+    estado: lead?.estado ?? 'Agendado',
     fecha_cita: toDateTimeLocalValue(lead?.fecha_cita),
     asesor_externo: lead?.asesor_externo ? 'si' : 'no',
     asesor_externo_nombre: lead?.asesor_externo_nombre ?? '',
   };
 }
 
-export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }: EditLeadModalProps) {
+export function EditLeadModal({
+  isOpen,
+  lead,
+  onClose,
+  onEdit,
+  propertyOptions,
+}: EditLeadModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -147,36 +164,14 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
 
     const payload: UpdateLeadPayload = {};
 
-    if (dirtyFields.nombres) {
-      payload.nombres = values.nombres.trim();
-    }
-    if (dirtyFields.apellidos) {
-      payload.apellidos = values.apellidos.trim();
-    }
-    if (dirtyFields.telefono) {
-      payload.telefono = values.telefono;
-    }
-    if (dirtyFields.propiedad_id) {
-      payload.propiedad_id = values.propiedad_id;
-    }
-    if (dirtyFields.lada) {
-      payload.lada = values.lada?.trim() || undefined;
-    }
-    if (dirtyFields.correo_electronico) {
-      payload.correo_electronico = values.correo_electronico?.trim() || undefined;
-    }
-    if (dirtyFields.comentarios) {
-      payload.comentarios = values.comentarios?.trim() || undefined;
-    }
-    if (dirtyFields.estado) {
-      payload.estado = values.estado?.trim() || undefined;
-    }
-    if (dirtyFields.prioridad) {
-      payload.prioridad = values.prioridad.trim();
-    }
-    if (dirtyFields.fecha_cita) {
-      payload.fecha_cita = values.fecha_cita?.trim() || undefined;
-    }
+    if (dirtyFields.nombres) payload.nombres = values.nombres.trim();
+    if (dirtyFields.apellidos) payload.apellidos = values.apellidos.trim();
+    if (dirtyFields.telefono) payload.telefono = values.telefono;
+    if (dirtyFields.propiedad_id) payload.propiedad_id = values.propiedad_id;
+    if (dirtyFields.lada) payload.lada = values.lada?.trim() || undefined;
+    if (dirtyFields.comentarios) payload.comentarios = values.comentarios?.trim() || undefined;
+    if (dirtyFields.estado) payload.estado = values.estado?.trim() || undefined;
+    if (dirtyFields.fecha_cita) payload.fecha_cita = values.fecha_cita?.trim() || undefined;
     if (dirtyFields.asesor_externo || dirtyFields.asesor_externo_nombre) {
       payload.asesor_externo = values.asesor_externo === 'si';
       payload.asesor_externo_nombre =
@@ -207,15 +202,19 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
       isOpen={isOpen}
       onClose={closeModal}
       title="Editar registro"
-      subtitle="Actualiza la información del cliente y ajusta el seguimiento sin salir de la vista."
+      subtitle="Actualiza la informacion del cliente y ajusta el seguimiento sin salir de la vista."
       maxWidthClassName="max-w-2xl"
       panelClassName="max-h-[88vh]"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Detalles del registro</p>
-            <p className="mt-1 text-sm text-slate-600">Revisa los datos clave del cliente antes de guardar cambios en la oportunidad.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Detalles del registro
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Revisa los datos clave del cliente antes de guardar cambios en la oportunidad.
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -262,7 +261,7 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Teléfono</FieldLabel>
+              <FieldLabel required>Ultimos 4 digitos del telefono del cliente</FieldLabel>
               <input
                 type="text"
                 inputMode="numeric"
@@ -272,16 +271,13 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
                   },
                 })}
                 className={fieldClassName}
-                maxLength={10}
-                placeholder="9981144249"
+                maxLength={4}
+                placeholder="4249"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5 md:col-span-2">
-              <FieldLabel>Correo electrónico</FieldLabel>
-              <input type="email" {...register('correo_electronico')} className={fieldClassName} placeholder="usuario@correo.com" />
-              {errors.correo_electronico ? <span className="text-xs text-red-600">{errors.correo_electronico.message}</span> : null}
+              <span className="text-xs text-slate-500">
+                Actualiza solo los ultimos 4 digitos con los que se identifica este registro.
+              </span>
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -300,7 +296,7 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
             <label className="flex flex-col gap-1.5">
               <FieldLabel>Estado</FieldLabel>
               <select {...register('estado')} className={fieldClassName}>
-                {LEAD_STATUS_OPTIONS.map((option) => (
+                {VISIT_STATUS_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -333,18 +329,6 @@ export function EditLeadModal({ isOpen, lead, onClose, onEdit, propertyOptions }
               {errors.asesor_externo_nombre ? (
                 <span className="text-xs text-red-600">{errors.asesor_externo_nombre.message}</span>
               ) : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Prioridad</FieldLabel>
-              <select {...register('prioridad')} className={fieldClassName}>
-                {LEAD_PRIORITY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              {errors.prioridad ? <span className="text-xs text-red-600">{errors.prioridad.message}</span> : null}
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">

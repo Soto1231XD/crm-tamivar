@@ -10,6 +10,7 @@ const MODULE_LABELS: Record<string, string> = {
   roles: "Roles",
   properties: "Propiedades",
   registros: "Registros",
+  "registros-leads": "Registros leads",
   blogs: "Blogs",
   dashboard: "Dashboard",
   movimientos: "Movimientos",
@@ -136,6 +137,17 @@ type SnapshotEntry = {
   label: string;
   value: string;
 };
+
+function isMeaningfulValue(value: unknown): boolean {
+  if (value == null) return false;
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized !== "" && normalized !== "sin valor";
+  }
+
+  return true;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -416,6 +428,46 @@ export function getStatusBadgeClass(statusCode: number): string {
   return "bg-slate-100 text-slate-700";
 }
 
+export function getStatusLabel(statusCode: number): string {
+  if (statusCode >= 200 && statusCode < 300) {
+    return "Exitoso";
+  }
+
+  if (statusCode === 400) {
+    return "Solicitud invalida";
+  }
+
+  if (statusCode === 401) {
+    return "No autorizado";
+  }
+
+  if (statusCode === 403) {
+    return "Sin permisos";
+  }
+
+  if (statusCode === 404) {
+    return "No encontrado";
+  }
+
+  if (statusCode === 409) {
+    return "Conflicto";
+  }
+
+  if (statusCode === 422) {
+    return "Datos invalidos";
+  }
+
+  if (statusCode >= 400 && statusCode < 500) {
+    return "Error del usuario";
+  }
+
+  if (statusCode >= 500) {
+    return "Error del sistema";
+  }
+
+  return "Sin clasificar";
+}
+
 export function getModuleLabel(module?: string | null): string {
   if (!module) return "Sin modulo";
   return MODULE_LABELS[module] ?? module;
@@ -453,15 +505,23 @@ export function getChangedFields(movement: MovementRecord): MovementChangedField
         !shouldHideFieldPath(field.campo),
     );
 
-    if (fromBackend.length > 0) {
-      return fromBackend;
+      if (fromBackend.length > 0) {
+        return fromBackend;
+      }
     }
-  }
-
-  return buildChangedFieldsFromSnapshots(
+  
+  const fromSnapshots = buildChangedFieldsFromSnapshots(
     movement.detalle_antes ?? null,
     movement.detalle_despues ?? null,
   ).filter((field) => !shouldHideFieldPath(field.campo));
+
+  if (fromSnapshots.length > 0) {
+    return fromSnapshots;
+  }
+
+  return buildFallbackChangedFieldsFromSnapshots(movement).filter(
+    (field) => !shouldHideFieldPath(field.campo),
+  );
 }
 
 export function getMovementDetailText(movement: MovementRecord): string {
@@ -621,7 +681,51 @@ function formatSnapshotEntries(
         value: formatMovementValue(value, nextPath),
       },
     ];
-  });
+    });
+}
+
+function buildFallbackChangedFieldsFromSnapshots(
+  movement: MovementRecord,
+): MovementChangedField[] {
+  const beforeEntries =
+    movement.detalle_antes && typeof movement.detalle_antes === "object"
+      ? formatSnapshotEntries(movement.detalle_antes)
+      : [];
+  const afterEntries =
+    movement.detalle_despues && typeof movement.detalle_despues === "object"
+      ? formatSnapshotEntries(movement.detalle_despues)
+      : [];
+
+  if (beforeEntries.length === 0 && afterEntries.length === 0) {
+    return [];
+  }
+
+  const beforeMap = new Map(beforeEntries.map((entry) => [entry.key, entry.value]));
+  const afterMap = new Map(afterEntries.map((entry) => [entry.key, entry.value]));
+  const keys = Array.from(new Set([...beforeMap.keys(), ...afterMap.keys()]));
+
+  const fallbackFields: MovementChangedField[] = [];
+
+  keys.forEach((key) => {
+      const beforeValue = beforeMap.get(key);
+      const afterValue = afterMap.get(key);
+
+      if (beforeValue === afterValue) {
+        return;
+      }
+
+      if (!isMeaningfulValue(beforeValue) && !isMeaningfulValue(afterValue)) {
+        return;
+      }
+
+      fallbackFields.push({
+        campo: key,
+        antes: beforeValue ?? "No habia un dato registrado",
+        despues: afterValue ?? "Se elimino este dato",
+      });
+    });
+
+  return fallbackFields;
 }
 
 export function getMovementSummaryItems(movement: MovementRecord) {
@@ -653,7 +757,6 @@ export function getMovementSnapshotSections(movement: MovementRecord) {
 
 export function downloadMovementsAsExcel(movements: MovementRecord[]) {
   const headers = [
-    "ID",
     "Fecha",
     "Usuario",
     "Correo",
@@ -666,7 +769,6 @@ export function downloadMovementsAsExcel(movements: MovementRecord[]) {
   ];
 
   const rows = movements.map((movement) => [
-      String(movement.id ?? ""),
       formatDate(movement.creado_en),
       movement.usuario?.nombres ?? "Sistema",
       movement.usuario?.correo_electronico ?? "Sin correo asociado",
@@ -675,7 +777,7 @@ export function downloadMovementsAsExcel(movements: MovementRecord[]) {
       normalizeMovementText(movement.descripcion) || "Accion realizada",
       getMovementDetailText(movement),
       movement.ruta ?? "",
-      String(movement.statusCode ?? ""),
+      `${getStatusLabel(movement.statusCode ?? 0)} (${movement.statusCode ?? ""})`,
     ]);
 
   downloadTableAsExcel({

@@ -7,7 +7,6 @@ import {
   formatDate,
   formatDateTime,
   formatPhone,
-  getPriorityStyles,
   getStatusStyles,
 } from '../utils/leads.utils';
 
@@ -141,7 +140,6 @@ type LeadPdfDocumentProps = {
 
 export function LeadPdfDocument({ lead, propertyTitle }: LeadPdfDocumentProps) {
   const statusStyle = getStatusStyles(lead.estado ?? '');
-  const priorityStyle = getPriorityStyles(lead.prioridad ?? '');
   const fullName = `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre';
 
   return (
@@ -166,14 +164,6 @@ export function LeadPdfDocument({ lead, propertyTitle }: LeadPdfDocumentProps) {
                 </Text>
               </View>
             </View>
-            <View style={styles.headerMetaGroup}>
-              <Text style={styles.inlineLabel}>Prioridad:</Text>
-              <View style={[styles.badge, { backgroundColor: priorityStyle.backgroundColor }]}>
-                <Text style={[styles.badgeText, { color: priorityStyle.color }]}>
-                  {lead.prioridad?.trim() || 'Sin prioridad'}
-                </Text>
-              </View>
-            </View>
           </View>
         </View>
 
@@ -185,12 +175,8 @@ export function LeadPdfDocument({ lead, propertyTitle }: LeadPdfDocumentProps) {
               <Text style={styles.valueBold}>{fullName}</Text>
             </View>
             <View style={styles.col6}>
-              <Text style={styles.label}>Teléfono</Text>
+              <Text style={styles.label}>Telefono</Text>
               <Text style={styles.value}>{formatPhone(lead.lada, lead.telefono)}</Text>
-            </View>
-            <View style={styles.col12}>
-              <Text style={styles.label}>Correo electrónico</Text>
-              <Text style={styles.value}>{lead.correo_electronico?.trim() || 'Sin correo'}</Text>
             </View>
           </View>
         </View>
@@ -199,7 +185,7 @@ export function LeadPdfDocument({ lead, propertyTitle }: LeadPdfDocumentProps) {
           <Text style={styles.sectionTitle}>Seguimiento comercial</Text>
           <View style={styles.grid}>
             <View style={styles.col6}>
-              <Text style={styles.label}>Propiedad de interés</Text>
+              <Text style={styles.label}>Propiedad de interes</Text>
               <Text style={styles.valueBold}>{propertyTitle}</Text>
             </View>
             <View style={styles.col6}>
@@ -229,7 +215,7 @@ export function LeadPdfDocument({ lead, propertyTitle }: LeadPdfDocumentProps) {
         </View>
 
         <Text style={styles.footer} fixed>
-          Generado por CRM Tamivar • Ficha de registro: {fullName}
+          Generado por CRM Tamivar - Ficha de registro: {fullName}
         </Text>
       </Page>
     </Document>

@@ -7,7 +7,7 @@ import { LeadLeadsTable } from '../components/LeadLeadsTable';
 import { CreateLeadLeadModal } from '../components/CreateLeadLeadModal';
 import { EditLeadLeadModal } from '../components/EditLeadLeadModal';
 import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
-import { useLeadsPageState } from '../hooks/useLeadsPageState';
+import { useLeadLeadsPageState } from '../hooks/useLeadLeadsPageState';
 import { PAGE_SIZE } from '../utils/leads.constants';
 
 export function LeadLeadsPage() {
@@ -51,7 +51,7 @@ export function LeadLeadsPage() {
     handleDeleteLead,
     handleDownloadFilteredLeads,
     handleQuickLeadChange,
-  } = useLeadsPageState({
+  } = useLeadLeadsPageState({
     userId: user?.id,
     accessToken,
   });

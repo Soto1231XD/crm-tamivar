@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 export type RecentLeadItem = {
   nombre: string;
   apellido: string;
-  correo: string;
   estado: string;
 };
 
@@ -41,6 +40,7 @@ export type RecentPublicationItem = {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
+  agendado: { backgroundColor: '#CD8774', color: '#2F0905' },
   contactado: { backgroundColor: '#DBEAFE', color: '#1480F0' },
   'en seguimiento': { backgroundColor: '#F3E8FF', color: '#C455DB' },
   cancelado: { backgroundColor: '#FEF3C7', color: '#CA5874' },
@@ -154,13 +154,12 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
   if (sectionTitle === 'Registros Recientes') {
     return data.registrosRecientes.map((registro, index) => (
       <li
-        key={`${registro.correo}-${registro.nombre}-${registro.apellido}-${index}`}
+        key={`${registro.nombre}-${registro.apellido}-${index}`}
         className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
       >
         <p className="text-sm font-semibold text-slate-800">
           {registro.nombre} {registro.apellido}
         </p>
-        <p className="mt-1 text-xs leading-5 text-slate-600">{registro.correo}</p>
         <div className="mt-2">
           <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold" style={getStatusStyles(registro.estado)}>
             {registro.estado}

@@ -1,4 +1,5 @@
 export const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
+  agendado: { backgroundColor: '#CD8774', color: '#2F0905' },
   'en seguimiento': { backgroundColor: '#F3E8FF', color: '#C455DB' },
   'en espera': { backgroundColor: '#A8E5AC', color: '#12714F' },
   contactado: { backgroundColor: '#85CAE0', color: '#0355A1' },
@@ -34,6 +35,7 @@ export const CHANNEL_STYLES: Record<string, { backgroundColor: string; color: st
 
 export const PAYMENT_METHOD_STYLES: Record<string, { backgroundColor: string; color: string }> = {
   efectivo: { backgroundColor: '#A8E5AC', color: '#12714F' },
+  'recursos propios': { backgroundColor: '#A8E5AC', color: '#12714F' },
   infonavit: { backgroundColor: '#B50200', color: '#FFAF9D' },
   cofinavit: { backgroundColor: '#85CAE0', color: '#0355A1' },
   fovissste: { backgroundColor: '#C455DB', color: '#F3E8FF' },
@@ -48,6 +50,8 @@ export const LEAD_SOURCE_STYLES: Record<string, { backgroundColor: string; color
 export const ALL_STATES = 'Todos los estados';
 export const ALL_PRIORITIES = 'Todas las prioridades';
 export const ALL_PROPERTIES = 'Todas las propiedades';
+
+export const VISIT_STATUS_OPTIONS = ['Agendado', 'Cancelado', 'Cerrado'] as const;
 
 export const LEAD_STATUS_OPTIONS = [
   'En seguimiento',
