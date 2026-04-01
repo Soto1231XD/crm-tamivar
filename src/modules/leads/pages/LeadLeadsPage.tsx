@@ -35,7 +35,6 @@ export function LeadLeadsPage() {
     filteredLeads,
     paginatedLeads,
     totalPages,
-    propertyChoices,
     userNameById,
     userChoices,
     setSearch,
@@ -119,7 +118,6 @@ export function LeadLeadsPage() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onCreate={handleCreateLead}
-          propertyOptions={propertyChoices}
           userOptions={userChoices}
         />
       ) : null}
@@ -130,7 +128,6 @@ export function LeadLeadsPage() {
           lead={editingLead}
           onClose={() => setEditingLead(null)}
           onEdit={handleEditLead}
-          propertyOptions={propertyChoices}
           userOptions={userChoices}
         />
       ) : null}

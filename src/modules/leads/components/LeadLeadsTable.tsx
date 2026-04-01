@@ -144,14 +144,14 @@ export function LeadLeadsTable({
       render: (lead) => <span className="text-sm text-slate-700">{formatPhone(lead.lada, lead.telefono)}</span>,
     },
     {
-      header: 'Operacion',
+      header: 'Operación',
       cellClassName: 'min-w-[140px]',
       render: (lead) => (
         <span
           className="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
           style={getOperationStyles(lead.operacion ?? '')}
         >
-          {lead.operacion || 'Sin operacion'}
+          {lead.operacion || 'Sin operación'}
         </span>
       ),
     },
@@ -187,16 +187,18 @@ export function LeadLeadsTable({
         ),
     },
     {
-      header: 'Ubicacion de la propiedad',
+      header: 'Zona de preferencia',
       cellClassName: 'min-w-[240px] whitespace-normal',
       render: (lead) => (
         <div className="max-w-[280px] break-words text-sm leading-6 text-slate-700">
-          {lead.propiedad_id != null ? propertyAddressById.get(lead.propiedad_id) ?? 'Sin ubicacion' : 'Sin propiedad'}
+          {lead.ubicacion_propiedad?.trim()
+            || (lead.propiedad_id != null ? propertyAddressById.get(lead.propiedad_id) : '')
+            || 'Sin ubicación'}
         </div>
       ),
     },
     {
-      header: 'Metodo de pago',
+      header: 'Método de pago',
       cellClassName: 'min-w-[220px]',
       render: (lead) => {
         const paymentMethods = (lead.metodo_pago ?? '')
@@ -205,7 +207,7 @@ export function LeadLeadsTable({
           .filter(Boolean);
 
         if (paymentMethods.length === 0) {
-          return <span className="text-sm text-slate-700">Sin metodo</span>;
+          return <span className="text-sm text-slate-700">Sin método</span>;
         }
 
         return (
@@ -224,7 +226,7 @@ export function LeadLeadsTable({
       },
     },
     {
-      header: 'Caracteristicas',
+      header: 'Características',
       cellClassName: 'min-w-[240px] whitespace-normal',
       render: (lead) => (
         <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">

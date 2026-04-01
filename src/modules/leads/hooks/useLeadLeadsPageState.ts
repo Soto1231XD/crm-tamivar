@@ -104,15 +104,6 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
     return filteredLeads.slice(start, start + PAGE_SIZE);
   }, [currentPage, filteredLeads]);
 
-  const propertyChoices = useMemo(
-    () =>
-      properties.map((property) => ({
-        id: property.id,
-        label: property.titulo?.trim() || 'Sin titulo',
-      })),
-    [properties],
-  );
-
   const userNameById = useMemo(
     () =>
       new Map(
@@ -187,7 +178,9 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
     downloadLeadLeadsAsExcel(
       filteredLeads,
       filteredLeads.map((lead) =>
-        lead.propiedad_id != null ? propertyAddressById.get(lead.propiedad_id) ?? 'Sin ubicacion' : 'Sin propiedad',
+        lead.ubicacion_propiedad?.trim()
+        || (lead.propiedad_id != null ? propertyAddressById.get(lead.propiedad_id) : '')
+        || 'Sin ubicacion',
       ),
       filteredLeads.map((lead) =>
         lead.vendedor_asignado
@@ -239,7 +232,6 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
     filteredLeads,
     paginatedLeads,
     totalPages,
-    propertyChoices,
     userNameById,
     userChoices,
     setSearch,

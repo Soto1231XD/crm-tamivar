@@ -35,6 +35,7 @@ export interface LeadRecord {
   canal?: string | null;
   solicitud?: string | null;
   presupuesto?: string | number | null;
+  ubicacion_propiedad?: string | null;
   metodo_pago?: string | null;
   caracteristicas?: string | null;
   origen_lead?: string | null;
@@ -62,6 +63,7 @@ export interface CreateLeadPayload {
   canal?: string;
   solicitud?: string;
   presupuesto?: number;
+  ubicacion_propiedad?: string;
   metodo_pago?: string;
   caracteristicas?: string;
   origen_lead?: string;
@@ -85,6 +87,7 @@ export interface UpdateLeadPayload {
   canal?: string;
   solicitud?: string;
   presupuesto?: number;
+  ubicacion_propiedad?: string;
   metodo_pago?: string;
   caracteristicas?: string;
   origen_lead?: string;

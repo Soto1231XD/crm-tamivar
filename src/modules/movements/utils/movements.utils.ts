@@ -67,6 +67,7 @@ const FIELD_LABELS: Record<string, string> = {
   canal: "Canal",
   solicitud: "Solicitud",
   presupuesto: "Presupuesto",
+  ubicacion_propiedad: "Zona de preferencia",
   metodo_pago: "Metodo de pago",
   origen_lead: "Origen del lead",
   asesor_externo: "Asesor externo",
@@ -236,9 +237,23 @@ function formatPropertySummary(value: Record<string, unknown>): string {
   const esquemaComercial = Array.isArray(value.esquema_comercial)
     ? value.esquema_comercial
     : [];
+  const direccion = isPlainObject(value.direccion) ? value.direccion : null;
+
+  const direccionResumen = [
+    direccion?.calle,
+    direccion?.fraccionamiento,
+    direccion?.municipio,
+  ]
+    .filter((segment) => typeof segment === "string" && segment.trim())
+    .map((segment) => normalizeMovementText(String(segment).trim()))
+    .join(", ");
 
   if (typeof value.titulo === "string" && value.titulo.trim()) {
     lineas.push(`Titulo: ${normalizeMovementText(value.titulo.trim())}`);
+  }
+
+  if (direccionResumen) {
+    lineas.push(`Ubicacion: ${direccionResumen}`);
   }
 
   if (typeof value.tipo_inmueble === "string" && value.tipo_inmueble.trim()) {
