@@ -43,6 +43,7 @@ export type FormState = {
   aire_acondicionado: boolean;
   boiler: boolean;
   tiene_gravamen: boolean;
+  exclusiva: boolean;
   cuota_mantenimiento: string;
   comentarios: string;
   pisos_tiene: string;
