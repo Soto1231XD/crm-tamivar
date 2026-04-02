@@ -50,16 +50,15 @@ export function PropertiesPage() {
     useState<(typeof STATUS_OPTIONS)[number]>("Todos los estados");
   const [typeFilter, setTypeFilter] =
     useState<(typeof TYPE_OPTIONS)[number]>("Todos los tipos");
-  const [operationFilter, setOperationFilter] =
-    useState<(typeof PROPERTY_OPERATION_FILTER_OPTIONS)[number]>(
-      "Todas las operaciones",
-    );
+  const [operationFilter, setOperationFilter] = useState<
+    (typeof PROPERTY_OPERATION_FILTER_OPTIONS)[number]
+  >("Todas las operaciones");
   const [deletingProperty, setDeletingProperty] =
     useState<PropertyRecord | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
-  const [operationProperties, setOperationProperties] = useState<PropertyRecord[]>(
-    [],
-  );
+  const [operationProperties, setOperationProperties] = useState<
+    PropertyRecord[]
+  >([]);
   const [isFilteringByOperation, setIsFilteringByOperation] = useState(false);
 
   const canEdit = can("propiedades", "actualizar");
@@ -83,7 +82,9 @@ export function PropertiesPage() {
       setIsFilteringByOperation(true);
 
       try {
-        const data = await searchProperties({ tipo_operacion: operationFilter });
+        const data = await searchProperties({
+          tipo_operacion: operationFilter,
+        });
         if (!active) return;
         setOperationProperties(data);
       } catch {
@@ -138,6 +139,22 @@ export function PropertiesPage() {
               </span>
             ))}
           </div>
+        ),
+      },
+      {
+        header: "Exclusivo",
+        headerClassName: "w-[100px]",
+        cellClassName: "w-[100px] align-top",
+        render: (property) => (
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
+              property.exclusiva
+                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                : "text-slate-500"
+            }`}
+          >
+            {property.exclusiva ? "Sí" : "No"}
+          </span>
         ),
       },
       {
@@ -248,7 +265,9 @@ export function PropertiesPage() {
   );
 
   const sourceProperties =
-    operationFilter === "Todas las operaciones" ? properties : operationProperties;
+    operationFilter === "Todas las operaciones"
+      ? properties
+      : operationProperties;
 
   const filteredProperties = useMemo(() => {
     return sourceProperties.filter((property) => {
@@ -398,7 +417,8 @@ export function PropertiesPage() {
             value={operationFilter}
             onChange={(event) =>
               setOperationFilter(
-                event.target.value as (typeof PROPERTY_OPERATION_FILTER_OPTIONS)[number],
+                event.target
+                  .value as (typeof PROPERTY_OPERATION_FILTER_OPTIONS)[number],
               )
             }
           >

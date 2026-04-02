@@ -9,6 +9,7 @@ export interface PropertyRecord {
   tipos_pago: string[]; 
   estatus: string;
   etiquetas: string[];
+  exclusiva: boolean;
   tiene_gravamen: boolean;
   cuota_mantenimiento?: number;
   comentarios?: string;
@@ -47,12 +48,12 @@ export interface Medidas {
 }
 
 export interface Direccion {
-  cp: number;
+  cp?: number;
   fraccionamiento: string;
   smz?: number;
   mza?: number;
   lote?: number;
-  calle: string;
+  calle?: string;
   num_ext?: number;
   num_int?: number;
   municipio: string;

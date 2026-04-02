@@ -50,6 +50,8 @@ const TERRAIN_RESET_VALUES: Partial<FormState> = {
   terraza: false,
   amueblado: false,
   bodega: false,
+  aire_acondicionado: false,
+  boiler: false,
 };
 
 function parseFormattedNumber(value: string): number {
@@ -114,6 +116,7 @@ const INITIAL_FORM_STATE: FormState = {
   bodega: false,
   aire_acondicionado: false,
   boiler: false,
+  exclusiva: false,
   tiene_gravamen: false,
   cuota_mantenimiento: "",
   comentarios: "",
@@ -237,6 +240,7 @@ function toFormState(property?: PropertyRecord | null): FormState {
     bodega: Boolean(property.caracteristicas?.bodega),
     aire_acondicionado: Boolean(property.caracteristicas?.aire_acondicionado),
     boiler: Boolean(property.caracteristicas?.boiler),
+    exclusiva: Boolean(property.exclusiva),
     tiene_gravamen: Boolean(property.tiene_gravamen),
     cuota_mantenimiento:
       property.cuota_mantenimiento != null
@@ -574,6 +578,7 @@ export function usePropertyForm(
       esquema_comercial,
       tipos_pago: form.tipos_pago,
       estatus: form.estatus.trim(),
+      exclusiva: form.exclusiva,
       tiene_gravamen: form.tiene_gravamen,
       etiquetas: form.etiquetas
         .split(",")

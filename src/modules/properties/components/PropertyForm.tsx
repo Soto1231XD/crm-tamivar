@@ -44,10 +44,7 @@ type OperationBlockConfig = {
   key: "Venta" | "Renta" | "Preventa";
   title: string;
   priceName: "precio_venta" | "precio_renta" | "precio_preventa";
-  discountName:
-    | "descuento_venta"
-    | "descuento_renta"
-    | "descuento_preventa";
+  discountName: "descuento_venta" | "descuento_renta" | "descuento_preventa";
 };
 
 const OPERATION_BLOCKS: OperationBlockConfig[] = [
@@ -196,6 +193,27 @@ export function PropertyForm({
               )}
               required
             />
+            <div className="flex flex-col w-full">
+              <label className="invisible text-sm font-medium mb-1.5 sm:mb-2 block select-none pointer-events-none">
+                Espacio
+              </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full items-end pb-1">
+              <Toggle
+                name="tiene_gravamen"
+                checked={form.tiene_gravamen}
+                onChange={handleInputChange}
+                label="¿Tiene gravamen?"
+                className="!min-h-[48px] h-[48px]"
+              />
+              <Toggle
+                name="exclusiva"
+                checked={form.exclusiva}
+                onChange={handleInputChange}
+                label="¿Es exclusiva?"
+                className="!min-h-[48px] h-[48px]"
+              />
+            </div>
+            </div>
             <FieldTextarea
               label="Descripción"
               name="descripcion"
@@ -282,7 +300,6 @@ export function PropertyForm({
               name="calle"
               value={form.calle}
               onChange={handleInputChange}
-              required
               className="md:col-span-2"
             />
             <FieldInput
@@ -291,7 +308,6 @@ export function PropertyForm({
               value={form.num_ext}
               onChange={handleInputChange}
               type="number"
-              required
             />
             <FieldInput
               label="Numero interior"
@@ -300,7 +316,6 @@ export function PropertyForm({
               onChange={handleInputChange}
               type="number"
             />
-
             <FieldInput
               label="Fraccionamiento"
               name="fraccionamiento"
@@ -330,6 +345,7 @@ export function PropertyForm({
               onChange={handleInputChange}
               error={errors.smz}
               type="number"
+              required
             />
             <FieldInput
               label="Manzana (MZ)"
@@ -354,7 +370,6 @@ export function PropertyForm({
               onChange={handleInputChange}
               error={errors.cp}
               type="number"
-              required
             />
             <FieldTextarea
               label="Referencias"
@@ -385,7 +400,6 @@ export function PropertyForm({
               type="number"
               min="1"
               step="0.01"
-              required
             />
             {!isTerreno ? (
               <FieldInput
@@ -397,7 +411,6 @@ export function PropertyForm({
                 type="number"
                 min="1"
                 step="0.01"
-                required
               />
             ) : null}
             <FieldInput
@@ -409,7 +422,6 @@ export function PropertyForm({
               type="number"
               min="1"
               step="0.01"
-              required
             />
             <FieldInput
               label="Fondo"
@@ -420,7 +432,6 @@ export function PropertyForm({
               type="number"
               min="1"
               step="0.01"
-              required
             />
             {!isTerreno ? (
               <>
@@ -432,7 +443,6 @@ export function PropertyForm({
                   error={errors.recamaras}
                   type="number"
                   min="0"
-                  required
                 />
                 <FieldInput
                   label="Baños"
@@ -443,7 +453,6 @@ export function PropertyForm({
                   type="number"
                   min="0"
                   step="0.5"
-                  required
                 />
                 <FieldInput
                   label="Estacionamiento"
@@ -453,7 +462,6 @@ export function PropertyForm({
                   error={errors.estacionamiento}
                   type="number"
                   min="0"
-                  required
                 />
                 <FieldInput
                   label="Pisos"
@@ -479,12 +487,6 @@ export function PropertyForm({
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                <Toggle
-                  name="tiene_gravamen"
-                  checked={form.tiene_gravamen}
-                  onChange={handleInputChange}
-                  label="Tiene gravamen"
-                />
                 <Toggle
                   name="sala"
                   checked={form.sala}
