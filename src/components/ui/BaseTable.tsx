@@ -46,6 +46,13 @@ export const BaseTable = <T extends { id: number | string }>({
   onPageChange,
 }: BaseTableProps<T>) => {
   const hasActions = Boolean(onEdit || onDelete || customActions);
+  const visiblePages = Array.from(
+    new Set(
+      [1, currentPage - 1, currentPage, currentPage + 1, totalPages].filter(
+        (page) => page >= 1 && page <= totalPages,
+      ),
+    ),
+  ).sort((left, right) => left - right);
 
   return (
     <div
@@ -139,24 +146,49 @@ export const BaseTable = <T extends { id: number | string }>({
       </div>
 
       {!isLoading && totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
-          <p className="text-sm text-slate-700">
-            Pagina <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
-          </p>
-          <div className="flex flex-1 justify-end gap-2">
+        <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-center sm:px-6">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <button
+              type="button"
               onClick={() => onPageChange?.(currentPage - 1)}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              <span aria-hidden="true">←</span>
               Anterior
             </button>
+
+            <div className="flex items-center gap-2">
+              {visiblePages.map((page) => {
+                const isActive = page === currentPage;
+
+                return (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => onPageChange?.(page)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={[
+                      'inline-flex h-10 min-w-10 items-center justify-center rounded-xl px-3 text-sm font-semibold transition',
+                      isActive
+                        ? 'bg-[#312C85] text-white shadow-sm'
+                        : 'border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-100',
+                    ].join(' ')}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            </div>
+
             <button
+              type="button"
               onClick={() => onPageChange?.(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente
+              <span aria-hidden="true">→</span>
             </button>
           </div>
         </div>

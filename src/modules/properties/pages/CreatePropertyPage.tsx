@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
 import { usePropertiesStore, type PropertiesState } from "../store/usePropertiesStore";
 import type { CreatePropertyPayload } from "@/interfaces/property.interface";
+import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 
 export function CreatePropertyPage() {
   const navigate = useNavigate();
@@ -20,14 +21,14 @@ export function CreatePropertyPage() {
     payload,
     files,
   }: {
-    payload: CreatePropertyPayload;
+    payload: PropertySubmitPayload;
     files: File[];
   }): Promise<string | null> {
     try {
       setIsSubmitting(true);
 
       // Llamamos a la acción del Store de Zustand
-      await addProperty(payload, files);
+      await addProperty(payload as CreatePropertyPayload, files);
       toast.success("La propiedad se creó con éxito.");
 
       // Si la petición es exitosa, navegamos a la lista

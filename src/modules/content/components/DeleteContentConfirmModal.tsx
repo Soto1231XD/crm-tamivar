@@ -40,7 +40,7 @@ export function DeleteContentConfirmModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Eliminar articulo"
-      subtitle="Esta accion quitara el contenido del listado actual."
+      subtitle="Esta acción quitara el contenido del listado actual."
       maxWidthClassName="max-w-lg"
       scrollBody={false}
     >
@@ -51,7 +51,7 @@ export function DeleteContentConfirmModal({
             <span className="font-semibold text-slate-900">
               {selectedBlog.titulo?.trim() || 'Sin titulo'}
             </span>
-            . Esta accion no se puede deshacer desde esta vista.
+            . Esta acción no se puede deshacer desde esta vista.
           </p>
         </div>
 

@@ -295,7 +295,7 @@ export function ContentPage() {
     try {
       await removeBlog(blogId);
       setDeletingBlog(null);
-      toast.success(`El articulo "${targetBlog?.titulo ?? 'seleccionado'}" se elimino con exito.`);
+      toast.success(`El articulo "${targetBlog?.titulo ?? 'seleccionado'}" se elimino con éxito.`);
       return null;
     } catch {
       toast.error("No fue posible eliminar el articulo.");

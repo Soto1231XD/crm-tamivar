@@ -22,11 +22,6 @@ import {
 
 const LADA_REGEX = /^\+?[0-9]+$/;
 
-type PropertyOption = {
-  id: number;
-  label: string;
-};
-
 type UserOption = {
   id: number;
   label: string;
@@ -36,7 +31,6 @@ type CreateLeadLeadModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (payload: Omit<CreateLeadPayload, 'creado_por_id'>) => Promise<string | null>;
-  propertyOptions: PropertyOption[];
   userOptions: UserOption[];
 };
 
@@ -44,17 +38,16 @@ const INITIAL_FORM = {
   nombres: '',
   apellidos: '',
   telefono: '',
-  propiedad_id: '',
   lada: '+52',
   comentarios: '',
   estado: 'En seguimiento',
   prioridad: 'Normal',
-  fecha_cita: '',
   vendedor_asignado_id: '',
   operacion: '',
   canal: '',
   solicitud: '',
   presupuesto: '',
+  ubicacion_propiedad: '',
   metodo_pago: [] as string[],
   caracteristicas: '',
   origen_lead: '',
@@ -71,8 +64,7 @@ const createLeadLeadSchema = z.object({
     .trim()
     .min(1, 'Apellidos es obligatorio.')
     .refine((value) => isValidLeadLeadName(value), 'Apellidos solo permite letras y espacios.'),
-  telefono: z.string().trim().regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos numéricos.'),
-  propiedad_id: z.string().optional(),
+  telefono: z.string().trim().regex(/^\d{10}$/, 'El telefono debe tener exactamente 10 digitos numericos.'),
   lada: z
     .string()
     .trim()
@@ -82,14 +74,14 @@ const createLeadLeadSchema = z.object({
   comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
   estado: z.string().optional(),
   prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
-  fecha_cita: z.string().optional(),
   vendedor_asignado_id: z.string().trim().min(1, 'Vendedor asignado es obligatorio.'),
-  operacion: z.string().trim().min(1, 'Operación es obligatoria.'),
+  operacion: z.string().trim().min(1, 'Operacion es obligatoria.'),
   canal: z.string().trim().min(1, 'Canal es obligatorio.'),
   solicitud: z.string().max(1000, 'Solicitud no puede exceder 1000 caracteres.').optional(),
   presupuesto: z.string().optional(),
-  metodo_pago: z.array(z.string()).min(1, 'Método de pago es obligatorio.'),
-  caracteristicas: z.string().max(1000, 'Características no puede exceder 1000 caracteres.').optional(),
+  ubicacion_propiedad: z.string().max(1000, 'La zona de preferencia no puede exceder 1000 caracteres.').optional(),
+  metodo_pago: z.array(z.string()).min(1, 'Metodo de pago es obligatorio.'),
+  caracteristicas: z.string().max(1000, 'Caracteristicas no puede exceder 1000 caracteres.').optional(),
   origen_lead: z.string().trim().min(1, 'Origen del lead es obligatorio.'),
 });
 
@@ -109,7 +101,6 @@ export function CreateLeadLeadModal({
   isOpen,
   onClose,
   onCreate,
-  propertyOptions,
   userOptions,
 }: CreateLeadLeadModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -137,7 +128,7 @@ export function CreateLeadLeadModal({
 
     const presupuestoValue = normalizeLeadBudgetValue(values.presupuesto);
     if (presupuestoValue && Number.isNaN(Number(presupuestoValue))) {
-      setSubmitError('El presupuesto debe ser numérico.');
+      setSubmitError('El presupuesto debe ser numerico.');
       return;
     }
 
@@ -145,17 +136,16 @@ export function CreateLeadLeadModal({
       nombres: values.nombres.trim(),
       apellidos: values.apellidos.trim(),
       telefono: values.telefono,
-      propiedad_id: values.propiedad_id ? Number(values.propiedad_id) : undefined,
       lada: values.lada?.trim() || undefined,
       comentarios: values.comentarios?.trim() || undefined,
       estado: values.estado?.trim() || undefined,
       prioridad: values.prioridad.trim(),
-      fecha_cita: values.fecha_cita?.trim() || undefined,
       vendedor_asignado_id: Number(values.vendedor_asignado_id),
       operacion: values.operacion.trim(),
       canal: values.canal.trim(),
       solicitud: values.solicitud?.trim() || undefined,
       presupuesto: presupuestoValue ? Number(presupuestoValue) : undefined,
+      ubicacion_propiedad: values.ubicacion_propiedad?.trim() || undefined,
       metodo_pago: values.metodo_pago.join(', '),
       caracteristicas: values.caracteristicas?.trim() || undefined,
       origen_lead: values.origen_lead.trim(),
@@ -178,7 +168,7 @@ export function CreateLeadLeadModal({
       isOpen={isOpen}
       onClose={resetAndClose}
       title="Registrar nuevo lead"
-      subtitle="Captura la información comercial del lead y asigna el seguimiento desde esta vista."
+      subtitle="Captura la informacion comercial del lead y asigna el seguimiento desde esta vista."
       maxWidthClassName="max-w-4xl"
       panelClassName="max-h-[88vh]"
     >
@@ -190,7 +180,7 @@ export function CreateLeadLeadModal({
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Datos del lead</p>
-            <p className="mt-1 text-sm text-slate-600">Completa la información base del prospecto y la asignación comercial.</p>
+            <p className="mt-1 text-sm text-slate-600">Completa la informacion base del prospecto y la asignacion comercial.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -253,16 +243,17 @@ export function CreateLeadLeadModal({
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
             </label>
 
-            <label className="flex flex-col gap-1.5">
-              <FieldLabel>Propiedad</FieldLabel>
-              <select {...register('propiedad_id')} className={leadLeadFieldClassName}>
-                <option value="">Selecciona una propiedad</option>
-                {propertyOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+            <label className="flex flex-col gap-1.5 md:col-span-2">
+              <FieldLabel>Zona de preferencia</FieldLabel>
+              <input
+                type="text"
+                {...register('ubicacion_propiedad')}
+                className={leadLeadFieldClassName}
+                placeholder="Ej. Zona hotelera, Playa del Carmen, Centro de Cancun"
+              />
+              {errors.ubicacion_propiedad ? (
+                <span className="text-xs text-red-600">{errors.ubicacion_propiedad.message}</span>
+              ) : null}
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -311,14 +302,9 @@ export function CreateLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Fecha de cita</FieldLabel>
-              <input type="datetime-local" {...register('fecha_cita')} className={leadLeadFieldClassName} />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Operación</FieldLabel>
+              <FieldLabel required>Operacion</FieldLabel>
               <select {...register('operacion')} className={leadLeadFieldClassName}>
-                <option value="">Selecciona una operación</option>
+                <option value="">Selecciona una operacion</option>
                 {LEAD_LEADS_OPERATION_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
@@ -342,7 +328,7 @@ export function CreateLeadLeadModal({
             </label>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel required>Método de pago</FieldLabel>
+              <FieldLabel required>Metodo de pago</FieldLabel>
               <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
                 {LEAD_LEADS_PAYMENT_METHOD_OPTIONS.map((option) => (
                   <label key={option} className="flex items-center gap-2 text-sm text-slate-700">
@@ -360,7 +346,7 @@ export function CreateLeadLeadModal({
             </div>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Presupuesto</FieldLabel>
+              <FieldLabel>Presupuesto (MXN)</FieldLabel>
               <input
                 type="text"
                 inputMode="decimal"
@@ -399,7 +385,7 @@ export function CreateLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">
-              <FieldLabel>Características</FieldLabel>
+              <FieldLabel>Caracteristicas</FieldLabel>
               <textarea
                 {...register('caracteristicas')}
                 rows={3}
@@ -415,7 +401,7 @@ export function CreateLeadLeadModal({
                 {...register('comentarios')}
                 rows={3}
                 className={`${leadLeadFieldClassName} resize-none`}
-                placeholder="Actualización del vendedor asignado"
+                placeholder="Actualizacion del vendedor asignado"
               />
               {errors.comentarios ? <span className="text-xs text-red-600">{errors.comentarios.message}</span> : null}
             </label>

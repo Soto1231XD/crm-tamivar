@@ -7,7 +7,7 @@ import { LeadLeadsTable } from '../components/LeadLeadsTable';
 import { CreateLeadLeadModal } from '../components/CreateLeadLeadModal';
 import { EditLeadLeadModal } from '../components/EditLeadLeadModal';
 import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
-import { useLeadsPageState } from '../hooks/useLeadsPageState';
+import { useLeadLeadsPageState } from '../hooks/useLeadLeadsPageState';
 import { PAGE_SIZE } from '../utils/leads.constants';
 
 export function LeadLeadsPage() {
@@ -35,7 +35,6 @@ export function LeadLeadsPage() {
     filteredLeads,
     paginatedLeads,
     totalPages,
-    propertyChoices,
     userNameById,
     userChoices,
     setSearch,
@@ -51,7 +50,7 @@ export function LeadLeadsPage() {
     handleDeleteLead,
     handleDownloadFilteredLeads,
     handleQuickLeadChange,
-  } = useLeadsPageState({
+  } = useLeadLeadsPageState({
     userId: user?.id,
     accessToken,
   });
@@ -119,7 +118,6 @@ export function LeadLeadsPage() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onCreate={handleCreateLead}
-          propertyOptions={propertyChoices}
           userOptions={userChoices}
         />
       ) : null}
@@ -130,7 +128,6 @@ export function LeadLeadsPage() {
           lead={editingLead}
           onClose={() => setEditingLead(null)}
           onEdit={handleEditLead}
-          propertyOptions={propertyChoices}
           userOptions={userChoices}
         />
       ) : null}

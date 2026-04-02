@@ -23,7 +23,6 @@ export function LeadsPage() {
     isLoading,
     search,
     statusFilter,
-    priorityFilter,
     propertyFilter,
     appointmentDateFilter,
     updatingLeadId,
@@ -40,7 +39,6 @@ export function LeadsPage() {
     propertyChoices,
     setSearch,
     setStatusFilter,
-    setPriorityFilter,
     setPropertyFilter,
     setAppointmentDateFilter,
     setIsCreateModalOpen,
@@ -84,7 +82,6 @@ export function LeadsPage() {
       <LeadFilters
         search={search}
         statusFilter={statusFilter}
-        priorityFilter={priorityFilter}
         propertyFilter={propertyFilter}
         appointmentDateFilter={appointmentDateFilter}
         statusOptions={statusOptions}
@@ -92,7 +89,6 @@ export function LeadsPage() {
         hasResults={filteredLeads.length > 0}
         onSearchChange={setSearch}
         onStatusChange={setStatusFilter}
-        onPriorityChange={setPriorityFilter}
         onPropertyChange={setPropertyFilter}
         onAppointmentDateChange={setAppointmentDateFilter}
         onDownload={handleDownloadFilteredLeads}

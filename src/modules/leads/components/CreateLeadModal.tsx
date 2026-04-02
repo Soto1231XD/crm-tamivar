@@ -4,9 +4,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CreateLeadPayload } from '@/interfaces/lead.interface';
 import { AppModal } from '@/components/ui/AppModal';
+import { VISIT_STATUS_OPTIONS } from '../utils/leads.constants';
 
-const LEAD_STATUS_OPTIONS = ['En seguimiento', 'Cancelado', 'Cita agendada', 'En proceso', 'Cerrado'] as const;
-const LEAD_PRIORITY_OPTIONS = ['Urgente', 'Normal', 'Bajo Interes'] as const;
 const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/;
 const LADA_REGEX = /^\+?[0-9]+$/;
 
@@ -31,30 +30,54 @@ const INITIAL_FORM = {
   telefono: '',
   propiedad_id: '',
   lada: '+52',
-  correo_electronico: '',
   comentarios: '',
-  estado: 'En seguimiento',
-  prioridad: 'Normal',
+  estado: 'Agendado',
   fecha_cita: '',
+  asesor_externo: 'no' as const,
+  asesor_externo_nombre: '',
 };
 
-const createLeadSchema = z.object({
-  nombres: z.string().trim().min(1, 'Nombres es obligatorio.').regex(NAME_REGEX, 'Nombres solo permite letras y espacios.'),
-  apellidos: z.string().trim().min(1, 'Apellidos es obligatorio.').regex(NAME_REGEX, 'Apellidos solo permite letras y espacios.'),
-  telefono: z.string().trim().regex(/^\d{10}$/, 'El telefono debe tener exactamente 10 digitos numericos.'),
-  propiedad_id: z.coerce.number().int().positive('Propiedad es obligatoria.'),
-  lada: z
-    .string()
-    .trim()
-    .max(6, 'Lada no puede exceder 6 caracteres.')
-    .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no valida.')
-    .optional(),
-  correo_electronico: z.union([z.literal(''), z.string().email('Correo electronico no valido.')]).optional(),
-  comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
-  estado: z.string().optional(),
-  prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
-  fecha_cita: z.string().optional(),
-});
+const createLeadSchema = z
+  .object({
+    nombres: z
+      .string()
+      .trim()
+      .min(1, 'Nombres es obligatorio.')
+      .regex(NAME_REGEX, 'Nombres solo permite letras y espacios.'),
+    apellidos: z
+      .string()
+      .trim()
+      .min(1, 'Apellidos es obligatorio.')
+      .regex(NAME_REGEX, 'Apellidos solo permite letras y espacios.'),
+    telefono: z
+      .string()
+      .trim()
+      .regex(/^\d{4}$/, 'El telefono debe tener exactamente 4 digitos numericos.'),
+    propiedad_id: z.coerce.number().int().positive('Propiedad es obligatoria.'),
+    lada: z
+      .string()
+      .trim()
+      .max(6, 'Lada no puede exceder 6 caracteres.')
+      .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no valida.')
+      .optional(),
+    comentarios: z
+      .string()
+      .max(500, 'Comentarios no puede exceder 500 caracteres.')
+      .optional(),
+    estado: z.string().optional(),
+    fecha_cita: z.string().optional(),
+    asesor_externo: z.enum(['si', 'no']),
+    asesor_externo_nombre: z.string().optional(),
+  })
+  .superRefine((values, ctx) => {
+    if (values.asesor_externo === 'si' && !values.asesor_externo_nombre?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['asesor_externo_nombre'],
+        message: 'El nombre del asesor externo es obligatorio.',
+      });
+    }
+  });
 
 type CreateLeadFormInput = z.input<typeof createLeadSchema>;
 type CreateLeadFormValues = z.output<typeof createLeadSchema>;
@@ -68,7 +91,12 @@ function FieldLabel({ children, required = false }: { children: string; required
   );
 }
 
-export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: CreateLeadModalProps) {
+export function CreateLeadModal({
+  isOpen,
+  onClose,
+  onCreate,
+  propertyOptions,
+}: CreateLeadModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -76,6 +104,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
     register,
     reset,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<CreateLeadFormInput, unknown, CreateLeadFormValues>({
     resolver: zodResolver(createLeadSchema),
@@ -87,7 +116,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
   }
 
   function sanitizePhone(value: string): string {
-    return value.replace(/\D/g, '').slice(0, 10);
+    return value.replace(/\D/g, '').slice(0, 4);
   }
 
   function sanitizeLada(value: string): string {
@@ -106,6 +135,8 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
     onClose();
   }
 
+  const asesorExterno = watch('asesor_externo');
+
   async function onSubmit(values: CreateLeadFormValues) {
     setSubmitError('');
 
@@ -115,11 +146,14 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
       telefono: values.telefono,
       propiedad_id: values.propiedad_id,
       lada: values.lada?.trim() || undefined,
-      correo_electronico: values.correo_electronico?.trim() || undefined,
       comentarios: values.comentarios?.trim() || undefined,
       estado: values.estado?.trim() || undefined,
-      prioridad: values.prioridad.trim(),
       fecha_cita: values.fecha_cita?.trim() || undefined,
+      asesor_externo: values.asesor_externo === 'si',
+      asesor_externo_nombre:
+        values.asesor_externo === 'si'
+          ? values.asesor_externo_nombre?.trim() || undefined
+          : undefined,
     };
 
     setIsSubmitting(true);
@@ -139,7 +173,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
       isOpen={isOpen}
       onClose={resetAndClose}
       title="Registrar nuevo registro"
-      subtitle="Captura la información principal del cliente, la propiedad de interés y el seguimiento comercial."
+      subtitle="Captura la informacion principal del cliente, la propiedad de interes y el seguimiento comercial."
       maxWidthClassName="max-w-2xl"
       panelClassName="max-h-[88vh]"
     >
@@ -150,8 +184,12 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Información del registro</p>
-            <p className="mt-1 text-sm text-slate-600">Completa los datos de contacto y seguimiento sin perder el contexto de la oportunidad.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Informacion del registro
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Completa los datos de contacto y seguimiento sin perder el contexto de la oportunidad.
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -198,7 +236,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Teléfono</FieldLabel>
+              <FieldLabel required>Ultimos 4 digitos del telefono del cliente</FieldLabel>
               <input
                 type="text"
                 inputMode="numeric"
@@ -208,16 +246,13 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
                   },
                 })}
                 className={fieldClassName}
-                maxLength={10}
-                placeholder="9981144249"
+                maxLength={4}
+                placeholder="4249"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5 md:col-span-2">
-              <FieldLabel>Correo electrónico</FieldLabel>
-              <input type="email" {...register('correo_electronico')} className={fieldClassName} placeholder="usuario@correo.com" />
-              {errors.correo_electronico ? <span className="text-xs text-red-600">{errors.correo_electronico.message}</span> : null}
+              <span className="text-xs text-slate-500">
+                Ingresa solo los ultimos 4 digitos para identificar este registro.
+              </span>
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -236,7 +271,7 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
             <label className="flex flex-col gap-1.5">
               <FieldLabel>Estado</FieldLabel>
               <select {...register('estado')} className={fieldClassName}>
-                {LEAD_STATUS_OPTIONS.map((option) => (
+                {VISIT_STATUS_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -250,15 +285,25 @@ export function CreateLeadModal({ isOpen, onClose, onCreate, propertyOptions }: 
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Prioridad</FieldLabel>
-              <select {...register('prioridad')} className={fieldClassName}>
-                {LEAD_PRIORITY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
+              <FieldLabel>Asesor externo</FieldLabel>
+              <select {...register('asesor_externo')} className={fieldClassName}>
+                <option value="no">No</option>
+                <option value="si">Si</option>
               </select>
-              {errors.prioridad ? <span className="text-xs text-red-600">{errors.prioridad.message}</span> : null}
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <FieldLabel required={asesorExterno === 'si'}>Nombre del asesor externo</FieldLabel>
+              <input
+                type="text"
+                {...register('asesor_externo_nombre')}
+                className={fieldClassName}
+                disabled={asesorExterno !== 'si'}
+                placeholder={asesorExterno === 'si' ? 'Nombre del broker externo' : 'N/A'}
+              />
+              {errors.asesor_externo_nombre ? (
+                <span className="text-xs text-red-600">{errors.asesor_externo_nombre.message}</span>
+              ) : null}
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">

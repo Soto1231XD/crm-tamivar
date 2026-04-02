@@ -22,6 +22,7 @@ import {
   calculateFinalPrice,
   getFullImageUrl,
 } from "../utils/formatters";
+import { downloadPropertiesAsExcel } from "../utils/propertyExport";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
 import { searchProperties } from "../services/properties.api";
 import {
@@ -29,6 +30,8 @@ import {
   FilterSearchInput,
   FilterSelect,
 } from "@/components/ui/AppFilters";
+
+const COMMISSION_CALCULATOR_URL = "https://tamivar-tabulador.netlify.app/";
 
 export function PropertiesPage() {
   const navigate = useNavigate();
@@ -321,6 +324,10 @@ export function PropertiesPage() {
     }
   };
 
+  function handleDownloadProperties() {
+    downloadPropertiesAsExcel(filteredProperties);
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
@@ -337,20 +344,36 @@ export function PropertiesPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          disabled={!canCreate}
-          onClick={() => navigate("/modulos/propiedades/nuevo")}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <img
-            src={agregarIcon}
-            alt=""
-            className="h-6 w-6 shrink-0"
-            aria-hidden="true"
-          />
-          <span>Nueva propiedad</span>
-        </button>
+        <div className="ml-auto flex flex-col items-end gap-3">
+          <button
+            type="button"
+            disabled={!canCreate}
+            onClick={() => navigate("/modulos/propiedades/nuevo")}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <img
+              src={agregarIcon}
+              alt=""
+              className="h-6 w-6 shrink-0"
+              aria-hidden="true"
+            />
+            <span>Nueva propiedad</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              window.open(
+                COMMISSION_CALCULATOR_URL,
+                "_blank",
+                "noopener,noreferrer",
+              )
+            }
+            className="inline-flex items-center gap-2 rounded-xl bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1E293B]"
+          >
+            <span>Tabulador de comisiones</span>
+          </button>
+        </div>
       </header>
 
       <FilterCard description="Busca propiedades por titulo y combina los filtros para ubicar resultados más rápido.">
@@ -408,8 +431,9 @@ export function PropertiesPage() {
 
           <button
             type="button"
+            onClick={handleDownloadProperties}
             disabled={isFilteringByOperation}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d]"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <img
               src={desArcIcon}

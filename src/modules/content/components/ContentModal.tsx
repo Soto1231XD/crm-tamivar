@@ -159,16 +159,23 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
       return;
     }
 
-    const payload = {
-      titulo: form.titulo.trim(),
-      subtitulo: form.subtitulo.trim(),
-      resumen: form.resumen.trim() || undefined,
-      contenido: form.contenido.trim(),
-      etiquetas: parseTags(form.etiquetas),
-      publicado: form.publicado,
-      fechaPublico: form.fechaPublico || undefined,
-      ...(mode === 'edit' ? { imagenes: form.imagenes } : {}),
-    };
+    const payload =
+      mode === 'create'
+        ? {
+            titulo: form.titulo.trim(),
+            subtitulo: form.subtitulo.trim(),
+            resumen: form.resumen.trim() || undefined,
+            contenido: form.contenido.trim(),
+            etiquetas: parseTags(form.etiquetas),
+            publicado: form.publicado,
+            fechaPublico: form.fechaPublico || undefined,
+          }
+        : buildUpdatePayload(form, blog);
+
+    if (mode === 'edit' && Object.keys(payload).length === 0 && selectedFiles.length === 0) {
+      onClose();
+      return;
+    }
 
     setIsSubmitting(true);
     const error = await onSubmit(payload, selectedFiles);
@@ -297,6 +304,52 @@ function getInitialForm(blog?: BlogRecord | null): FormState {
     fechaPublico: toDateTimeLocalValue(blog.fechaPublico),
     imagenes: Array.isArray(blog.imagenes) ? blog.imagenes : [],
   };
+}
+
+function arraysEqual(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
+
+function imagesEqual(left: BlogImageRecord[], right: BlogImageRecord[]): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function buildUpdatePayload(
+  form: FormState,
+  blog?: BlogRecord | null,
+): UpdateBlogPayload {
+  const initial = getInitialForm(blog);
+  const payload: UpdateBlogPayload = {};
+  const currentTags = parseTags(form.etiquetas);
+  const initialTags = parseTags(initial.etiquetas);
+
+  if (form.titulo.trim() !== initial.titulo.trim()) {
+    payload.titulo = form.titulo.trim();
+  }
+  if (form.subtitulo.trim() !== initial.subtitulo.trim()) {
+    payload.subtitulo = form.subtitulo.trim();
+  }
+  if ((form.resumen.trim() || '') !== (initial.resumen.trim() || '')) {
+    payload.resumen = form.resumen.trim() || undefined;
+  }
+  if (form.contenido.trim() !== initial.contenido.trim()) {
+    payload.contenido = form.contenido.trim();
+  }
+  if (!arraysEqual(currentTags, initialTags)) {
+    payload.etiquetas = currentTags;
+  }
+  if (form.publicado !== initial.publicado) {
+    payload.publicado = form.publicado;
+  }
+  if ((form.fechaPublico || '') !== (initial.fechaPublico || '')) {
+    payload.fechaPublico = form.fechaPublico || undefined;
+  }
+  if (!imagesEqual(form.imagenes, initial.imagenes)) {
+    payload.imagenes = form.imagenes;
+  }
+
+  return payload;
 }
 
 function validateForm(form: FormState): string | null {

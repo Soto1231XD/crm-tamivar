@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
 import type { MovementRecord } from "@/interfaces/movement.interface";
+import { MovementDetailModal } from "../components/MovementDetailModal";
 import { MovementsFilters } from "../components/MovementsFilters";
 import { getMovements } from "../services/movements.api";
 import {
@@ -12,6 +13,7 @@ import {
   getModuleLabel,
   getMovementDetailText,
   getStatusBadgeClass,
+  getStatusLabel,
   normalizeMovementText,
 } from "../utils/movements.utils";
 
@@ -24,6 +26,8 @@ export function MovementsPage() {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedMovement, setSelectedMovement] =
+    useState<MovementRecord | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -171,13 +175,18 @@ export function MovementsPage() {
       {
         header: "Status",
         render: (movement) => (
-          <span
-            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(
-              movement.statusCode,
-            )}`}
-          >
-            {movement.statusCode}
-          </span>
+          <div className="flex min-w-[120px] flex-col items-center gap-1">
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(
+                movement.statusCode,
+              )}`}
+            >
+              {getStatusLabel(movement.statusCode)}
+            </span>
+            <span className="text-[11px] font-medium text-slate-500">
+              Codigo {movement.statusCode}
+            </span>
+          </div>
         ),
       },
     ],
@@ -188,14 +197,14 @@ export function MovementsPage() {
     <div className="min-w-0 space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Bitácora del sistema
+          Bitacora del sistema
         </p>
         <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-[2rem]">
           Movimientos
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
           Consulta el historial de actividad del CRM con descripciones claras
-          sobre lo que hizo cada usuario, en que modulo y cuando ocurrió.
+          sobre lo que hizo cada usuario, en que modulo y cuando ocurrio.
         </p>
       </header>
 
@@ -224,8 +233,23 @@ export function MovementsPage() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           tableClassName="min-w-[1080px] text-center"
+          customActions={(movement) => (
+            <button
+              type="button"
+              onClick={() => setSelectedMovement(movement)}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+            >
+              Ver detalle
+            </button>
+          )}
+          actionsClassName="mx-auto flex w-max items-center justify-center gap-2"
         />
       </section>
+
+      <MovementDetailModal
+        movement={selectedMovement}
+        onClose={() => setSelectedMovement(null)}
+      />
     </div>
   );
 }

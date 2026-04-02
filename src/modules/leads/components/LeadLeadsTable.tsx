@@ -12,6 +12,7 @@ import {
   getStatusStyles,
 } from '../utils/leads.utils';
 import { LEAD_LEADS_PRIORITY_OPTIONS, LEAD_LEADS_STATUS_OPTIONS } from './leadLeads.shared';
+import { formatCurrency } from '@/modules/properties/utils/formatters';
 
 type LeadLeadsTableProps = {
   leads: LeadRecord[];
@@ -23,16 +24,6 @@ type LeadLeadsTableProps = {
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
 };
-
-function formatCurrency(value?: string | number | null): string {
-  if (value == null || Number.isNaN(Number(value))) return 'Sin presupuesto';
-
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    maximumFractionDigits: 0,
-  }).format(Number(value));
-}
 
 function QuickBadgeSelect({
   value,
@@ -113,10 +104,9 @@ export function LeadLeadsTable({
       header: 'Nombre',
       cellClassName: 'min-w-[220px]',
       render: (lead) => (
-        <div>
-          <p className="font-semibold text-slate-900">{`${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'}</p>
-          <p className="mt-1 text-xs text-slate-500">{lead.correo_electronico || 'Sin correo'}</p>
-        </div>
+        <span className="font-semibold text-slate-900">
+          {`${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre'}
+        </span>
       ),
     },
     {
@@ -154,14 +144,14 @@ export function LeadLeadsTable({
       render: (lead) => <span className="text-sm text-slate-700">{formatPhone(lead.lada, lead.telefono)}</span>,
     },
     {
-      header: 'Operacion',
+      header: 'Operación',
       cellClassName: 'min-w-[140px]',
       render: (lead) => (
         <span
           className="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
           style={getOperationStyles(lead.operacion ?? '')}
         >
-          {lead.operacion || 'Sin operacion'}
+          {lead.operacion || 'Sin operación'}
         </span>
       ),
     },
@@ -187,19 +177,28 @@ export function LeadLeadsTable({
     {
       header: 'Presupuesto',
       cellClassName: 'min-w-[150px]',
-      render: (lead) => <span className="text-sm text-slate-700">{formatCurrency(lead.presupuesto)}</span>,
+      render: (lead) =>
+        lead.presupuesto == null || Number.isNaN(Number(lead.presupuesto)) ? (
+          <span className="text-sm text-slate-700">Sin presupuesto</span>
+        ) : (
+          <span className="whitespace-nowrap font-semibold text-[#4F5EF8]">
+            {formatCurrency(lead.presupuesto)}
+          </span>
+        ),
     },
     {
-      header: 'Ubicacion de la propiedad',
+      header: 'Zona de preferencia',
       cellClassName: 'min-w-[240px] whitespace-normal',
       render: (lead) => (
         <div className="max-w-[280px] break-words text-sm leading-6 text-slate-700">
-          {lead.propiedad_id != null ? propertyAddressById.get(lead.propiedad_id) ?? 'Sin ubicacion' : 'Sin propiedad'}
+          {lead.ubicacion_propiedad?.trim()
+            || (lead.propiedad_id != null ? propertyAddressById.get(lead.propiedad_id) : '')
+            || 'Sin ubicación'}
         </div>
       ),
     },
     {
-      header: 'Metodo de pago',
+      header: 'Método de pago',
       cellClassName: 'min-w-[220px]',
       render: (lead) => {
         const paymentMethods = (lead.metodo_pago ?? '')
@@ -208,7 +207,7 @@ export function LeadLeadsTable({
           .filter(Boolean);
 
         if (paymentMethods.length === 0) {
-          return <span className="text-sm text-slate-700">Sin metodo</span>;
+          return <span className="text-sm text-slate-700">Sin método</span>;
         }
 
         return (
@@ -227,7 +226,7 @@ export function LeadLeadsTable({
       },
     },
     {
-      header: 'Caracteristicas',
+      header: 'Características',
       cellClassName: 'min-w-[240px] whitespace-normal',
       render: (lead) => (
         <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">

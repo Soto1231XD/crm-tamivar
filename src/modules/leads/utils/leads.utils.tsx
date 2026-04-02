@@ -1,4 +1,5 @@
 import type { LeadRecord } from '@/interfaces/lead.interface';
+import { downloadTableAsExcel } from '@/components/ui/excelExport';
 import {
   CHANNEL_STYLES,
   LEAD_SOURCE_STYLES,
@@ -59,6 +60,15 @@ export function formatPhone(lada?: string | null, telefono?: string | number): s
   return parts.length ? parts.join(' ') : 'Sin telefono';
 }
 
+export function formatPhoneLastFour(telefono?: string | number): string {
+  const digits = String(telefono ?? '')
+    .replace(/\D/g, '')
+    .slice(-4);
+
+  if (!digits) return 'Sin telefono';
+  return `**** ${digits}`;
+}
+
 export function formatDate(value?: string): string {
   if (!value) return 'Sin fecha';
   const date = new Date(value);
@@ -101,94 +111,95 @@ export function formatCreatorName(
   return parts.length > 0 ? parts.join(' ') : 'Sin asignar';
 }
 
+export function formatAsesorExterno(
+  asesorExterno?: boolean | null,
+  asesorExternoNombre?: string | null,
+): string {
+  if (!asesorExterno) return 'N/A';
+  const nombre = asesorExternoNombre?.trim();
+  return nombre || 'Sin nombre';
+}
+
 export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string[]) {
-  const rows = [
-    [
-      'ID',
-      'Cliente',
-      'Correo electronico',
-      'Telefono',
-      'Propiedad',
-      'Estado',
-      'Prioridad',
-      'Creado por',
-      'Fecha de creacion',
-      'Fecha de cita',
-      'Comentarios',
-    ],
-    ...leads.map((lead, index) => [
-      String(lead.id ?? ''),
+  const headers = [
+    'Cliente',
+    'Telefono',
+    'Propiedad',
+    'Estado',
+    'Creado por',
+    'Fecha de creacion',
+    'Fecha de cita',
+    'Asesor externo',
+    'Comentarios',
+  ];
+
+  const rows = leads.map((lead, index) => [
       `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre',
-      lead.correo_electronico?.trim() || 'Sin correo',
       formatPhone(lead.lada, lead.telefono),
       propertyTitles[index] ?? 'Sin titulo',
       lead.estado?.trim() || 'Sin estado',
-      lead.prioridad?.trim() || 'Sin prioridad',
       formatCreatorName(lead.creador),
       formatDate(lead.creado_en),
       formatDateTime(lead.fecha_cita),
+      formatAsesorExterno(lead.asesor_externo, lead.asesor_externo_nombre),
       lead.comentarios?.trim() || 'Sin comentarios',
-    ]),
-  ];
+    ]);
 
-  const tableRows = rows
-    .map(
-      (columns, rowIndex) => `
-        <tr>
-          ${columns
-            .map(
-              (column) =>
-                `<td style="${rowIndex === 0 ? HEADER_CELL_STYLE : VALUE_CELL_STYLE}">${escapeHtml(column)}</td>`,
-            )
-            .join('')}
-        </tr>`,
-    )
-    .join('');
-
-  const excelContent = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-      <head>
-        <meta charset="UTF-8" />
-        <!--[if gte mso 9]>
-          <xml>
-            <x:ExcelWorkbook>
-              <x:ExcelWorksheets>
-                <x:ExcelWorksheet>
-                  <x:Name>Registros</x:Name>
-                  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-                </x:ExcelWorksheet>
-              </x:ExcelWorksheets>
-            </x:ExcelWorkbook>
-          </xml>
-        <![endif]-->
-      </head>
-      <body>
-        <table border="1" cellspacing="0" cellpadding="0">
-          ${tableRows}
-        </table>
-      </body>
-    </html>`;
-
-  const blob = new Blob([`\ufeff${excelContent}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'registros-filtrados.xls';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  downloadTableAsExcel({
+    title: 'Registros exportados',
+    sheetName: 'Registros',
+    fileName: 'registros-filtrados.xls',
+    headers,
+    rows,
+  });
 }
 
-const HEADER_CELL_STYLE =
-  'background:#E2E8F0;font-weight:700;color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
-const VALUE_CELL_STYLE = 'color:#0F172A;padding:8px 12px;border:1px solid #CBD5E1;';
+export function downloadLeadLeadsAsExcel(
+  leads: LeadRecord[],
+  propertyAddresses: string[],
+  userNames: string[],
+) {
+  const headers = [
+    'Fecha de lead',
+    'Estatus',
+    'Nombre',
+    'Prioridad',
+    'Vendedor asignado',
+    'Celular',
+    'Operacion',
+    'Canal',
+    'Solicitud',
+    'Presupuesto',
+    'Ubicacion de la propiedad',
+    'Metodo de pago',
+    'Caracteristicas',
+    'Comentarios',
+    'Origen de lead',
+  ];
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  const rows = leads.map((lead, index) => [
+    formatDate(lead.creado_en),
+    lead.estado?.trim() || 'Sin estatus',
+    `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre',
+    lead.prioridad?.trim() || 'Sin prioridad',
+    userNames[index] ?? 'Sin asignar',
+    formatPhone(lead.lada, lead.telefono),
+    lead.operacion?.trim() || 'Sin operacion',
+    lead.canal?.trim() || 'Sin canal',
+    lead.solicitud?.trim() || 'Sin solicitud',
+    lead.presupuesto != null ? String(lead.presupuesto) : 'Sin presupuesto',
+    propertyAddresses[index] ?? 'Sin ubicacion',
+    lead.metodo_pago?.trim() || 'Sin metodo',
+    lead.caracteristicas?.trim() || 'Sin caracteristicas',
+    lead.comentarios?.trim() || 'Sin comentarios',
+    lead.origen_lead?.trim() || 'Sin origen',
+  ]);
+
+  downloadTableAsExcel({
+    title: 'Registros leads exportados',
+    sheetName: 'Registros leads',
+    fileName: 'registros-leads-filtrados.xls',
+    headers,
+    rows,
+  });
 }

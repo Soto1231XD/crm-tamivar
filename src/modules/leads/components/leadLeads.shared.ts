@@ -30,7 +30,7 @@ export const LEAD_LEADS_CHANNEL_OPTIONS = [
 ] as const;
 
 export const LEAD_LEADS_PAYMENT_METHOD_OPTIONS = [
-  'Efectivo',
+  'Recursos propios',
   'Infonavit',
   'Cofinavit',
   'Credito bancario',

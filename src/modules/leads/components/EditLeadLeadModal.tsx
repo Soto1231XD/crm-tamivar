@@ -19,15 +19,9 @@ import {
   sanitizeLeadLeadLada,
   sanitizeLeadLeadName,
   sanitizeLeadLeadPhone,
-  toLeadDateTimeLocalValue,
 } from './leadLeads.shared';
 
 const LADA_REGEX = /^\+?[0-9]+$/;
-
-type PropertyOption = {
-  id: number;
-  label: string;
-};
 
 type UserOption = {
   id: number;
@@ -39,7 +33,6 @@ type EditLeadLeadModalProps = {
   lead: LeadRecord | null;
   onClose: () => void;
   onEdit: (leadId: number, payload: UpdateLeadPayload) => Promise<string | null>;
-  propertyOptions: PropertyOption[];
   userOptions: UserOption[];
 };
 
@@ -55,7 +48,6 @@ const editLeadLeadSchema = z.object({
     .min(1, 'Apellidos es obligatorio.')
     .refine((value) => isValidLeadLeadName(value), 'Apellidos solo permite letras y espacios.'),
   telefono: z.string().trim().regex(/^\d{10}$/, 'El telefono debe tener exactamente 10 digitos numericos.'),
-  propiedad_id: z.string().optional(),
   lada: z
     .string()
     .trim()
@@ -65,12 +57,12 @@ const editLeadLeadSchema = z.object({
   comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
   estado: z.string().optional(),
   prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
-  fecha_cita: z.string().optional(),
   vendedor_asignado_id: z.string().trim().min(1, 'Vendedor asignado es obligatorio.'),
   operacion: z.string().trim().min(1, 'Operacion es obligatoria.'),
   canal: z.string().trim().min(1, 'Canal es obligatorio.'),
   solicitud: z.string().max(1000, 'Solicitud no puede exceder 1000 caracteres.').optional(),
   presupuesto: z.string().optional(),
+  ubicacion_propiedad: z.string().max(1000, 'La zona de preferencia no puede exceder 1000 caracteres.').optional(),
   metodo_pago: z.array(z.string()).min(1, 'Metodo de pago es obligatorio.'),
   caracteristicas: z.string().max(1000, 'Caracteristicas no puede exceder 1000 caracteres.').optional(),
   origen_lead: z.string().trim().min(1, 'Origen del lead es obligatorio.'),
@@ -93,17 +85,16 @@ function toDefaultValues(lead: LeadRecord | null): EditLeadLeadFormInput {
     nombres: lead?.nombres ?? '',
     apellidos: lead?.apellidos ?? '',
     telefono: lead?.telefono != null ? String(lead.telefono) : '',
-    propiedad_id: lead?.propiedad_id != null ? String(lead.propiedad_id) : '',
     lada: lead?.lada ?? '+52',
     comentarios: lead?.comentarios ?? '',
     estado: lead?.estado ?? 'En seguimiento',
     prioridad: lead?.prioridad ?? 'Normal',
-    fecha_cita: toLeadDateTimeLocalValue(lead?.fecha_cita),
     vendedor_asignado_id: lead?.vendedor_asignado_id != null ? String(lead.vendedor_asignado_id) : '',
     operacion: lead?.operacion ?? '',
     canal: lead?.canal ?? '',
     solicitud: lead?.solicitud ?? '',
     presupuesto: lead?.presupuesto != null ? formatLeadBudgetInput(String(lead.presupuesto)) : '',
+    ubicacion_propiedad: lead?.ubicacion_propiedad ?? '',
     metodo_pago: parseLeadPaymentMethods(lead?.metodo_pago),
     caracteristicas: lead?.caracteristicas ?? '',
     origen_lead: lead?.origen_lead ?? '',
@@ -115,7 +106,6 @@ export function EditLeadLeadModal({
   lead,
   onClose,
   onEdit,
-  propertyOptions,
   userOptions,
 }: EditLeadLeadModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,7 +115,7 @@ export function EditLeadLeadModal({
     register,
     reset,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<EditLeadLeadFormInput, unknown, EditLeadLeadFormValues>({
     resolver: zodResolver(editLeadLeadSchema),
     defaultValues: toDefaultValues(lead),
@@ -149,32 +139,37 @@ export function EditLeadLeadModal({
   async function onSubmit(values: EditLeadLeadFormValues) {
     const presupuestoValue = normalizeLeadBudgetValue(values.presupuesto);
     if (presupuestoValue && Number.isNaN(Number(presupuestoValue))) {
-      setSubmitError('El presupuesto debe ser numérico.');
+      setSubmitError('El presupuesto debe ser numerico.');
       return;
     }
 
     setSubmitError('');
     setIsSubmitting(true);
 
-    const payload: UpdateLeadPayload = {
-      nombres: values.nombres.trim(),
-      apellidos: values.apellidos.trim(),
-      telefono: values.telefono,
-      propiedad_id: values.propiedad_id ? Number(values.propiedad_id) : undefined,
-      lada: values.lada?.trim() || undefined,
-      comentarios: values.comentarios?.trim() || undefined,
-      estado: values.estado?.trim() || undefined,
-      prioridad: values.prioridad.trim(),
-      fecha_cita: values.fecha_cita?.trim() || undefined,
-      vendedor_asignado_id: Number(values.vendedor_asignado_id),
-      operacion: values.operacion.trim(),
-      canal: values.canal.trim(),
-      solicitud: values.solicitud?.trim() || undefined,
-      presupuesto: presupuestoValue ? Number(presupuestoValue) : undefined,
-      metodo_pago: values.metodo_pago.join(', '),
-      caracteristicas: values.caracteristicas?.trim() || undefined,
-      origen_lead: values.origen_lead.trim(),
-    };
+    const payload: UpdateLeadPayload = {};
+
+    if (dirtyFields.nombres) payload.nombres = values.nombres.trim();
+    if (dirtyFields.apellidos) payload.apellidos = values.apellidos.trim();
+    if (dirtyFields.telefono) payload.telefono = values.telefono;
+    if (dirtyFields.lada) payload.lada = values.lada?.trim() || undefined;
+    if (dirtyFields.comentarios) payload.comentarios = values.comentarios?.trim() || undefined;
+    if (dirtyFields.estado) payload.estado = values.estado?.trim() || undefined;
+    if (dirtyFields.prioridad) payload.prioridad = values.prioridad.trim();
+    if (dirtyFields.vendedor_asignado_id) payload.vendedor_asignado_id = Number(values.vendedor_asignado_id);
+    if (dirtyFields.operacion) payload.operacion = values.operacion.trim();
+    if (dirtyFields.canal) payload.canal = values.canal.trim();
+    if (dirtyFields.solicitud) payload.solicitud = values.solicitud?.trim() || undefined;
+    if (dirtyFields.presupuesto) payload.presupuesto = presupuestoValue ? Number(presupuestoValue) : undefined;
+    if (dirtyFields.ubicacion_propiedad) payload.ubicacion_propiedad = values.ubicacion_propiedad?.trim() || undefined;
+    if (dirtyFields.metodo_pago) payload.metodo_pago = values.metodo_pago.join(', ');
+    if (dirtyFields.caracteristicas) payload.caracteristicas = values.caracteristicas?.trim() || undefined;
+    if (dirtyFields.origen_lead) payload.origen_lead = values.origen_lead.trim();
+
+    if (Object.keys(payload).length === 0) {
+      setIsSubmitting(false);
+      closeModal();
+      return;
+    }
 
     const error = await onEdit(currentLead.id, payload);
     setIsSubmitting(false);
@@ -192,7 +187,7 @@ export function EditLeadLeadModal({
       isOpen={isOpen}
       onClose={closeModal}
       title="Editar lead"
-      subtitle="Actualiza la información del lead y mantiene el seguimiento comercial al día."
+      subtitle="Actualiza la información del lead y mantiene el seguimiento comercial al dia."
       maxWidthClassName="max-w-4xl"
       panelClassName="max-h-[88vh]"
     >
@@ -200,7 +195,7 @@ export function EditLeadLeadModal({
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Datos del lead</p>
-            <p className="mt-1 text-sm text-slate-600">Revisa los datos de contacto, la propiedad y la asignación comercial.</p>
+            <p className="mt-1 text-sm text-slate-600">Revisa los datos de contacto, la zona de preferencia y la asignación comercial.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -263,16 +258,17 @@ export function EditLeadLeadModal({
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
             </label>
 
-            <label className="flex flex-col gap-1.5">
-              <FieldLabel>Propiedad</FieldLabel>
-              <select {...register('propiedad_id')} className={leadLeadFieldClassName}>
-                <option value="">Selecciona una propiedad</option>
-                {propertyOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+            <label className="flex flex-col gap-1.5 md:col-span-2">
+              <FieldLabel>Zona de preferencia</FieldLabel>
+              <input
+                type="text"
+                {...register('ubicacion_propiedad')}
+                className={leadLeadFieldClassName}
+                placeholder="Ej. Zona hotelera, Playa del Carmen, Centro de Cancun"
+              />
+              {errors.ubicacion_propiedad ? (
+                <span className="text-xs text-red-600">{errors.ubicacion_propiedad.message}</span>
+              ) : null}
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -321,14 +317,9 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Fecha de cita</FieldLabel>
-              <input type="datetime-local" {...register('fecha_cita')} className={leadLeadFieldClassName} />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
               <FieldLabel required>Operación</FieldLabel>
               <select {...register('operacion')} className={leadLeadFieldClassName}>
-                <option value="">Selecciona una operación</option>
+                <option value="">Selecciona una operacion</option>
                 {LEAD_LEADS_OPERATION_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
