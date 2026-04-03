@@ -6,7 +6,6 @@ import {
   formatCreatorName,
   formatDate,
   formatDateTime,
-  formatPhone,
   getStatusStyles,
 } from '../utils/leads.utils';
 
@@ -170,13 +169,9 @@ export function LeadPdfDocument({ lead, propertyTitle }: LeadPdfDocumentProps) {
         <View style={styles.section} wrap={false}>
           <Text style={styles.sectionTitle}>Datos del cliente</Text>
           <View style={styles.grid}>
-            <View style={styles.col6}>
+            <View style={styles.col12}>
               <Text style={styles.label}>Nombre completo</Text>
               <Text style={styles.valueBold}>{fullName}</Text>
-            </View>
-            <View style={styles.col6}>
-              <Text style={styles.label}>Telefono</Text>
-              <Text style={styles.value}>{formatPhone(lead.lada, lead.telefono)}</Text>
             </View>
           </View>
         </View>

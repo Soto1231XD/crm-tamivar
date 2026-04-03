@@ -1,6 +1,5 @@
 import { BaseTable, type ColumnDef } from '@/components/ui/BaseTable';
 import type { LeadRecord } from '@/interfaces/lead.interface';
-import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import descInfIcon from '../../../assets/images/DescInf.png';
 import { DownloadLeadPdfButton } from './DownloadLeadPdfButton';
 import { VISIT_STATUS_OPTIONS } from '../utils/leads.constants';
@@ -18,6 +17,12 @@ type LeadsTableProps = {
   isLoading: boolean;
   updatingLeadId: number | null;
   propertyTitleById: Map<number, string>;
+  hideResponsibleColumn?: boolean;
+  showFolioColumn?: boolean;
+  canQuickEdit?: boolean;
+  canQuickEditItem?: (lead: LeadRecord) => boolean;
+  canEditItem?: (lead: LeadRecord) => boolean;
+  canDeleteItem?: (lead: LeadRecord) => boolean;
   onQuickChange: (leadId: number, field: 'estado', value: string) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
@@ -28,15 +33,16 @@ export function LeadsTable({
   isLoading,
   updatingLeadId,
   propertyTitleById,
+  hideResponsibleColumn = false,
+  showFolioColumn = false,
+  canQuickEdit = true,
+  canQuickEditItem,
+  canEditItem,
+  canDeleteItem,
   onQuickChange,
   onEdit,
   onDelete,
 }: LeadsTableProps) {
-  const { can } = useHasPermission();
-
-  const canEdit = can('registros', 'actualizar');
-  const canDelete = can('registros', 'eliminar');
-
   const columns: ColumnDef<LeadRecord>[] = [
     {
       header: 'Cliente',
@@ -67,25 +73,29 @@ export function LeadsTable({
       header: 'Estado',
       cellClassName: 'min-w-[150px]',
       render: (lead) => (
-        <select
-          value={lead.estado || VISIT_STATUS_OPTIONS[0]}
-          onChange={(event) => onQuickChange(lead.id, 'estado', event.target.value)}
-          disabled={updatingLeadId === lead.id}
-          className="min-w-32 rounded-full border-0 px-3 py-1 text-xs font-semibold outline-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-          style={getStatusStyles(lead.estado ?? '')}
-        >
-          {VISIT_STATUS_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        canQuickEdit && (canQuickEditItem == null || canQuickEditItem(lead)) ? (
+          <select
+            value={lead.estado || VISIT_STATUS_OPTIONS[0]}
+            onChange={(event) => onQuickChange(lead.id, 'estado', event.target.value)}
+            disabled={updatingLeadId === lead.id}
+            className="min-w-32 rounded-full border-0 px-3 py-1 text-xs font-semibold outline-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+            style={getStatusStyles(lead.estado ?? '')}
+          >
+            {VISIT_STATUS_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span
+            className="inline-flex min-w-32 justify-center rounded-full px-3 py-1 text-xs font-semibold"
+            style={getStatusStyles(lead.estado ?? '')}
+          >
+            {lead.estado || VISIT_STATUS_OPTIONS[0]}
+          </span>
+        )
       ),
-    },
-    {
-      header: 'Creado por',
-      cellClassName: 'min-w-[180px]',
-      render: (lead) => <span className="text-sm text-slate-700">{formatCreatorName(lead.creador)}</span>,
     },
     {
       header: 'Fecha de creacion',
@@ -117,6 +127,26 @@ export function LeadsTable({
     },
   ];
 
+  if (!hideResponsibleColumn) {
+    columns.splice(4, 0, {
+      header: 'Responsable',
+      cellClassName: 'min-w-[180px]',
+      render: (lead) => <span className="text-sm text-slate-700">{formatCreatorName(lead.creador)}</span>,
+    });
+  }
+
+  if (showFolioColumn) {
+    columns.splice(hideResponsibleColumn ? 6 : 7, 0, {
+      header: 'Folio',
+      cellClassName: 'min-w-[220px]',
+      render: (lead) => (
+        <span className="text-sm font-semibold text-slate-700">
+          {lead.folio?.trim() || 'Sin folio'}
+        </span>
+      ),
+    });
+  }
+
   return (
     <BaseTable
       data={leads}
@@ -126,8 +156,10 @@ export function LeadsTable({
       wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
       tableClassName="w-max min-w-[1320px] text-left"
       actionsClassName="flex items-center gap-2"
-      onEdit={canEdit ? onEdit : undefined}
-      onDelete={canDelete ? onDelete : undefined}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      canEditItem={canEditItem}
+      canDeleteItem={canDeleteItem}
       customActions={(lead) => (
         <DownloadLeadPdfButton
           lead={lead}

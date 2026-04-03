@@ -1,4 +1,5 @@
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
+import type { PermissionAction } from "@/shared/auth/permissions/permissions.util";
 
 export type DashboardCardTitle =
   | "Propiedades Disponibles"
@@ -14,7 +15,7 @@ export type DashboardSectionTitle =
   | "Usuarios"
   | "Publicaciones";
 
-type DashboardCan = (module: ModuleKey, action?: "leer") => boolean;
+type DashboardCan = (module: ModuleKey, action?: PermissionAction) => boolean;
 
 const DASHBOARD_CARD_MODULES: Record<DashboardCardTitle, ModuleKey> = {
   "Propiedades Disponibles": "propiedades",
@@ -49,7 +50,13 @@ const DASHBOARD_SECTION_ORDER: readonly DashboardSectionTitle[] = [
 ];
 
 export function getVisibleDashboardCards(can: DashboardCan): DashboardCardTitle[] {
-  return DASHBOARD_CARD_ORDER.filter((title) => can(DASHBOARD_CARD_MODULES[title], "leer"));
+  return DASHBOARD_CARD_ORDER.filter((title) => {
+    if (title === "Propiedades vendidas") {
+      return can("dashboard", "ver_propiedades_vendidas");
+    }
+
+    return can(DASHBOARD_CARD_MODULES[title], "leer");
+  });
 }
 
 export function getVisibleDashboardSections(can: DashboardCan): DashboardSectionTitle[] {

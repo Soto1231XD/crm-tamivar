@@ -22,6 +22,8 @@ interface BaseTableProps<T> {
   onDelete?: (item: T) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  canEditItem?: (item: T) => boolean;
+  canDeleteItem?: (item: T) => boolean;
   customActions?: (item: T) => React.ReactNode;
   currentPage?: number;
   totalPages?: number;
@@ -40,6 +42,8 @@ export const BaseTable = <T extends { id: number | string }>({
   onDelete,
   canEdit = true,
   canDelete = true,
+  canEditItem,
+  canDeleteItem,
   customActions,
   currentPage = 1,
   totalPages = 1,
@@ -113,27 +117,31 @@ export const BaseTable = <T extends { id: number | string }>({
                     <td className="whitespace-nowrap px-4 py-3">
                       <div className={actionsClassName}>
                         {onEdit && canEdit && (
-                          <button
-                            type="button"
-                            title="Editar"
-                            className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-100"
-                            onClick={() => onEdit(item)}
-                          >
-                            <img src={editarIcon} alt="Editar" className="h-5 w-5" />
-                          </button>
+                          canEditItem == null || canEditItem(item) ? (
+                            <button
+                              type="button"
+                              title="Editar"
+                              className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-100"
+                              onClick={() => onEdit(item)}
+                            >
+                              <img src={editarIcon} alt="Editar" className="h-5 w-5" />
+                            </button>
+                          ) : null
                         )}
 
                         {customActions && customActions(item)}
 
                         {onDelete && canDelete && (
-                          <button
-                            type="button"
-                            title="Eliminar"
-                            className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-100"
-                            onClick={() => onDelete(item)}
-                          >
-                            <img src={borrarIcon} alt="Eliminar" className="h-5 w-5" />
-                          </button>
+                          canDeleteItem == null || canDeleteItem(item) ? (
+                            <button
+                              type="button"
+                              title="Eliminar"
+                              className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-100"
+                              onClick={() => onDelete(item)}
+                            >
+                              <img src={borrarIcon} alt="Eliminar" className="h-5 w-5" />
+                            </button>
+                          ) : null
                         )}
                       </div>
                     </td>

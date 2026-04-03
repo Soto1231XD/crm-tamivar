@@ -1,6 +1,5 @@
 import { BaseTable, type ColumnDef } from '@/components/ui/BaseTable';
 import type { LeadRecord } from '@/interfaces/lead.interface';
-import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import {
   formatDate,
   formatPhone,
@@ -20,6 +19,9 @@ type LeadLeadsTableProps = {
   updatingLeadId: number | null;
   propertyAddressById: Map<number, string>;
   userNameById: Map<number, string>;
+  canQuickEdit?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
   onQuickChange: (leadId: number, field: 'estado' | 'prioridad', value: string) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
@@ -69,15 +71,13 @@ export function LeadLeadsTable({
   updatingLeadId,
   propertyAddressById,
   userNameById,
+  canQuickEdit = true,
+  canEdit = true,
+  canDelete = true,
   onQuickChange,
   onEdit,
   onDelete,
 }: LeadLeadsTableProps) {
-  const { can } = useHasPermission();
-
-  const canEdit = can('registros_leads', 'actualizar');
-  const canDelete = can('registros_leads', 'eliminar');
-
   const columns: ColumnDef<LeadRecord>[] = [
     {
       header: 'Fecha de lead',
@@ -90,13 +90,22 @@ export function LeadLeadsTable({
       render: (lead) => {
         const currentValue = lead.estado || LEAD_LEADS_STATUS_OPTIONS[0];
         return (
-          <QuickBadgeSelect
-            value={currentValue}
-            options={LEAD_LEADS_STATUS_OPTIONS}
-            disabled={updatingLeadId === lead.id}
-            style={getStatusStyles(lead.estado ?? '')}
-            onChange={(value) => onQuickChange(lead.id, 'estado', value)}
-          />
+          canQuickEdit ? (
+            <QuickBadgeSelect
+              value={currentValue}
+              options={LEAD_LEADS_STATUS_OPTIONS}
+              disabled={updatingLeadId === lead.id}
+              style={getStatusStyles(lead.estado ?? '')}
+              onChange={(value) => onQuickChange(lead.id, 'estado', value)}
+            />
+          ) : (
+            <span
+              className="inline-flex min-w-32 justify-center rounded-full px-3 py-1 text-xs font-semibold"
+              style={getStatusStyles(lead.estado ?? '')}
+            >
+              {currentValue}
+            </span>
+          )
         );
       },
     },
@@ -115,13 +124,22 @@ export function LeadLeadsTable({
       render: (lead) => {
         const currentValue = lead.prioridad || LEAD_LEADS_PRIORITY_OPTIONS[1];
         return (
-          <QuickBadgeSelect
-            value={currentValue}
-            options={LEAD_LEADS_PRIORITY_OPTIONS}
-            disabled={updatingLeadId === lead.id}
-            style={getPriorityStyles(lead.prioridad ?? '')}
-            onChange={(value) => onQuickChange(lead.id, 'prioridad', value)}
-          />
+          canQuickEdit ? (
+            <QuickBadgeSelect
+              value={currentValue}
+              options={LEAD_LEADS_PRIORITY_OPTIONS}
+              disabled={updatingLeadId === lead.id}
+              style={getPriorityStyles(lead.prioridad ?? '')}
+              onChange={(value) => onQuickChange(lead.id, 'prioridad', value)}
+            />
+          ) : (
+            <span
+              className="inline-flex min-w-28 justify-center rounded-full px-3 py-1 text-xs font-semibold"
+              style={getPriorityStyles(lead.prioridad ?? '')}
+            >
+              {currentValue}
+            </span>
+          )
         );
       },
     },

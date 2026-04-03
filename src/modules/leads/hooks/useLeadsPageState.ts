@@ -20,9 +20,11 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [search, setSearch] = useState('');
+  const [responsibleSearch, setResponsibleSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_STATES);
   const [propertyFilter, setPropertyFilter] = useState(ALL_PROPERTIES);
-  const [appointmentDateFilter, setAppointmentDateFilter] = useState('');
+  const [appointmentDateFromFilter, setAppointmentDateFromFilter] = useState('');
+  const [appointmentDateToFilter, setAppointmentDateToFilter] = useState('');
   const [updatingLeadId, setUpdatingLeadId] = useState<number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadRecord | null>(null);
@@ -82,24 +84,48 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
 
   const filteredLeads = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const responsibleQuery = responsibleSearch.trim().toLowerCase();
 
     return leads.filter((lead) => {
       const fullName = `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim().toLowerCase();
       const phone = formatPhone(lead.lada, lead.telefono).toLowerCase();
+      const responsibleName = `${lead.creador?.nombres ?? ''} ${lead.creador?.apellido_paterno ?? ''}`.trim().toLowerCase();
       const propertyTitle =
         lead.propiedad_id != null ? propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo' : 'Sin propiedad';
       const appointmentDate = getComparableDate(lead.fecha_cita);
 
       const matchesSearch =
         query.length === 0 || fullName.includes(query) || phone.includes(query);
+      const matchesResponsible =
+        responsibleQuery.length === 0 || responsibleName.includes(responsibleQuery);
       const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;
       const matchesProperty = propertyFilter === ALL_PROPERTIES || propertyTitle === propertyFilter;
-      const matchesAppointmentDate =
-        appointmentDateFilter.length === 0 || appointmentDate === appointmentDateFilter;
+      const matchesAppointmentDateFrom =
+        appointmentDateFromFilter.length === 0 ||
+        (appointmentDate.length > 0 && appointmentDate >= appointmentDateFromFilter);
+      const matchesAppointmentDateTo =
+        appointmentDateToFilter.length === 0 ||
+        (appointmentDate.length > 0 && appointmentDate <= appointmentDateToFilter);
 
-      return matchesSearch && matchesStatus && matchesProperty && matchesAppointmentDate;
+      return (
+        matchesSearch &&
+        matchesResponsible &&
+        matchesStatus &&
+        matchesProperty &&
+        matchesAppointmentDateFrom &&
+        matchesAppointmentDateTo
+      );
     });
-  }, [appointmentDateFilter, leads, propertyFilter, propertyTitleById, search, statusFilter]);
+  }, [
+    appointmentDateFromFilter,
+    appointmentDateToFilter,
+    leads,
+    propertyFilter,
+    propertyTitleById,
+    responsibleSearch,
+    search,
+    statusFilter,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 
@@ -142,7 +168,7 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [appointmentDateFilter, propertyFilter, search, statusFilter]);
+  }, [appointmentDateFromFilter, appointmentDateToFilter, propertyFilter, responsibleSearch, search, statusFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -224,9 +250,11 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     leads,
     isLoading,
     search,
+    responsibleSearch,
     statusFilter,
     propertyFilter,
-    appointmentDateFilter,
+    appointmentDateFromFilter,
+    appointmentDateToFilter,
     updatingLeadId,
     isCreateModalOpen,
     editingLead,
@@ -243,9 +271,11 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     userNameById,
     userChoices,
     setSearch,
+    setResponsibleSearch,
     setStatusFilter,
     setPropertyFilter,
-    setAppointmentDateFilter,
+    setAppointmentDateFromFilter,
+    setAppointmentDateToFilter,
     setIsCreateModalOpen,
     setEditingLead,
     setDeletingLead,

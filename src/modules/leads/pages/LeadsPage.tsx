@@ -10,21 +10,35 @@ import { LeadsTable } from '../components/LeadsTable';
 import { useLeadsPageState } from '../hooks/useLeadsPageState';
 import { PAGE_SIZE } from '../utils/leads.constants';
 
+function normalizeRoleName(role: string): string {
+  return role
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
 export function LeadsPage() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.token);
-  const { can } = useHasPermission();
+  const { can, isSuperAdmin } = useHasPermission();
 
   const canCreate = can('registros', 'crear');
-  const canEdit = can('registros', 'actualizar');
+  const canEditOwn = can('registros', 'actualizar');
+  const canEditAll = can('registros', 'actualizar_todos');
   const canDelete = can('registros', 'eliminar');
+  const normalizedRoles = (user?.roles ?? []).map(normalizeRoleName);
+  const isSalesAdvisor =
+    normalizedRoles.includes('asesor de ventas') || normalizedRoles.includes('asesor ventas');
 
   const {
     isLoading,
     search,
+    responsibleSearch,
     statusFilter,
     propertyFilter,
-    appointmentDateFilter,
+    appointmentDateFromFilter,
+    appointmentDateToFilter,
     updatingLeadId,
     isCreateModalOpen,
     editingLead,
@@ -38,9 +52,11 @@ export function LeadsPage() {
     totalPages,
     propertyChoices,
     setSearch,
+    setResponsibleSearch,
     setStatusFilter,
     setPropertyFilter,
-    setAppointmentDateFilter,
+    setAppointmentDateFromFilter,
+    setAppointmentDateToFilter,
     setIsCreateModalOpen,
     setEditingLead,
     setDeletingLead,
@@ -54,6 +70,12 @@ export function LeadsPage() {
     userId: user?.id,
     accessToken,
   });
+
+  const canEditVisit = (lead: { creado_por_id?: number | null; creador?: { id?: number | null } | null }) => {
+    if (canEditAll) return true;
+    if (!canEditOwn || !user?.id) return false;
+    return (lead.creado_por_id ?? lead.creador?.id ?? null) === user.id;
+  };
 
   return (
     <div className="min-w-0 space-y-6">
@@ -81,16 +103,20 @@ export function LeadsPage() {
 
       <LeadFilters
         search={search}
+        responsibleSearch={responsibleSearch}
         statusFilter={statusFilter}
         propertyFilter={propertyFilter}
-        appointmentDateFilter={appointmentDateFilter}
+        appointmentDateFromFilter={appointmentDateFromFilter}
+        appointmentDateToFilter={appointmentDateToFilter}
         statusOptions={statusOptions}
         propertyFilterOptions={propertyFilterOptions}
         hasResults={filteredLeads.length > 0}
         onSearchChange={setSearch}
+        onResponsibleSearchChange={setResponsibleSearch}
         onStatusChange={setStatusFilter}
         onPropertyChange={setPropertyFilter}
-        onAppointmentDateChange={setAppointmentDateFilter}
+        onAppointmentDateFromChange={setAppointmentDateFromFilter}
+        onAppointmentDateToChange={setAppointmentDateToFilter}
         onDownload={handleDownloadFilteredLeads}
       />
 
@@ -100,6 +126,12 @@ export function LeadsPage() {
           isLoading={isLoading}
           updatingLeadId={updatingLeadId}
           propertyTitleById={propertyTitleById}
+          hideResponsibleColumn={isSalesAdvisor}
+          showFolioColumn={isSuperAdmin}
+          canQuickEdit={canEditAll || canEditOwn}
+          canQuickEditItem={canEditVisit}
+          canEditItem={canEditVisit}
+          canDeleteItem={() => isSuperAdmin && canDelete}
           onQuickChange={handleQuickLeadChange}
           onEdit={setEditingLead}
           onDelete={setDeletingLead}
@@ -124,7 +156,7 @@ export function LeadsPage() {
         />
       ) : null}
 
-      {canEdit ? (
+      {canEditAll || canEditOwn ? (
         <EditLeadModal
           isOpen={Boolean(editingLead)}
           lead={editingLead}

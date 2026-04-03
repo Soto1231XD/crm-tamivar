@@ -4,41 +4,56 @@ import { ALL_PROPERTIES, ALL_STATES } from '../utils/leads.constants';
 
 type LeadFiltersProps = {
   search: string;
+  responsibleSearch: string;
   statusFilter: string;
   propertyFilter: string;
-  appointmentDateFilter: string;
+  appointmentDateFromFilter: string;
+  appointmentDateToFilter: string;
   statusOptions: string[];
   propertyFilterOptions: string[];
   hasResults: boolean;
   onSearchChange: (value: string) => void;
+  onResponsibleSearchChange: (value: string) => void;
   onStatusChange: (value: string) => void;
   onPropertyChange: (value: string) => void;
-  onAppointmentDateChange: (value: string) => void;
+  onAppointmentDateFromChange: (value: string) => void;
+  onAppointmentDateToChange: (value: string) => void;
   onDownload: () => void;
 };
 
 export function LeadFilters({
   search,
+  responsibleSearch,
   statusFilter,
   propertyFilter,
-  appointmentDateFilter,
+  appointmentDateFromFilter,
+  appointmentDateToFilter,
   statusOptions,
   propertyFilterOptions,
   hasResults,
   onSearchChange,
+  onResponsibleSearchChange,
   onStatusChange,
   onPropertyChange,
-  onAppointmentDateChange,
+  onAppointmentDateFromChange,
+  onAppointmentDateToChange,
   onDownload,
 }: LeadFiltersProps) {
   return (
-    <FilterCard description="Busca por cliente, estado, propiedad o fecha de cita para ubicar registros mas rapido.">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]">
+    <FilterCard description="Busca por cliente, responsable, estado, propiedad o rango de fecha de cita para ubicar registros mas rapido.">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_auto]">
         <FilterSearchInput
           type="text"
           placeholder="Buscar por nombre o telefono"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
+        />
+
+        <FilterSearchInput
+          type="text"
+          placeholder="Buscar por responsable"
+          value={responsibleSearch}
+          onChange={(event) => onResponsibleSearchChange(event.target.value)}
         />
 
         <FilterSelect value={statusFilter} onChange={(event) => onStatusChange(event.target.value)}>
@@ -59,8 +74,14 @@ export function LeadFilters({
 
         <FilterDateInput
           type="date"
-          value={appointmentDateFilter}
-          onChange={(event) => onAppointmentDateChange(event.target.value)}
+          value={appointmentDateFromFilter}
+          onChange={(event) => onAppointmentDateFromChange(event.target.value)}
+        />
+
+        <FilterDateInput
+          type="date"
+          value={appointmentDateToFilter}
+          onChange={(event) => onAppointmentDateToChange(event.target.value)}
         />
 
         <button

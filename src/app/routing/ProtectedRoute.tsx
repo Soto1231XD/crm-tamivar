@@ -18,7 +18,13 @@ export function ProtectedRoute({ module }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (module && module !== "dashboard" && !can(module, "leer") && !can(module, "*")) {
+  if (
+    module &&
+    module !== "dashboard" &&
+    !can(module, "leer") &&
+    !can(module, "leer_todos") &&
+    !can(module, "*")
+  ) {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -6,7 +6,7 @@ import type { CreateLeadPayload } from '@/interfaces/lead.interface';
 import { AppModal } from '@/components/ui/AppModal';
 import { VISIT_STATUS_OPTIONS } from '../utils/leads.constants';
 
-const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/;
+const NAME_REGEX = /^[A-Z\s]+$/;
 const LADA_REGEX = /^\+?[0-9]+$/;
 
 const fieldClassName =
@@ -91,6 +91,29 @@ function FieldLabel({ children, required = false }: { children: string; required
   );
 }
 
+function normalizeVisitName(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .toUpperCase()
+    .trimStart();
+}
+
+function sanitizePhone(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 4);
+}
+
+function sanitizeLada(value: string): string {
+  const normalized = value.replace(/[^\d+]/g, '');
+  if (normalized.startsWith('+')) {
+    return `+${normalized.slice(1).replace(/\+/g, '').slice(0, 5)}`;
+  }
+
+  return normalized.replace(/\+/g, '').slice(0, 5);
+}
+
 export function CreateLeadModal({
   isOpen,
   onClose,
@@ -110,23 +133,6 @@ export function CreateLeadModal({
     resolver: zodResolver(createLeadSchema),
     defaultValues: INITIAL_FORM,
   });
-
-  function sanitizeName(value: string): string {
-    return value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '');
-  }
-
-  function sanitizePhone(value: string): string {
-    return value.replace(/\D/g, '').slice(0, 4);
-  }
-
-  function sanitizeLada(value: string): string {
-    const normalized = value.replace(/[^\d+]/g, '');
-    if (normalized.startsWith('+')) {
-      return `+${normalized.slice(1).replace(/\+/g, '').slice(0, 5)}`;
-    }
-
-    return normalized.replace(/\+/g, '').slice(0, 5);
-  }
 
   function resetAndClose() {
     reset(INITIAL_FORM);
@@ -199,7 +205,7 @@ export function CreateLeadModal({
                 type="text"
                 {...register('nombres', {
                   onChange: (event) => {
-                    event.target.value = sanitizeName(event.target.value);
+                    event.target.value = normalizeVisitName(event.target.value);
                   },
                 })}
                 className={fieldClassName}
@@ -213,7 +219,7 @@ export function CreateLeadModal({
                 type="text"
                 {...register('apellidos', {
                   onChange: (event) => {
-                    event.target.value = sanitizeName(event.target.value);
+                    event.target.value = normalizeVisitName(event.target.value);
                   },
                 })}
                 className={fieldClassName}
@@ -247,7 +253,7 @@ export function CreateLeadModal({
                 })}
                 className={fieldClassName}
                 maxLength={4}
-                placeholder="4249"
+                placeholder="6678"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
               <span className="text-xs text-slate-500">
@@ -296,7 +302,11 @@ export function CreateLeadModal({
               <FieldLabel required={asesorExterno === 'si'}>Nombre del asesor externo</FieldLabel>
               <input
                 type="text"
-                {...register('asesor_externo_nombre')}
+                {...register('asesor_externo_nombre', {
+                  onChange: (event) => {
+                    event.target.value = normalizeVisitName(event.target.value);
+                  },
+                })}
                 className={fieldClassName}
                 disabled={asesorExterno !== 'si'}
                 placeholder={asesorExterno === 'si' ? 'Nombre del broker externo' : 'N/A'}

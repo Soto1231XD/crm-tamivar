@@ -13,11 +13,11 @@ import { PAGE_SIZE } from '../utils/leads.constants';
 export function LeadLeadsPage() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.token);
-  const { can } = useHasPermission();
+  const { can, isSuperAdmin } = useHasPermission();
 
   const canCreate = can('registros_leads', 'crear');
   const canEdit = can('registros_leads', 'actualizar');
-  const canDelete = can('registros_leads', 'eliminar');
+  const canDelete = isSuperAdmin && can('registros_leads', 'eliminar');
 
   const {
     isLoading,
@@ -98,6 +98,9 @@ export function LeadLeadsPage() {
           updatingLeadId={updatingLeadId}
           propertyAddressById={propertyAddressById}
           userNameById={userNameById}
+          canQuickEdit={canEdit}
+          canEdit={canEdit}
+          canDelete={canDelete}
           onQuickChange={handleQuickLeadChange}
           onEdit={setEditingLead}
           onDelete={setDeletingLead}

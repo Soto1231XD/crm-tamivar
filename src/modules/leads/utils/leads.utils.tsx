@@ -66,7 +66,7 @@ export function formatPhoneLastFour(telefono?: string | number): string {
     .slice(-4);
 
   if (!digits) return 'Sin telefono';
-  return `**** ${digits}`;
+  return digits;
 }
 
 export function formatDate(value?: string): string {
@@ -126,7 +126,7 @@ export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string
     'Telefono',
     'Propiedad',
     'Estado',
-    'Creado por',
+    'Responsable',
     'Fecha de creacion',
     'Fecha de cita',
     'Asesor externo',

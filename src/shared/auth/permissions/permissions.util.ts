@@ -1,7 +1,15 @@
 import type { AppUser } from "../interfaces/auth.interface";
 import type { ModuleKey } from "../interfaces/rbac.interface";
 
-export type PermissionAction = "leer" | "crear" | "actualizar" | "eliminar" | "*";
+export type PermissionAction =
+  | "leer"
+  | "crear"
+  | "actualizar"
+  | "eliminar"
+  | "leer_todos"
+  | "actualizar_todos"
+  | "ver_propiedades_vendidas"
+  | "*";
 export type RecordsReadScope = "none" | "own" | "all";
 
 /**

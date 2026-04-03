@@ -1,12 +1,12 @@
 export const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
-  agendado: { backgroundColor: '#CD8774', color: '#2F0905' },
+  agendado: { backgroundColor: '#FEE798', color: '#7C6D30' },
   'en seguimiento': { backgroundColor: '#F3E8FF', color: '#C455DB' },
   'en espera': { backgroundColor: '#A8E5AC', color: '#12714F' },
   contactado: { backgroundColor: '#85CAE0', color: '#0355A1' },
-  cancelado: { backgroundColor: '#FEF3C7', color: '#CA5874' },
+  cancelado: { backgroundColor: '#B50200', color: '#FFAF9D' },
   'cita agendada': { backgroundColor: '#CD8774', color: '#2F0905' },
   'en proceso': { backgroundColor: '#C455DB', color: '#F3E8FF' },
-  cerrado: { backgroundColor: '#C3B28A', color: '#050505' },
+  cerrado: { backgroundColor: '#12714F', color: '#E7F7E8' },
 };
 
 export const PRIORITY_STYLES: Record<string, { backgroundColor: string; color: string }> = {

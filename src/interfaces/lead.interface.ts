@@ -17,6 +17,7 @@ export interface LeadPropertyRecord {
 
 export interface LeadRecord {
   id: number;
+  folio?: string | null;
   nombres: string;
   apellidos: string;
   lada?: string | null;
@@ -29,6 +30,7 @@ export interface LeadRecord {
   asesor_externo?: boolean | null;
   asesor_externo_nombre?: string | null;
   creado_en?: string;
+  creado_por_id?: number | null;
   propiedad_id?: number | null;
   vendedor_asignado_id?: number | null;
   operacion?: string | null;

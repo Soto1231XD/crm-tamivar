@@ -34,7 +34,10 @@ const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
 function hasModuleReadAccess(permissions: string[], module: ModuleKey): boolean {
   if (permissions.includes("*:*")) return true;
   if (permissions.includes(`${module}:*`)) return true;
-  return permissions.includes(`${module}:leer`);
+  return (
+    permissions.includes(`${module}:leer`) ||
+    permissions.includes(`${module}:leer_todos`)
+  );
 }
 
 export function canAccessDashboard(permissions: string[]): boolean {
