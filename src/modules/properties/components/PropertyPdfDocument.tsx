@@ -12,8 +12,8 @@ import {
   formatFullDireccion,
   calculateFinalPrice,
   getFullImageUrl,
+  getPropertyStatusStyles,
 } from "../utils/formatters";
-import { PROPERTY_STATUS_STYLES } from "../utils/property-constants";
 import Logo from "@/assets/images/Logo.png";
 import { stripEmojis } from "../utils/formatters";
 
@@ -208,9 +208,7 @@ export const PropertyPdfDocument = ({
   property: PropertyRecord;
 }) => {
   // Obtener estilos dinámicos del estatus
-  const statusStyle =
-    PROPERTY_STATUS_STYLES[property.estatus.toLowerCase()] ||
-    PROPERTY_STATUS_STYLES["disponible"];
+  const statusStyle = getPropertyStatusStyles(property.estatus);
 
   return (
     <Document>

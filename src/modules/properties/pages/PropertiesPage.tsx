@@ -283,7 +283,7 @@ export function PropertiesPage() {
       const matchesSearch =
         query === "" ||
         property.titulo.toLowerCase().includes(query) ||
-        property.direccion.calle.toLowerCase().includes(query) ||
+        (property.direccion.calle ?? "").toLowerCase().includes(query) ||
         property.creador.nombres.toLowerCase().includes(query);
 
       return matchesStatus && matchesType && matchesSearch;

@@ -267,6 +267,7 @@ function buildInitialPayload(
     titulo: property.titulo,
     tipo_inmueble: property.tipo_inmueble,
     descripcion: property.descripcion || undefined,
+    exclusiva: Boolean(property.exclusiva),
     esquema_comercial: Array.isArray(property.esquema_comercial)
       ? property.esquema_comercial.map((item) => ({
           tipo_operacion: item.tipo_operacion,

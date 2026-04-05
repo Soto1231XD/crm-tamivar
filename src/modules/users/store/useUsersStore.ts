@@ -21,8 +21,8 @@ type UsersState = {
   error: string | null;
   fetchUsers: () => Promise<void>;
   fetchRolesCatalog: () => Promise<void>;
-  addUser: (payload: CreateUserPayload) => Promise<UserRecord>;
-  editUser: (id: number, payload: UpdateUserPayload) => Promise<UserRecord>;
+  addUser: (payload: CreateUserPayload, photoFile?: File | null) => Promise<UserRecord>;
+  editUser: (id: number, payload: UpdateUserPayload, photoFile?: File | null) => Promise<UserRecord>;
   toggleStatus: (id: number) => Promise<ToggleUserStatusResponse>;
 };
 
@@ -57,10 +57,10 @@ export const useUsersStore = create<UsersState>((set) => ({
     }
   },
 
-  addUser: async (payload: CreateUserPayload) => {
+  addUser: async (payload: CreateUserPayload, photoFile?: File | null) => {
     set({ isLoading: true, error: null });
     try {
-      const createdUser = await createUser(payload);
+      const createdUser = await createUser({ ...payload, photoFile });
       set((state) => ({
         users: [createdUser, ...state.users],
         isLoading: false,
@@ -73,10 +73,10 @@ export const useUsersStore = create<UsersState>((set) => ({
     }
   },
 
-  editUser: async (id: number, payload: UpdateUserPayload) => {
+  editUser: async (id: number, payload: UpdateUserPayload, photoFile?: File | null) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedUser = await updateUser(id, payload);
+      const updatedUser = await updateUser(id, { ...payload, photoFile });
       set((state) => ({
         users: state.users.map((user) => (user.id === id ? updatedUser : user)),
         isLoading: false,

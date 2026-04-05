@@ -7,12 +7,12 @@ import { getProperties } from '../../properties/services/properties.api';
 import { getUsers } from '../../users/services/users.api';
 import { formatDireccion } from '../../properties/utils/formatters';
 import { useLeadLeadsStore } from '../store/useLeadLeadsStore';
-import { ALL_STATES, PAGE_SIZE } from '../utils/leads.constants';
+import { ALL_STATES, PAGE_SIZE } from '../../leads/utils/leads.constants';
 import {
   downloadLeadLeadsAsExcel,
   formatPhone,
   getComparableDate,
-} from '../utils/leads.utils';
+} from '../../leads/utils/leads.utils';
 
 type UseLeadLeadsPageStateParams = {
   userId?: number | null;

@@ -11,6 +11,7 @@ import { FilterCard, FilterSearchInput } from "@/components/ui/AppFilters";
 import agregarIcon from "../../../assets/images/Agregar.png";
 import borrarIcon from "../../../assets/images/Borrar.png";
 import editarDosIcon from "../../../assets/images/editar2.png";
+import { extractUserRoles, normalizeRoleName } from "@/shared/auth/role.utils";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { getUsers } from "../../users/services/users.api";
@@ -63,8 +64,8 @@ export function SystemRolesPage() {
   }, [accessToken]);
 
   const filteredRoles = useMemo(() => {
-    const query = normalizeText(search);
-    return roles.filter((role) => query.length === 0 || normalizeText(role.rol).includes(query));
+    const query = normalizeRoleName(search);
+    return roles.filter((role) => query.length === 0 || normalizeRoleName(role.rol).includes(query));
   }, [roles, search]);
 
   const availablePermissions = useMemo(() => {
@@ -270,14 +271,14 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
 }
 
 function getAssignedUsersCount(role: SystemRoleRecord, users: UserRecord[]): number {
-  const targetRole = normalizeText(role.rol);
+  const targetRole = normalizeRoleName(role.rol);
   return users.filter((user) =>
-    getUserRoles(user).some((userRole) => normalizeText(userRole) === targetRole),
+    getUserRoles(user).some((userRole) => normalizeRoleName(userRole) === targetRole),
   ).length;
 }
 
 function getRoleDescription(roleName: string): string {
-  const normalized = normalizeText(roleName);
+  const normalized = normalizeRoleName(roleName);
   if (normalized === "super admin" || normalized === "super administrador") {
     return "Control total del CRM y administración completa del sistema.";
   }
@@ -300,36 +301,11 @@ function getRoleDescription(roleName: string): string {
 }
 
 function getUserRoles(user: UserRecord): string[] {
-  const sourceRoles = Array.isArray(user.roles) ? user.roles : user.rol ? [user.rol] : [];
-
-  return Array.from(
-    new Set(
-      sourceRoles
-        .map((role) => {
-          if (typeof role === "string") return role.trim();
-          if (typeof role?.rol === "string") return role.rol.trim();
-          if (role?.rol && typeof role.rol === "object") {
-            if (typeof role.rol.rol === "string") return role.rol.rol.trim();
-            if (typeof role.rol.nombre === "string") return role.rol.nombre.trim();
-          }
-          if (typeof role?.nombre === "string") return role.nombre.trim();
-          return "";
-        })
-        .filter(Boolean),
-    ),
-  );
-}
-
-function normalizeText(value?: string | null): string {
-  return (value ?? "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+  return extractUserRoles(user);
 }
 
 function isProtectedRole(roleName: string): boolean {
-  const normalized = normalizeText(roleName);
+  const normalized = normalizeRoleName(roleName);
   return [
     "super admin",
     "super administrador",

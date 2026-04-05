@@ -6,9 +6,9 @@ import { LeadLeadsFilters } from '../components/LeadLeadsFilters';
 import { LeadLeadsTable } from '../components/LeadLeadsTable';
 import { CreateLeadLeadModal } from '../components/CreateLeadLeadModal';
 import { EditLeadLeadModal } from '../components/EditLeadLeadModal';
-import { DeleteLeadConfirmModal } from '../components/DeleteLeadConfirmModal';
+import { DeleteLeadConfirmModal } from '../../leads/components/DeleteLeadConfirmModal';
 import { useLeadLeadsPageState } from '../hooks/useLeadLeadsPageState';
-import { PAGE_SIZE } from '../utils/leads.constants';
+import { PAGE_SIZE } from '../../leads/utils/leads.constants';
 
 export function LeadLeadsPage() {
   const user = useAuthStore((state) => state.user);

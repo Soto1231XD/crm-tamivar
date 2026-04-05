@@ -9,7 +9,7 @@ import {
   getPaymentMethodStyles,
   getPriorityStyles,
   getStatusStyles,
-} from '../utils/leads.utils';
+} from '../../leads/utils/leads.utils';
 import { LEAD_LEADS_PRIORITY_OPTIONS, LEAD_LEADS_STATUS_OPTIONS } from './leadLeads.shared';
 import { formatCurrency } from '@/modules/properties/utils/formatters';
 

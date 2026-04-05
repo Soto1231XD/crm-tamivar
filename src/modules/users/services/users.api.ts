@@ -21,9 +21,10 @@ export async function getRoles(accessToken?: string | null): Promise<RoleOptionR
 
 export async function createUser(payload: CreateUserPayload, accessToken?: string | null): Promise<UserRecord> {
   void accessToken;
+  const formData = buildUserFormData(payload);
   return apiRequest<UserRecord>('/users', {
     method: 'POST',
-    data: payload,
+    data: formData,
   });
 }
 
@@ -33,9 +34,10 @@ export async function updateUser(
   accessToken?: string | null,
 ): Promise<UserRecord> {
   void accessToken;
+  const formData = buildUserFormData(payload);
   return apiRequest<UserRecord>(`/users/${id}`, {
     method: 'PATCH',
-    data: payload,
+    data: formData,
   });
 }
 
@@ -47,4 +49,19 @@ export async function toggleUserStatus(
   return apiRequest<ToggleUserStatusResponse>(`/users/${id}`, {
     method: 'DELETE',
   });
+}
+
+function buildUserFormData(payload: CreateUserPayload | UpdateUserPayload): FormData {
+  const formData = new FormData();
+  const { photoFile, ...data } = payload as (CreateUserPayload | UpdateUserPayload) & {
+    photoFile?: File | null;
+  };
+
+  formData.append('datos', JSON.stringify(data));
+
+  if (photoFile instanceof File) {
+    formData.append('file', photoFile);
+  }
+
+  return formData;
 }

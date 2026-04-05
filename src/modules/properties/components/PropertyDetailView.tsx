@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { PROPERTY_STATUS_STYLES } from "../utils/property-constants";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import {
   formatFullDireccion,
@@ -10,6 +9,7 @@ import {
   calculateFinalPrice,
   formatDate,
   getFullImageUrl,
+  getPropertyStatusStyles,
 } from "../utils/formatters";
 import { getFeatureIcon } from "../utils/featureIcons";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
@@ -63,9 +63,7 @@ export const PropertyDetailView = () => {
 
   if (!currentProperty) return null;
 
-  const statusStyle =
-    PROPERTY_STATUS_STYLES[currentProperty.estatus.toLowerCase()] ||
-    PROPERTY_STATUS_STYLES["disponible"];
+  const statusStyle = getPropertyStatusStyles(currentProperty.estatus);
 
   const imagenesFormateadas =
     currentProperty.imagenes && currentProperty.imagenes.length > 0
@@ -729,7 +727,7 @@ export const PropertyDetailView = () => {
         </>
       ) : (
         /* Pestaña de visitas */
-        <PropertyVisitsList propertyId={currentProperty.id} />
+        <PropertyVisitsList />
       )}
     </div>
   );

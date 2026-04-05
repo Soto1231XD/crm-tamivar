@@ -1,4 +1,12 @@
 import type { ReactNode } from 'react';
+import { getSoftBadgeStyles } from '@/components/ui/badgeStyles';
+import { getHighestPriorityRoleLabel } from '@/shared/auth/role.utils';
+import {
+  getPropertyStatusStyles,
+  getPublicationStatusStyles,
+  getStatusStyles,
+} from '@/shared/ui/statusStyles';
+import { getFullImageUrl } from '@/shared/utils/imageUrl';
 
 export type RecentLeadItem = {
   nombre: string;
@@ -21,6 +29,7 @@ export type RecentUserItem = {
   nombres: string;
   apellido_paterno: string;
   correo_electronico: string;
+  foto_url?: string | null;
   rol?: string;
   roles?: string[];
 };
@@ -38,35 +47,6 @@ export type RecentPublicationItem = {
 };
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-const STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
-  agendado: { backgroundColor: '#CD8774', color: '#2F0905' },
-  contactado: { backgroundColor: '#DBEAFE', color: '#1480F0' },
-  'en seguimiento': { backgroundColor: '#F3E8FF', color: '#C455DB' },
-  cancelado: { backgroundColor: '#FEF3C7', color: '#CA5874' },
-  'cita agendada': { backgroundColor: '#CD8774', color: '#2F0905' },
-  'en espera': { backgroundColor: '#DBFCE7', color: '#4D8236' },
-  'en proceso': { backgroundColor: '#C455DB', color: '#F3E8FF' },
-  cerrado: { backgroundColor: '#C3B28A', color: '#050505' },
-};
-
-const PROPERTY_STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
-  disponible: { backgroundColor: '#D0FAE5', color: '#4D8236' },
-  apartado: { backgroundColor: '#FEF9C2', color: '#E4AE1F' },
-  vendido: { backgroundColor: '#B3B3B5', color: '#000000' },
-  preventa: { backgroundColor: '#DBEAFE', color: '#1480F0' },
-  baja: { backgroundColor: '#FEF3C7', color: '#CA5874' },
-};
-
-export function getStatusStyles(estado: string): { backgroundColor: string; color: string } {
-  const normalizedEstado = estado.trim().toLowerCase();
-  return STATUS_STYLES[normalizedEstado] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
-}
-
-export function getPropertyStatusStyles(estatus: string): { backgroundColor: string; color: string } {
-  const normalizedStatus = estatus.trim().toLowerCase();
-  return PROPERTY_STATUS_STYLES[normalizedStatus] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
-}
 
 export function formatDireccion(direccion: RecentPropertyItem['direccion']): string {
   const parts = [direccion.calle, direccion.municipio, direccion.fraccionamiento].map((part) => part.trim()).filter(Boolean);
@@ -97,13 +77,6 @@ export function renderPrice(value: string) {
   );
 }
 
-export function getPublicationStatusStyles(publicado: boolean): { backgroundColor: string; color: string } {
-  if (publicado) {
-    return { backgroundColor: '#DBFCE7', color: '#4D8236' };
-  }
-  return { backgroundColor: '#E0E7F4', color: '#000000' };
-}
-
 export function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -115,16 +88,7 @@ export function formatDate(value: string): string {
 }
 
 export function getUserRoleLabel(usuario: { rol?: string; roles?: string[] }): string {
-  if (typeof usuario.rol === 'string' && usuario.rol.trim()) {
-    return usuario.rol.trim();
-  }
-
-  if (Array.isArray(usuario.roles) && usuario.roles.length > 0) {
-    const firstRole = usuario.roles.find((role) => typeof role === 'string' && role.trim().length > 0);
-    if (firstRole) return firstRole.trim();
-  }
-
-  return 'Sin rol';
+  return getHighestPriorityRoleLabel(usuario);
 }
 
 type DashboardSectionData = {
@@ -196,17 +160,33 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
         key={`${usuario.correo_electronico}-${index}`}
         className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
       >
-        <p className="text-sm font-semibold text-slate-800">
-          {usuario.nombres} {usuario.apellido_paterno}
-        </p>
-        <p className="mt-1 text-xs leading-5 text-slate-600">{usuario.correo_electronico}</p>
-        <div className="mt-2">
-          <span
-            className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-            style={{ backgroundColor: '#DBEAFE', color: '#1480F0' }}
-          >
-            {getUserRoleLabel(usuario)}
-          </span>
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600">
+            {usuario.foto_url ? (
+              <img
+                src={getFullImageUrl(usuario.foto_url)}
+                alt={`${usuario.nombres} ${usuario.apellido_paterno}`.trim()}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span>{`${usuario.nombres?.[0] || ''}${usuario.apellido_paterno?.[0] || ''}`.toUpperCase() || 'U'}</span>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-800">
+              {usuario.nombres} {usuario.apellido_paterno}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">{usuario.correo_electronico}</p>
+            <div className="mt-2">
+              <span
+                className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                style={getSoftBadgeStyles('blue')}
+              >
+                {getUserRoleLabel(usuario)}
+              </span>
+            </div>
+          </div>
         </div>
       </li>
     ));

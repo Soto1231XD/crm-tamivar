@@ -7,7 +7,7 @@ import { PropertiesPage } from "@/modules/properties/pages/PropertiesPage";
 import { CreatePropertyPage } from "@/modules/properties/pages/CreatePropertyPage";
 import { EditPropertyPage } from "@/modules/properties/pages/EditPropertyPage";
 import { LeadsPage } from "@/modules/leads/pages/LeadsPage";
-import { LeadLeadsPage } from "@/modules/leads/pages/LeadLeadsPage";
+import { LeadLeadsPage } from "@/modules/registroLeads/pages/LeadLeadsPage";
 import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
 import { ContentPage } from "@/modules/content/pages/ContentPage";

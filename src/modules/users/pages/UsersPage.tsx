@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { CreateUserPayload, UpdateUserPayload, UserRecord, UserRoleRecord } from '@/interfaces/user.interface';
+import type { CreateUserPayload, UpdateUserPayload, UserRecord } from '@/interfaces/user.interface';
 import toast from 'react-hot-toast';
 import { FilterCard, FilterSearchInput, FilterSelect } from '@/components/ui/AppFilters';
+import { getSoftBadgeStyles } from '@/components/ui/badgeStyles';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import borrarIcon from '../../../assets/images/Borrar.png';
 import editarDosIcon from '../../../assets/images/editar2.png';
+import { extractUserRoles, getHighestPriorityRoleLabel, isSuperAdminRole, normalizeRoleName } from '@/shared/auth/role.utils';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
+import { getFullImageUrl } from '@/shared/utils/imageUrl';
 import { UserModal } from '../components/UserModal';
 import { useUsersStore } from '../store/useUsersStore';
 
@@ -45,10 +48,10 @@ export function UsersPage() {
   }, [fetchRolesCatalog]);
 
   const filteredUsers = useMemo(() => {
-    const query = normalizeText(search);
+    const query = normalizeRoleName(search);
 
     return users.filter((user) => {
-      const matchesSearch = query.length === 0 || normalizeText(user.nombres).includes(query);
+      const matchesSearch = query.length === 0 || normalizeRoleName(user.nombres).includes(query);
       const matchesStatus =
         statusFilter === ALL_USER_STATES || getUserStatusLabel(user.activo) === statusFilter;
 
@@ -109,10 +112,9 @@ export function UsersPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredUsers.map((user) => {
               const roles = getUserRoles(user);
-              const isSuperAdmin = roles.some((role) => {
-                const normalizedRole = normalizeText(role);
-                return normalizedRole === 'super admin' || normalizedRole === 'super administrador';
-              });
+              const primaryRole = getHighestPriorityRoleLabel(user);
+              const extraRolesCount = Math.max(roles.length - 1, 0);
+              const isSuperAdmin = roles.some((role) => isSuperAdminRole(role));
 
               const isCurrentUser = sessionUser?.id === user.id;
 
@@ -122,14 +124,30 @@ export function UsersPage() {
                   className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Usuario</p>
-                      <h3 className="mt-2 truncate text-lg font-bold tracking-tight text-slate-900">
-                        {getUserFullName(user)}
-                      </h3>
-                      <p className="mt-1 truncate text-sm text-slate-600">
-                        {user.correo_electronico?.trim() || 'Sin correo electrónico'}
-                      </p>
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-sm font-bold text-slate-600 shadow-sm">
+                        {user.foto_url ? (
+                          <img
+                            src={getFullImageUrl(user.foto_url)}
+                            alt={getUserFullName(user)}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span>
+                            {`${user.nombres?.[0] || ''}${user.apellido_paterno?.[0] || ''}`.toUpperCase() || 'U'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Usuario</p>
+                        <h3 className="mt-2 truncate text-lg font-bold tracking-tight text-slate-900">
+                          {getUserFullName(user)}
+                        </h3>
+                        <p className="mt-1 truncate text-sm text-slate-600">
+                          {user.correo_electronico?.trim() || 'Sin correo electrónico'}
+                        </p>
+                      </div>
                     </div>
                     <span
                       className="inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm"
@@ -141,7 +159,7 @@ export function UsersPage() {
 
                   <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-slate-700">Roles asignados</p>
+                      <p className="text-sm font-semibold text-slate-700">Rol principal</p>
                       <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
                         {roles.length} {roles.length === 1 ? 'rol' : 'roles'}
                       </span>
@@ -149,14 +167,19 @@ export function UsersPage() {
 
                     <div className="mt-3 flex flex-wrap gap-2">
                       {roles.length > 0 ? (
-                        roles.map((role) => (
+                        <>
                           <span
-                            key={`${user.id}-${role}`}
-                            className="inline-flex rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-[#312C85]"
+                            className="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
+                            style={getSoftBadgeStyles('indigo')}
                           >
-                            {role}
+                            {primaryRole}
                           </span>
-                        ))
+                          {extraRolesCount > 0 ? (
+                            <span className="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" style={getSoftBadgeStyles('slate')}>
+                              +{extraRolesCount} {extraRolesCount === 1 ? 'rol adicional' : 'roles adicionales'}
+                            </span>
+                          ) : null}
+                        </>
                       ) : (
                         <span className="text-sm text-slate-500">Sin roles asignados</span>
                       )}
@@ -225,15 +248,22 @@ export function UsersPage() {
           user={editingUser}
           roles={rolesCatalog}
           onClose={() => setEditingUser(null)}
-          onSubmit={(payload) => (editingUser ? handleEditUser(editingUser.id, payload as UpdateUserPayload) : Promise.resolve('Usuario no valido.'))}
+          onSubmit={(payload, photoFile) =>
+            editingUser
+              ? handleEditUser(editingUser.id, payload as UpdateUserPayload, photoFile)
+              : Promise.resolve('Usuario no valido.')
+          }
         />
       )}
     </div>
   );
 
-  async function handleCreateUser(payload: CreateUserPayload | UpdateUserPayload): Promise<string | null> {
+  async function handleCreateUser(
+    payload: CreateUserPayload | UpdateUserPayload,
+    photoFile?: File | null,
+  ): Promise<string | null> {
     try {
-      await addUser(payload as CreateUserPayload);
+      await addUser(payload as CreateUserPayload, photoFile);
       toast.success('El usuario se creó con éxito.');
       return null;
     } catch (error) {
@@ -241,9 +271,13 @@ export function UsersPage() {
     }
   }
 
-  async function handleEditUser(userId: number, payload: UpdateUserPayload): Promise<string | null> {
+  async function handleEditUser(
+    userId: number,
+    payload: UpdateUserPayload,
+    photoFile?: File | null,
+  ): Promise<string | null> {
     try {
-      await editUser(userId, payload);
+      await editUser(userId, payload, photoFile);
       toast.success('El usuario se actualizó con éxito.');
       return null;
     } catch (error) {
@@ -271,10 +305,12 @@ function getUserStatusLabel(isActive?: boolean | null): 'Activo' | 'Baja' {
 
 function getUserStatusStyles(isActive?: boolean | null): { backgroundColor: string; color: string } {
   if (isActive === false) {
-    return { backgroundColor: '#FFEDD4', color: '#CA5874' };
+    const tone = getSoftBadgeStyles('amber');
+    return { backgroundColor: tone.backgroundColor, color: '#CA5874' };
   }
 
-  return { backgroundColor: '#DBFCE7', color: '#4D8236' };
+  const tone = getSoftBadgeStyles('green');
+  return { backgroundColor: tone.backgroundColor, color: tone.color };
 }
 
 function getUserFullName(user: UserRecord): string {
@@ -286,32 +322,5 @@ function getUserFullName(user: UserRecord): string {
 }
 
 function getUserRoles(user: UserRecord): string[] {
-  const sourceRoles: UserRoleRecord[] = Array.isArray(user.roles)
-    ? user.roles
-    : user.rol
-      ? [user.rol]
-      : [];
-
-  const normalizedRoles = sourceRoles
-    .map((role) => {
-      if (typeof role === 'string') return role.trim();
-      if (typeof role?.rol === 'string') return role.rol.trim();
-      if (role?.rol && typeof role.rol === 'object') {
-        if (typeof role.rol.rol === 'string') return role.rol.rol.trim();
-        if (typeof role.rol.nombre === 'string') return role.rol.nombre.trim();
-      }
-      if (typeof role?.nombre === 'string') return role.nombre.trim();
-      return '';
-    })
-    .filter(Boolean);
-
-  return Array.from(new Set(normalizedRoles));
-}
-
-function normalizeText(value?: string | null): string {
-  return (value ?? '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+  return extractUserRoles(user);
 }

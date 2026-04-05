@@ -7,6 +7,7 @@ import type {
 } from "@/interfaces/blog.interface";
 import toast from "react-hot-toast";
 import { FilterCard, FilterSearchInput, FilterSelect } from "@/components/ui/AppFilters";
+import { getPublicationStatusStyles } from "@/shared/ui/statusStyles";
 import agregarIcon from "../../../assets/images/Agregar.png";
 import borrarIcon from "../../../assets/images/Borrar.png";
 import editarDosIcon from "../../../assets/images/editar2.png";
@@ -302,17 +303,6 @@ export function ContentPage() {
       return "No fue posible eliminar el articulo.";
     }
   }
-}
-
-function getPublicationStatusStyles(publicado?: boolean | null): {
-  backgroundColor: string;
-  color: string;
-} {
-  if (publicado === true) {
-    return { backgroundColor: "#DBFCE7", color: "#4D8236" };
-  }
-
-  return { backgroundColor: "#FFEDD4", color: "#CA5874" };
 }
 
 function getMainImageUrl(images?: BlogImageRecord[] | null): string | null {

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { getHighestPriorityRoleLabel } from "@/shared/auth/role.utils";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { getFullImageUrl } from "@/shared/utils/imageUrl";
 import {
   getAvailableModules,
   MODULE_LABELS,
@@ -47,7 +49,7 @@ export function AppShell() {
       icon: MODULE_ICONS[module],
     }));
 
-  const primaryRoleDisplay = user?.roles?.[0] || "Sin rol asignado";
+  const primaryRoleDisplay = user ? getHighestPriorityRoleLabel(user) : "Sin rol asignado";
   const pageTitle = getPageTitle(location.pathname);
   const displayName = user
     ? `${user.nombres || ""} ${user.apellido_paterno || ""}`.trim() ||
@@ -190,7 +192,7 @@ export function AppShell() {
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-900 text-sm font-bold text-white shadow-sm">
                   {user?.foto_url ? (
                     <img
-                      src={user.foto_url}
+                      src={getFullImageUrl(user.foto_url)}
                       alt={displayName}
                       className="h-full w-full object-cover"
                     />

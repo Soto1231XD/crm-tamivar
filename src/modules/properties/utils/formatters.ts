@@ -1,19 +1,12 @@
-import { PROPERTY_STATUS_STYLES } from "./property-constants";
 import type { EsquemaComercial, PropertyRecord } from "@/interfaces/property.interface";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+export { getFullImageUrl } from "@/shared/utils/imageUrl";
+import { getPropertyStatusStyles as getSharedPropertyStatusStyles } from "@/shared/ui/statusStyles";
 
 export function getPropertyStatusStyles(estatus: string): {
   backgroundColor: string;
   color: string;
 } {
-  const normalizedStatus = estatus.trim().toLowerCase();
-  return (
-    PROPERTY_STATUS_STYLES[normalizedStatus] ?? {
-      backgroundColor: "#E2E8F0",
-      color: "#334155",
-    }
-  );
+  return getSharedPropertyStatusStyles(estatus);
 }
 
 export function formatDireccion(direccion: {
@@ -145,18 +138,6 @@ export function formatDate(dateString: string | Date | undefined): string {
     year: "numeric",
   });
 }
-
-// Imágenes
-export const getFullImageUrl = (url: string) => {
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-
-  const cleanBaseUrl = API_BASE_URL.replace(/\/$/, "");
-  const cleanPath = url.startsWith("/") ? url : `/${url}`;
-
-  return `${cleanBaseUrl}${cleanPath}`;
-};
 
 // Limpiar emojis en PDF
 export const stripEmojis = (text: string): string => {

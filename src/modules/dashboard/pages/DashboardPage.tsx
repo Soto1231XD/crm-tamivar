@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { BlogRecord } from "@/interfaces/blog.interface";
-import type { UserRecord, UserRoleRecord } from "@/interfaces/user.interface";
+import type { UserRecord } from "@/interfaces/user.interface";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { extractUserRoles, getHighestPriorityRoleLabel } from "@/shared/auth/role.utils";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { canAccessDashboard } from "@/shared/auth/navigation.util";
 import { getBlogs } from "../../content/services/content.api";
@@ -63,7 +64,7 @@ export function DashboardPage() {
     ? `${user.nombres || ""} ${user.apellido_paterno || ""}`.trim() ||
       user.correo_electronico
     : "Usuario";
-  const primaryRoleDisplay = user?.roles?.[0] || "Sin rol asignado";
+  const primaryRoleDisplay = user ? getHighestPriorityRoleLabel(user) : "Sin rol asignado";
   const canViewDashboard = canAccessDashboard(userPermissions);
   const dashboardCards = getVisibleDashboardCards(can);
   const dashboardSections = getVisibleDashboardSections(can);
@@ -163,6 +164,7 @@ export function DashboardPage() {
                 nombres: item.nombres ?? "Sin nombre",
                 apellido_paterno: item.apellido_paterno ?? "",
                 correo_electronico: item.correo_electronico ?? "Sin correo",
+                foto_url: item.foto_url ?? null,
                 rol: typeof item.rol === "string" ? item.rol : undefined,
                 roles: getUserRoles(item),
               }))
@@ -343,24 +345,5 @@ function normalizePropertyStatus(status?: string | null): string {
 }
 
 function getUserRoles(user: UserRecord): string[] {
-  const sourceRoles: UserRoleRecord[] = Array.isArray(user.roles)
-    ? user.roles
-    : user.rol
-      ? [user.rol]
-      : [];
-
-  const normalizedRoles = sourceRoles
-    .map((role) => {
-      if (typeof role === "string") return role.trim();
-      if (typeof role?.rol === "string") return role.rol.trim();
-      if (role?.rol && typeof role.rol === "object") {
-        if (typeof role.rol.rol === "string") return role.rol.rol.trim();
-        if (typeof role.rol.nombre === "string") return role.rol.nombre.trim();
-      }
-      if (typeof role?.nombre === "string") return role.nombre.trim();
-      return "";
-    })
-    .filter(Boolean);
-
-  return Array.from(new Set(normalizedRoles));
+  return extractUserRoles(user);
 }

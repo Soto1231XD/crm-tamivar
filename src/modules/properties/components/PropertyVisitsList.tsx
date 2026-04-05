@@ -1,7 +1,12 @@
+import { getSoftBadgeStyles } from "@/components/ui/badgeStyles";
 import { formatDate } from "../utils/formatters";
 import { getFullImageUrl } from "../utils/formatters";
 
-export const PropertyVisitsList = ({ propertyId }: { propertyId: number }) => {
+export const PropertyVisitsList = () => {
+  const countBadgeStyles = getSoftBadgeStyles("indigo");
+  const completedBadgeStyles = getSoftBadgeStyles("green");
+  const pendingBadgeStyles = getSoftBadgeStyles("amber");
+
   const mockVisitas = [
     {
       id: 1,
@@ -36,7 +41,10 @@ export const PropertyVisitsList = ({ propertyId }: { propertyId: number }) => {
         <h3 className="text-xl font-bold text-slate-900">
           Historial de Visitas
         </h3>
-        <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-200">
+        <span
+          className="rounded-full border px-3 py-1.5 text-xs font-black"
+          style={countBadgeStyles}
+        >
           {mockVisitas.length} REGISTROS TOTALES
         </span>
       </div>
@@ -100,11 +108,8 @@ export const PropertyVisitsList = ({ propertyId }: { propertyId: number }) => {
               {/* BLOQUE DERECHO: Estado */}
               <div className="flex items-center justify-end min-w-[120px]">
                 <span
-                  className={`w-full sm:w-auto text-center px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border-2 shadow-sm ${
-                    visita.estado === "Completada"
-                      ? "bg-green-50 text-green-700 border-green-300"
-                      : "bg-amber-50 text-amber-700 border-amber-300"
-                  }`}
+                  className="w-full rounded-full border px-4 py-2 text-center text-[10px] font-black uppercase tracking-widest shadow-sm sm:w-auto"
+                  style={visita.estado === "Completada" ? completedBadgeStyles : pendingBadgeStyles}
                 >
                   {visita.estado}
                 </span>

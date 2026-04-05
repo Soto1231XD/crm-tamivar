@@ -39,6 +39,7 @@ export interface CreateUserPayload {
   correo_electronico: string;
   contrasena: string;
   foto_url?: string;
+  photoFile?: File | null;
   folio_certificacion?: string;
   creado_por_id?: number;
   roles_ids: number[];
