@@ -4,23 +4,31 @@ import {
   createLead,
   deleteLead,
   getLeads,
+  getLeadsByProperty,
   updateLead,
 } from '../services/leads.api';
 
 export interface LeadsState {
   leads: LeadRecord[];
+  propertyLeads: LeadRecord[];
   isLoading: boolean;
   error: string | null;
   fetchLeads: () => Promise<void>;
+  fetchLeadsByProperty: (propertyId: number) => Promise<void>;
   addLead: (payload: CreateLeadPayload) => Promise<LeadRecord>;
   editLead: (id: number, payload: UpdateLeadPayload) => Promise<LeadRecord>;
   removeLead: (id: number) => Promise<void>;
+  clearPropertyLeads: () => void;
 }
 
 export const useLeadsStore = create<LeadsState>((set) => ({
   leads: [],
+  propertyLeads: [],
   isLoading: false,
   error: null,
+  clearPropertyLeads: () => {
+    set({ propertyLeads: [], error: null });
+  },
 
   fetchLeads: async () => {
     set({ isLoading: true, error: null });
@@ -30,6 +38,19 @@ export const useLeadsStore = create<LeadsState>((set) => ({
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Error al cargar los registros',
+        isLoading: false,
+      });
+    }
+  },
+
+  fetchLeadsByProperty: async (propertyId: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await getLeadsByProperty(propertyId);
+      set({ propertyLeads: data, isLoading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Error al cargar los registros de la propiedad',
         isLoading: false,
       });
     }

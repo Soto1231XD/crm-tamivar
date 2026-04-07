@@ -15,6 +15,7 @@ import {
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
+import { BadgeSelect } from "@/components/ui/BadgeSelect";
 import {
   formatDireccion,
   getPropertyStatusStyles,
@@ -218,46 +219,15 @@ export function PropertiesPage() {
       {
         header: "Estado",
         render: (property) => (
-          <div className="relative inline-block w-[140px]">
-            <select
-              value={property.estatus}
-              onChange={(event) =>
-                handleStatusChange(property.id, event.target.value)
-              }
-              disabled={updatingStatusId === property.id || !canEdit}
-              className="w-full appearance-none cursor-pointer rounded-full border-0 px-4 py-1.5 text-left text-xs font-semibold shadow-sm outline-none ring-1 ring-inset ring-slate-200 transition-all hover:ring-slate-300 focus:ring-2 focus:ring-[#312C85] disabled:cursor-not-allowed disabled:opacity-70"
-              style={getPropertyStatusStyles(property.estatus)}
-            >
-              {STATUS_OPTIONS.filter(
-                (option) => option !== "Todos los estados",
-              ).map((option) => (
-                <option
-                  key={option}
-                  value={option}
-                  className="bg-white text-slate-800 font-medium"
-                >
-                  {option}
-                </option>
-              ))}
-            </select>
-
-            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-current opacity-70">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </span>
-          </div>
+          <BadgeSelect
+            value={property.estatus}
+            options={STATUS_OPTIONS}
+            onChange={(val) => handleStatusChange(property.id, val)}
+            disabled={updatingStatusId === property.id}
+            canEdit={canEdit}
+            getStyles={getPropertyStatusStyles}
+            omitFirstOption={true}
+          />
         ),
       },
     ],

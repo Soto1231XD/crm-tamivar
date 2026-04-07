@@ -6,6 +6,11 @@ export async function getLeads(): Promise<LeadRecord[]> {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getLeadsByProperty(propertyId: number): Promise<LeadRecord[]> {
+  const data = await apiRequest<LeadRecord[]>(`/registros/property/${propertyId}`);
+  return Array.isArray(data) ? data : [];
+}
+
 export async function createLead(payload: CreateLeadPayload, accessToken?: string | null): Promise<LeadRecord> {
   void accessToken;
   return apiRequest<LeadRecord>('/registros', {
