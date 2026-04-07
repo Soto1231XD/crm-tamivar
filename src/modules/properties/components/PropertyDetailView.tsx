@@ -727,7 +727,7 @@ export const PropertyDetailView = () => {
         </>
       ) : (
         /* Pestaña de visitas */
-        <PropertyVisitsList />
+        <PropertyVisitsList propertyId={currentProperty.id} />
       )}
     </div>
   );
