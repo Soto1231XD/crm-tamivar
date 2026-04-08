@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
+import type { NuevaImagen } from "@/interfaces/property.interface";
 
 export function EditPropertyPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export function EditPropertyPage() {
     files,
   }: {
     payload: PropertySubmitPayload;
-    files: File[];
+    files: NuevaImagen[];
   }): Promise<string | null> {
     if (!currentProperty) return "No se encontró la propiedad.";
 

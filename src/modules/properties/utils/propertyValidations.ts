@@ -1,3 +1,5 @@
+import type { Imagen, NuevaImagen } from "@/interfaces/property.interface";
+
 export type FormState = {
   titulo: string;
   tipo_inmueble: string;
@@ -49,8 +51,8 @@ export type FormState = {
   pisos_tiene: string;
   servicios_instalaciones: string;
   amenidades: string;
-  imagenes: File[];
-  imagenes_existentes: any[];
+  imagenes: NuevaImagen[];
+  imagenes_existentes: Imagen[];
 };
 
 export interface ParsedNumbers {
@@ -141,6 +143,29 @@ export function validatePropertyForm(
 
   if (form.tipos_pago.length === 0) {
     errors.tipos_pago = "Debes seleccionar al menos un método de pago.";
+  }
+
+  const hasImages =
+    form.imagenes.length > 0 || form.imagenes_existentes.length > 0;
+
+  if (!hasImages) {
+    errors.imagenes = "Debes agregar al menos una imagen.";
+  }
+
+  const hasUntitledNewImage = form.imagenes.some(
+    (image) => image.titulo.trim().length === 0,
+  );
+
+  if (hasUntitledNewImage) {
+    errors.imagenes = "Cada imagen nueva debe tener un título.";
+  }
+
+  const hasUntitledExistingImage = form.imagenes_existentes.some(
+    (image) => image.titulo.trim().length === 0,
+  );
+
+  if (hasUntitledExistingImage) {
+    errors.imagenes = "Cada imagen guardada debe conservar un título.";
   }
 
   if (form.smz && Number.isNaN(parsed.smz)) {

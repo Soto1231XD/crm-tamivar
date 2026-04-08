@@ -5,6 +5,7 @@ import type {
   CreateBlogPayload,
   UpdateBlogPayload,
 } from '@/interfaces/blog.interface';
+import type { NuevaImagen } from '@/interfaces/property.interface';
 import { AppModal } from '@/components/ui/AppModal';
 import { ImageGridUploader } from '../../properties/components/ImageGridUploader';
 
@@ -142,6 +143,12 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
     setSelectedFiles((current) => current.filter((_, index) => index !== indexToRemove));
   }
 
+  const uploaderImages: NuevaImagen[] = selectedFiles.map((file, index) => ({
+    file,
+    titulo: file.name.replace(/\.[^/.]+$/, ''),
+    principal: index === 0,
+  }));
+
   function removeExistingImage(indexToRemove: number) {
     setForm((current) => ({
       ...current,
@@ -263,11 +270,14 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
 
             <ImageGridUploader
               label="Imágenes del articulo"
-              images={selectedFiles}
-              existingImages={form.imagenes}
+              images={uploaderImages}
+              existingImages={form.imagenes as BlogImageRecord[]}
               onAddImages={handleAddImages}
               onRemoveImage={handleRemoveImage}
               onRemoveExistingImage={removeExistingImage}
+              onUpdateImageTitle={() => undefined}
+              onUpdateExistingImageTitle={() => undefined}
+              onSetPrimaryImage={() => undefined}
             />
           </div>
         </div>

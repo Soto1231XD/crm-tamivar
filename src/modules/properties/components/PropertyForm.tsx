@@ -20,6 +20,7 @@ import {
   TYPE_OPTIONS,
 } from "../utils/property-constants";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
+import type { NuevaImagen } from "@/interfaces/property.interface";
 
 type PropertyFormProps = {
   property?: PropertyRecord | null;
@@ -29,7 +30,7 @@ type PropertyFormProps = {
   onCancel: () => void;
   onSubmit: (data: {
     payload: PropertySubmitPayload;
-    files: File[];
+    files: NuevaImagen[];
   }) => Promise<string | null>;
 };
 
@@ -104,6 +105,9 @@ export function PropertyForm({
     handleAddImages,
     handleRemoveImage,
     handleRemoveExistingImage,
+    handleImageTitleChange,
+    handleExistingImageTitleChange,
+    handleSetPrimaryImage,
     handleSubmit,
   } = usePropertyForm(property, onSubmit);
 
@@ -621,8 +625,12 @@ export function PropertyForm({
               images={form.imagenes}
               onAddImages={handleAddImages}
               onRemoveImage={handleRemoveImage}
+              onUpdateImageTitle={handleImageTitleChange}
               existingImages={form.imagenes_existentes}
               onRemoveExistingImage={handleRemoveExistingImage}
+              onUpdateExistingImageTitle={handleExistingImageTitleChange}
+              onSetPrimaryImage={handleSetPrimaryImage}
+              error={errors.imagenes}
             />
             <FieldTextarea
               label="Comentarios"

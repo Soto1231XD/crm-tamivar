@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
 import { usePropertiesStore, type PropertiesState } from "../store/usePropertiesStore";
-import type { CreatePropertyPayload } from "@/interfaces/property.interface";
+import type { CreatePropertyPayload, NuevaImagen } from "@/interfaces/property.interface";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 
 export function CreatePropertyPage() {
@@ -22,7 +22,7 @@ export function CreatePropertyPage() {
     files,
   }: {
     payload: PropertySubmitPayload;
-    files: File[];
+    files: NuevaImagen[];
   }): Promise<string | null> {
     try {
       setIsSubmitting(true);

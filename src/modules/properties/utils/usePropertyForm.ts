@@ -4,6 +4,9 @@ import type {
   CreatePropertyPayload,
   EsquemaComercial,
   UpdatePropertyPayload,
+  NuevaImagen,
+  Imagen,
+  ImagenMetadata,
 } from "@/interfaces/property.interface";
 import {
   validatePropertyForm,
@@ -34,6 +37,11 @@ export type PropertySubmitPayload =
   | Omit<CreatePropertyPayload, "creado_por_id">
   | UpdatePropertyPayload;
 
+type PropertyFormSubmitData = {
+  payload: PropertySubmitPayload;
+  files: NuevaImagen[];
+};
+
 const TERRAIN_RESET_VALUES: Partial<FormState> = {
   construccion_m2: "0",
   recamaras: "0",
@@ -56,6 +64,33 @@ const TERRAIN_RESET_VALUES: Partial<FormState> = {
 
 function parseFormattedNumber(value: string): number {
   return Number(value.replace(/,/g, ""));
+}
+
+function getDefaultImageTitle(fileName: string): string {
+  return fileName.replace(/\.[^/.]+$/, "").replace(/[_-]+/g, " ").trim();
+}
+
+function ensureSinglePrimary<T extends { principal: boolean }>(images: T[]): T[] {
+  if (images.length === 0) {
+    return images;
+  }
+
+  let primaryFound = false;
+
+  const normalized = images.map((image) => {
+    if (!primaryFound && image.principal) {
+      primaryFound = true;
+      return image;
+    }
+
+    return { ...image, principal: false };
+  });
+
+  if (!primaryFound) {
+    normalized[0] = { ...normalized[0], principal: true };
+  }
+
+  return normalized;
 }
 
 function formatCurrencyInput(value: string): string {
@@ -327,6 +362,7 @@ function buildInitialPayload(
           boiler: Boolean(property.caracteristicas?.boiler),
         },
     imagenes: Array.isArray(property.imagenes) ? property.imagenes : [],
+    imagenes_nuevas_metadata: [],
   };
 }
 
@@ -384,10 +420,7 @@ function getChangedPayload(
 
 export function usePropertyForm(
   property: PropertyRecord | null | undefined,
-  onSubmit: (data: {
-    payload: PropertySubmitPayload;
-    files: File[];
-  }) => Promise<string | null>,
+  onSubmit: (data: PropertyFormSubmitData) => Promise<string | null>,
 ) {
   const [form, setForm] = useState<FormState>(() => toFormState(property));
   const [submitError, setSubmitError] = useState("");
@@ -475,26 +508,86 @@ export function usePropertyForm(
       const newFiles = Array.from(event.target.files);
       setForm((prev) => ({
         ...prev,
-        imagenes: [...prev.imagenes, ...newFiles],
+        imagenes: ensureSinglePrimary([
+          ...prev.imagenes,
+          ...newFiles.map((file, index) => ({
+            file,
+            titulo: getDefaultImageTitle(file.name),
+            principal:
+              prev.imagenes.length === 0 &&
+              prev.imagenes_existentes.length === 0 &&
+              index === 0,
+          })),
+        ]),
       }));
     }
     event.target.value = "";
   }
 
   function handleRemoveImage(indexToRemove: number) {
-    setForm((prev) => ({
-      ...prev,
-      imagenes: prev.imagenes.filter((_, index) => index !== indexToRemove),
-    }));
+    setForm((prev) => {
+      const nextImages = ensureSinglePrimary(
+        prev.imagenes.filter((_, index) => index !== indexToRemove),
+      );
+
+      return {
+        ...prev,
+        imagenes: nextImages,
+      };
+    });
   }
 
   function handleRemoveExistingImage(indexToRemove: number) {
+    setForm((prev) => {
+      const nextExistingImages = ensureSinglePrimary(
+        prev.imagenes_existentes.filter((_, index) => index !== indexToRemove),
+      );
+
+      return {
+        ...prev,
+        imagenes_existentes: nextExistingImages,
+      };
+    });
+  }
+
+  function handleImageTitleChange(index: number, titulo: string) {
     setForm((prev) => ({
       ...prev,
-      imagenes_existentes: prev.imagenes_existentes.filter(
-        (_, index) => index !== indexToRemove,
+      imagenes: prev.imagenes.map((image, currentIndex) =>
+        currentIndex === index ? { ...image, titulo } : image,
       ),
     }));
+  }
+
+  function handleExistingImageTitleChange(index: number, titulo: string) {
+    setForm((prev) => ({
+      ...prev,
+      imagenes_existentes: prev.imagenes_existentes.map((image, currentIndex) =>
+        currentIndex === index ? { ...image, titulo } : image,
+      ),
+    }));
+  }
+
+  function handleSetPrimaryImage(type: "new" | "existing", index: number) {
+    setForm((prev) => {
+      const nextNewImages = prev.imagenes.map((image, currentIndex) => ({
+        ...image,
+        principal: type === "new" && currentIndex === index,
+      }));
+
+      const nextExistingImages = prev.imagenes_existentes.map(
+        (image, currentIndex) => ({
+          ...image,
+          principal: type === "existing" && currentIndex === index,
+        }),
+      );
+
+      return {
+        ...prev,
+        imagenes: nextNewImages,
+        imagenes_existentes: nextExistingImages,
+      };
+    });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -630,7 +723,19 @@ export function usePropertyForm(
             aire_acondicionado: form.aire_acondicionado,
             boiler: form.boiler,
           },
-      imagenes: form.imagenes_existentes,
+      imagenes: ensureSinglePrimary(
+        form.imagenes_existentes.map((image: Imagen) => ({
+          url: image.url,
+          titulo: image.titulo.trim(),
+          principal: Boolean(image.principal),
+        })),
+      ),
+      imagenes_nuevas_metadata: ensureSinglePrimary(
+        form.imagenes.map((image): ImagenMetadata => ({
+          titulo: image.titulo.trim(),
+          principal: Boolean(image.principal),
+        })),
+      ),
     };
 
     let payload: PropertySubmitPayload = propertyData;
@@ -642,7 +747,10 @@ export function usePropertyForm(
         initialPayload as Record<string, unknown>,
       ) as UpdatePropertyPayload;
 
-      if (Object.keys(changedPayload).length === 0 && form.imagenes.length === 0) {
+      if (
+        Object.keys(changedPayload).length === 0 &&
+        form.imagenes.length === 0
+      ) {
         setSubmitError("No se detectaron cambios para guardar.");
         return;
       }
@@ -670,6 +778,9 @@ export function usePropertyForm(
     handleAddImages,
     handleRemoveImage,
     handleRemoveExistingImage,
+    handleImageTitleChange,
+    handleExistingImageTitleChange,
+    handleSetPrimaryImage,
     handleSubmit,
   };
 }

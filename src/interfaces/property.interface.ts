@@ -85,10 +85,20 @@ export interface Imagen {
   principal: boolean;
 }
 
+export interface ImagenMetadata {
+  titulo: string;
+  principal: boolean;
+}
+
+export interface NuevaImagen extends ImagenMetadata {
+  file: File;
+}
+
 // Payloads para peticiones
 export type CreatePropertyPayload = 
   Omit<PropertyRecord, 'id' | 'carpeta_id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador'> & {
-  imagenes?: Imagen[]; 
+  imagenes?: Imagen[];
+  imagenes_nuevas_metadata?: ImagenMetadata[];
 };
 
 export type UpdatePropertyPayload = Partial<CreatePropertyPayload> & {
