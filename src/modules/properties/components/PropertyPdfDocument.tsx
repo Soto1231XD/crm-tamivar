@@ -9,9 +9,8 @@ import {
 import type { PropertyRecord } from "@/interfaces/property.interface";
 import {
   formatCurrency,
-  formatFullDireccion,
+  formatPublicDireccion,
   calculateFinalPrice,
-  getFullImageUrl,
   getPropertyStatusStyles,
 } from "../utils/formatters";
 import Logo from "@/assets/images/Logo.png";
@@ -266,7 +265,7 @@ export const PropertyPdfDocument = ({
             <View style={styles.col12}>
               <Text style={styles.label}>Dirección</Text>
               <Text style={styles.valueBold}>
-                {formatFullDireccion(property.direccion)}
+                {formatPublicDireccion(property.direccion)}
               </Text>
             </View>
 
@@ -441,7 +440,8 @@ export const PropertyPdfDocument = ({
         <View style={styles.section} wrap={false}>
           <Text style={styles.sectionTitle}>Descripción General</Text>
           <Text style={styles.textParagraph}>
-            {stripEmojis(property.descripcion || "") || "Sin descripción proporcionada."}
+            {stripEmojis(property.descripcion || "") ||
+              "Sin descripción proporcionada."}
           </Text>
         </View>
 
@@ -451,7 +451,9 @@ export const PropertyPdfDocument = ({
             <Text style={styles.sectionTitle}>
               Amenidades de la Zona/Complejo
             </Text>
-            <Text style={styles.textParagraph}>{stripEmojis(property.amenidades)}</Text>
+            <Text style={styles.textParagraph}>
+              {stripEmojis(property.amenidades)}
+            </Text>
           </View>
         )}
 
@@ -488,15 +490,7 @@ export const PropertyPdfDocument = ({
             <View style={styles.galleryGrid}>
               {property.imagenes.map((img, idx) => (
                 <View key={idx} style={styles.galleryCol} wrap={false}>
-                  <Image
-                    src={getFullImageUrl(img.url)}
-                    style={styles.galleryImage}
-                  />
-                  {img.titulo ? (
-                    <Text style={[styles.value, { marginTop: 6 }]}>
-                      {stripEmojis(img.titulo)}
-                    </Text>
-                  ) : null}
+                  <Image src={img.url} style={styles.galleryImage} />
                 </View>
               ))}
             </View>

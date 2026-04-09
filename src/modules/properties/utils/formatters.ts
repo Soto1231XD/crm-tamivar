@@ -1,4 +1,7 @@
-import type { EsquemaComercial, PropertyRecord } from "@/interfaces/property.interface";
+import type {
+  EsquemaComercial,
+  PropertyRecord,
+} from "@/interfaces/property.interface";
 export { getFullImageUrl } from "@/shared/utils/imageUrl";
 import { getPropertyStatusStyles as getSharedPropertyStatusStyles } from "@/shared/ui/statusStyles";
 
@@ -38,6 +41,32 @@ export function formatDireccion(direccion: {
     .filter(Boolean);
 
   return parts.length > 0 ? parts.join(", ") : "Sin dirección";
+}
+
+export function formatPublicDireccion(direccion?: {
+  smz?: number;
+  cp?: number;
+  municipio?: string;
+  estado?: string;
+}): string {
+  if (!direccion) return "Ubicación no especificada";
+
+  const parts = [
+    direccion.smz != null ? `SMZ ${direccion.smz}` : "",
+    direccion.municipio,
+    direccion.estado,
+    direccion.cp != null ? `CP ${direccion.cp}` : "",
+  ]
+    .map((part) =>
+      typeof part === "string"
+        ? part.trim()
+        : part != null
+          ? String(part).trim()
+          : "",
+    )
+    .filter((part) => part && part !== "undefined");
+
+  return parts.length > 0 ? parts.join(", ") : "Ubicación no especificada";
 }
 
 export function formatFullDireccion(direccion?: {
@@ -109,7 +138,7 @@ export const calculateFinalPrice = (
       finalPrice: precio,
       originalPrice: precio,
       discountAmount: 0,
-      discountPercentage: 0, 
+      discountPercentage: 0,
     };
   }
 
@@ -121,8 +150,8 @@ export const calculateFinalPrice = (
 
   return {
     hasDiscount: true,
-    discountAmount: descuentoCantidad, 
-    finalPrice: finalPrice > 0 ? finalPrice : 0, 
+    discountAmount: descuentoCantidad,
+    finalPrice: finalPrice > 0 ? finalPrice : 0,
     originalPrice: precio,
     discountPercentage,
   };
@@ -142,15 +171,23 @@ export function formatDate(dateString: string | Date | undefined): string {
 // Limpiar emojis en PDF
 export const stripEmojis = (text: string): string => {
   if (!text) return "";
-  
-  return text
-    // Elimina Emojis
-    .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
-    // Elimina caracteres especiales que causan ruido visual en PDFs
-    .replace(/[^\x00-\x7F\x80-\xFF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]/g, '')
-    // Limpia espacios dobles que puedan quedar tras la eliminación
-    .replace(/ +(?= )/g, '')
-    .trim();
+
+  return (
+    text
+      // Elimina Emojis
+      .replace(
+        /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
+        "",
+      )
+      // Elimina caracteres especiales que causan ruido visual en PDFs
+      .replace(
+        /[^\x00-\x7F\x80-\xFF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]/g,
+        "",
+      )
+      // Limpia espacios dobles que puedan quedar tras la eliminación
+      .replace(/ +(?= )/g, "")
+      .trim()
+  );
 };
 
 export function getCommercialSchemes(

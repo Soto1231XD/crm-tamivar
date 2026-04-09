@@ -57,3 +57,40 @@ export const processImageToWebP = async (
       reject(new Error("Error al leer el archivo original"));
   });
 };
+
+// Procesa una imagen, convierte a JPEG
+export async function getPdfCompatibleImage(
+  imageUrl: string,
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+
+    img.crossOrigin = "Anonymous";
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        console.warn("No se pudo crear el contexto 2D para PDF");
+        return resolve(null);
+      }
+
+      // Dibujamos el WebP original en el canvas
+      ctx.drawImage(img, 0, 0);
+
+      // Lo exportamos como JPEG (calidad 0.8 es un buen balance peso/calidad)
+      const jpegBase64 = canvas.toDataURL("image/jpeg", 0.8);
+      resolve(jpegBase64);
+    };
+
+    img.onerror = () => {
+      console.warn("Error cargando imagen para conversión a PDF:", imageUrl);
+      resolve(null); // Resolvemos con null para omitir esa imagen sin romper el PDF
+    };
+
+    img.src = imageUrl;
+  });
+}
