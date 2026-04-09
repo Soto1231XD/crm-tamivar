@@ -6,7 +6,11 @@ import type {
   UpdateBlogPayload,
 } from "@/interfaces/blog.interface";
 import toast from "react-hot-toast";
-import { FilterCard, FilterSearchInput, FilterSelect } from "@/components/ui/AppFilters";
+import {
+  FilterCard,
+  FilterSearchInput,
+  FilterSelect,
+} from "@/components/ui/AppFilters";
 import { getPublicationStatusStyles } from "@/shared/ui/statusStyles";
 import agregarIcon from "../../../assets/images/Agregar.png";
 import borrarIcon from "../../../assets/images/Borrar.png";
@@ -16,6 +20,7 @@ import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { ContentModal } from "../components/ContentModal";
 import { DeleteContentConfirmModal } from "../components/DeleteContentConfirmModal";
 import { useContentStore } from "../store/useContentStore";
+import { processImageToWebP } from "@/shared/utils/imageProcessor";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const ALL_CONTENT_STATES = "Todos los estados";
@@ -57,7 +62,9 @@ export function ContentPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900">Contenido</h2>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">
+            Contenido
+          </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
             Gestiona blogs y artículos del sitio web
           </p>
@@ -87,7 +94,10 @@ export function ContentPage() {
             onChange={(event) => setSearch(event.target.value)}
           />
 
-          <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <FilterSelect
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
             {[ALL_CONTENT_STATES, "Publicado", "Borrador"].map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -247,7 +257,13 @@ export function ContentPage() {
     files: File[],
   ): Promise<string | null> {
     try {
-      await addBlog(payload as CreateBlogPayload, files);
+      const optimizedFiles = await Promise.all(
+        files.map(async (file) => {
+          return await processImageToWebP(file);
+        }),
+      );
+
+      await addBlog(payload as CreateBlogPayload, optimizedFiles);
       toast.success("El artículo se creó con éxito.");
       return null;
     } catch (error) {
@@ -263,7 +279,13 @@ export function ContentPage() {
     files: File[],
   ): Promise<string | null> {
     try {
-      await editBlog(blogId, payload, files);
+      const optimizedFiles = await Promise.all(
+        files.map(async (file) => {
+          return await processImageToWebP(file);
+        }),
+      );
+
+      await editBlog(blogId, payload, optimizedFiles);
       toast.success("El artículo se actualizó con éxito.");
       return null;
     } catch (error) {
@@ -296,7 +318,9 @@ export function ContentPage() {
     try {
       await removeBlog(blogId);
       setDeletingBlog(null);
-      toast.success(`El articulo "${targetBlog?.titulo ?? 'seleccionado'}" se elimino con éxito.`);
+      toast.success(
+        `El articulo "${targetBlog?.titulo ?? "seleccionado"}" se elimino con éxito.`,
+      );
       return null;
     } catch {
       toast.error("No fue posible eliminar el articulo.");

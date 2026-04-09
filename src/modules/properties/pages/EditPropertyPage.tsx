@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
+import { processImageToWebP } from "@/shared/utils/imageProcessor";
 
 export function EditPropertyPage() {
   const navigate = useNavigate();
@@ -36,7 +37,6 @@ export function EditPropertyPage() {
     navigate("/modulos/propiedades");
   }
 
-  // Mantenemos la misma firma que espera tu PropertyForm ({ payload, files })
   async function handleEditProperty({
     payload,
     files,
@@ -46,14 +46,17 @@ export function EditPropertyPage() {
   }): Promise<string | null> {
     if (!currentProperty) return "No se encontró la propiedad.";
 
+    // Optimizar las imágenes a WebP
+    const optimizedFiles = await Promise.all(
+      files.map(async (file) => {
+        return await processImageToWebP(file);
+      }),
+    );
+
     try {
       setIsSubmitting(true);
 
-      await editProperty(
-        currentProperty.id,
-        payload,
-        files,
-      );
+      await editProperty(currentProperty.id, payload, optimizedFiles);
 
       toast.success("La propiedad se actualizó con éxito.");
       navigate("/modulos/propiedades");

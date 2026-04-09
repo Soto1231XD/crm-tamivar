@@ -1,7 +1,11 @@
-import { apiRequest } from '../../../shared/apiRequest';
-import type { BlogRecord, CreateBlogPayload, UpdateBlogPayload } from '@/interfaces/blog.interface';
+import { apiRequest } from "../../../shared/apiRequest";
+import type {
+  BlogRecord,
+  CreateBlogPayload,
+  UpdateBlogPayload,
+} from "@/interfaces/blog.interface";
 
-const PATH = '/blogs';
+const PATH = "/blogs";
 
 export async function getBlogs(): Promise<BlogRecord[]> {
   const data = await apiRequest<BlogRecord[]>(PATH);
@@ -12,14 +16,17 @@ export async function getBlog(id: number): Promise<BlogRecord> {
   return apiRequest<BlogRecord>(`${PATH}/${id}`);
 }
 
-export async function createBlog(payload: CreateBlogPayload, files: File[] = []): Promise<BlogRecord> {
+export async function createBlog(
+  payload: CreateBlogPayload,
+  files: File[] = [],
+): Promise<BlogRecord> {
   const formData = new FormData();
 
-  files.forEach((file) => formData.append('files', file));
-  formData.append('datos', JSON.stringify(payload));
+  files.forEach((file) => formData.append("files", file));
+  formData.append("datos", JSON.stringify(payload));
 
   return apiRequest<BlogRecord>(PATH, {
-    method: 'POST',
+    method: "POST",
     data: formData,
   });
 }
@@ -31,17 +38,25 @@ export async function updateBlog(
 ): Promise<BlogRecord> {
   const formData = new FormData();
 
-  files.forEach((file) => formData.append('files', file));
-  formData.append('datos', JSON.stringify(payload));
+  if (payload.carpeta_id) {
+    formData.append("carpeta_id", payload.carpeta_id);
+  }
+
+  // Empaquetamos el resto de los datos
+  formData.append("datos", JSON.stringify(payload));
+
+  if (files && files.length > 0) {
+    files.forEach((file) => formData.append("files", file));
+  }
 
   return apiRequest<BlogRecord>(`${PATH}/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     data: formData,
   });
 }
 
 export async function deleteBlog(id: number): Promise<void> {
   return apiRequest<void>(`${PATH}/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 }

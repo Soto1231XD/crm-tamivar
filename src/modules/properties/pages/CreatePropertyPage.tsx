@@ -2,16 +2,22 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
-import { usePropertiesStore, type PropertiesState } from "../store/usePropertiesStore";
+import {
+  usePropertiesStore,
+  type PropertiesState,
+} from "../store/usePropertiesStore";
 import type { CreatePropertyPayload } from "@/interfaces/property.interface";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
+import { processImageToWebP } from "@/shared/utils/imageProcessor";
 
 export function CreatePropertyPage() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Extraemos la acción addProperty del store de propiedades
-  const addProperty = usePropertiesStore((state: PropertiesState) => state.addProperty);
+  const addProperty = usePropertiesStore(
+    (state: PropertiesState) => state.addProperty,
+  );
 
   function handleCancel() {
     navigate("/modulos/propiedades");
@@ -27,8 +33,15 @@ export function CreatePropertyPage() {
     try {
       setIsSubmitting(true);
 
+      // Optimizar las imágenes a WebP
+      const optimizedFiles = await Promise.all(
+        files.map(async (file) => {
+          return await processImageToWebP(file);
+        }),
+      );
+
       // Llamamos a la acción del Store de Zustand
-      await addProperty(payload as CreatePropertyPayload, files);
+      await addProperty(payload as CreatePropertyPayload, optimizedFiles);
       toast.success("La propiedad se creó con éxito.");
 
       // Si la petición es exitosa, navegamos a la lista
