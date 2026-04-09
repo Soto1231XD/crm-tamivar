@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import type { LeadRecord } from '@/interfaces/lead.interface';
-import { AppModal } from '@/components/ui/AppModal';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 
 type DeleteLeadConfirmModalProps = {
   isOpen: boolean;
@@ -10,62 +9,17 @@ type DeleteLeadConfirmModalProps = {
 };
 
 export function DeleteLeadConfirmModal({ isOpen, lead, onClose, onConfirm }: DeleteLeadConfirmModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-
-  if (!isOpen || !lead) return null;
-  const currentLead = lead;
-
-  async function handleConfirm() {
-    setSubmitError('');
-    setIsSubmitting(true);
-    const error = await onConfirm(currentLead.id);
-    setIsSubmitting(false);
-
-    if (error) {
-      setSubmitError(error);
-      return;
-    }
-
-    onClose();
-  }
-
   return (
-    <AppModal
+    <DeleteConfirmModal
       isOpen={isOpen}
+      entityId={lead?.id ?? null}
+      entityLabel={`${lead?.nombres ?? ''} ${lead?.apellidos ?? ''}`}
+      fallbackLabel="este cliente"
+      descriptionPrefix="Estas por eliminar el registro de"
       onClose={onClose}
+      onConfirm={onConfirm}
       title="Eliminar registro"
       subtitle="Esta acción quitara el registro del flujo comercial actual."
-      maxWidthClassName="max-w-lg"
-      scrollBody={false}
-    >
-      <div className="space-y-5">
-        <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-          <p className="text-sm leading-6 text-slate-700">
-            Estas por eliminar el registro de{' '}
-            <span className="font-semibold text-slate-900">
-              {`${currentLead.nombres ?? ''} ${currentLead.apellidos ?? ''}`.trim() || 'este cliente'}
-            </span>
-            . Esta acción no se puede deshacer desde esta vista.
-          </p>
-        </div>
-
-        {submitError ? <p className="text-sm font-medium text-red-600">{submitError}</p> : null}
-
-        <div className="flex items-center justify-center gap-3 border-t border-slate-200 pt-4">
-          <button type="button" onClick={onClose} className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white">
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={isSubmitting}
-            className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isSubmitting ? 'Eliminando...' : 'Eliminar'}
-          </button>
-        </div>
-      </div>
-    </AppModal>
+    />
   );
 }
