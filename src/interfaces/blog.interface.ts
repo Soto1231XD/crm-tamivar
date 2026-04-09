@@ -15,6 +15,7 @@ export interface BlogAuthorRecord {
 
 export interface BlogRecord {
   id: number;
+  carpeta_id: string;
   titulo: string;
   subtitulo: string;
   slug: string;
@@ -43,4 +44,5 @@ export interface CreateBlogPayload {
 
 export type UpdateBlogPayload = Partial<CreateBlogPayload> & {
   imagenes?: BlogImageRecord[];
+  carpeta_id?: string;
 };

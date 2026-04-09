@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type {
   BlogImageRecord,
   BlogRecord,
@@ -9,7 +9,7 @@ import type { NuevaImagen } from '@/interfaces/property.interface';
 import { AppModal } from '@/components/ui/AppModal';
 import { ImageGridUploader } from '../../properties/components/ImageGridUploader';
 
-type ContentModalMode = 'create' | 'edit';
+type ContentModalMode = "create" | "edit";
 
 type FormState = {
   titulo: string;
@@ -27,28 +27,39 @@ type ContentModalProps = {
   mode: ContentModalMode;
   blog?: BlogRecord | null;
   onClose: () => void;
-  onSubmit: (payload: CreateBlogPayload | UpdateBlogPayload, files: File[]) => Promise<string | null>;
+  onSubmit: (
+    payload: CreateBlogPayload | UpdateBlogPayload,
+    files: File[],
+  ) => Promise<string | null>;
 };
 
 const INITIAL_FORM: FormState = {
-  titulo: '',
-  subtitulo: '',
-  resumen: '',
-  contenido: '',
-  etiquetas: '',
+  titulo: "",
+  subtitulo: "",
+  resumen: "",
+  contenido: "",
+  etiquetas: "",
   publicado: false,
-  fechaPublico: '',
+  fechaPublico: "",
   imagenes: [],
 };
 
 const fieldClassName =
-  'w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10';
+  "w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10";
 
-function FieldLabel({ children, required = false }: { children: string; required?: boolean }) {
+function FieldLabel({
+  children,
+  required = false,
+}: {
+  children: string;
+  required?: boolean;
+}) {
   return (
     <span className="text-sm font-medium text-slate-700">
       {children}
-      {required ? <span className="ml-1 font-semibold text-red-600">*</span> : null}
+      {required ? (
+        <span className="ml-1 font-semibold text-red-600">*</span>
+      ) : null}
     </span>
   );
 }
@@ -58,7 +69,7 @@ function Field({
   value,
   onChange,
   required = false,
-  type = 'text',
+  type = "text",
   placeholder,
 }: {
   label: string;
@@ -111,10 +122,16 @@ function TextArea({
   );
 }
 
-export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentModalProps) {
+export function ContentModal({
+  isOpen,
+  mode,
+  blog,
+  onClose,
+  onSubmit,
+}: ContentModalProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [submitError, setSubmitError] = useState('');
+  const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -122,11 +139,14 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
 
     setForm(getInitialForm(blog));
     setSelectedFiles([]);
-    setSubmitError('');
+    setSubmitError("");
     setIsSubmitting(false);
   }, [isOpen, blog]);
 
-  function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
+  function updateField<K extends keyof FormState>(
+    field: K,
+    value: FormState[K],
+  ) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
@@ -136,11 +156,13 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
       setSelectedFiles((current) => [...current, ...newFiles]);
     }
 
-    event.target.value = '';
+    event.target.value = "";
   }
 
   function handleRemoveImage(indexToRemove: number) {
-    setSelectedFiles((current) => current.filter((_, index) => index !== indexToRemove));
+    setSelectedFiles((current) =>
+      current.filter((_, index) => index !== indexToRemove),
+    );
   }
 
   const uploaderImages: NuevaImagen[] = selectedFiles.map((file, index) => ({
@@ -158,7 +180,7 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitError('');
+    setSubmitError("");
 
     const validationError = validateForm(form);
     if (validationError) {
@@ -166,8 +188,8 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
       return;
     }
 
-    const payload =
-      mode === 'create'
+    let payload =
+      mode === "create"
         ? {
             titulo: form.titulo.trim(),
             subtitulo: form.subtitulo.trim(),
@@ -179,7 +201,18 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
           }
         : buildUpdatePayload(form, blog);
 
-    if (mode === 'edit' && Object.keys(payload).length === 0 && selectedFiles.length === 0) {
+    if (mode === "edit" && blog?.carpeta_id) {
+      payload = {
+        ...payload,
+        carpeta_id: blog.carpeta_id,
+      };
+    }
+
+    if (
+      mode === "edit" &&
+      Object.keys(payload).length === 0 &&
+      selectedFiles.length === 0
+    ) {
       onClose();
       return;
     }
@@ -200,11 +233,11 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === 'create' ? 'Crear articulo' : 'Editar articulo'}
+      title={mode === "create" ? "Crear articulo" : "Editar articulo"}
       subtitle={
-        mode === 'create'
-          ? 'Captura el contenido principal, su contexto editorial y las imágenes del articulo.'
-          : 'Actualiza el contenido publicado sin salir del flujo editorial.'
+        mode === "create"
+          ? "Captura el contenido principal, su contexto editorial y las imágenes del articulo."
+          : "Actualiza el contenido publicado sin salir del flujo editorial."
       }
       maxWidthClassName="max-w-4xl"
       panelClassName="max-h-[88vh]"
@@ -216,25 +249,44 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Información editorial</p>
-            <p className="mt-1 text-sm text-slate-600">Define el enfoque del articulo y como se mostrara en la experiencia de lectura.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Información editorial
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Define el enfoque del articulo y como se mostrara en la
+              experiencia de lectura.
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Titulo" required value={form.titulo} onChange={(value) => updateField('titulo', value)} />
-            <Field label="Subtitulo" required value={form.subtitulo} onChange={(value) => updateField('subtitulo', value)} />
-            <Field label="Resumen" value={form.resumen} onChange={(value) => updateField('resumen', value)} />
+            <Field
+              label="Titulo"
+              required
+              value={form.titulo}
+              onChange={(value) => updateField("titulo", value)}
+            />
+            <Field
+              label="Subtitulo"
+              required
+              value={form.subtitulo}
+              onChange={(value) => updateField("subtitulo", value)}
+            />
+            <Field
+              label="Resumen"
+              value={form.resumen}
+              onChange={(value) => updateField("resumen", value)}
+            />
             <Field
               label="Etiquetas"
               placeholder="Ej. mercado, lujo, inversion"
               value={form.etiquetas}
-              onChange={(value) => updateField('etiquetas', value)}
+              onChange={(value) => updateField("etiquetas", value)}
             />
             <Field
               label="Fecha de publicación"
               type="datetime-local"
               value={form.fechaPublico}
-              onChange={(value) => updateField('fechaPublico', value)}
+              onChange={(value) => updateField("fechaPublico", value)}
             />
 
             <label className="flex flex-col gap-1.5">
@@ -243,10 +295,14 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
                 <input
                   type="checkbox"
                   checked={form.publicado}
-                  onChange={(event) => updateField('publicado', event.target.checked)}
+                  onChange={(event) =>
+                    updateField("publicado", event.target.checked)
+                  }
                   className="h-4 w-4 rounded border-slate-300 text-[#312C85] focus:ring-[#312C85]"
                 />
-                <span className="text-sm text-slate-700">{form.publicado ? 'Publicado' : 'Borrador'}</span>
+                <span className="text-sm text-slate-700">
+                  {form.publicado ? "Publicado" : "Borrador"}
+                </span>
               </div>
             </label>
           </div>
@@ -254,8 +310,13 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Contenido</p>
-            <p className="mt-1 text-sm text-slate-600">Escribe el cuerpo principal del articulo y organiza el soporte visual del contenido.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Contenido
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Escribe el cuerpo principal del articulo y organiza el soporte
+              visual del contenido.
+            </p>
           </div>
 
           <div className="space-y-4">
@@ -264,7 +325,7 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
               required
               rows={8}
               value={form.contenido}
-              onChange={(value) => updateField('contenido', value)}
+              onChange={(value) => updateField("contenido", value)}
               placeholder="Desarrolla aquí el contenido del articulo."
             />
 
@@ -282,10 +343,16 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
           </div>
         </div>
 
-        {submitError ? <p className="text-sm font-medium text-red-600">{submitError}</p> : null}
+        {submitError ? (
+          <p className="text-sm font-medium text-red-600">{submitError}</p>
+        ) : null}
 
         <div className="flex items-center justify-center gap-3 border-t border-slate-200 pt-4">
-          <button type="button" onClick={onClose} className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white"
+          >
             Cancelar
           </button>
           <button
@@ -293,7 +360,11 @@ export function ContentModal({ isOpen, mode, blog, onClose, onSubmit }: ContentM
             disabled={isSubmitting}
             className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar cambios'}
+            {isSubmitting
+              ? "Guardando..."
+              : mode === "create"
+                ? "Crear"
+                : "Guardar cambios"}
           </button>
         </div>
       </form>
@@ -305,11 +376,11 @@ function getInitialForm(blog?: BlogRecord | null): FormState {
   if (!blog) return INITIAL_FORM;
 
   return {
-    titulo: blog.titulo?.trim() || '',
-    subtitulo: blog.subtitulo?.trim() || '',
-    resumen: blog.resumen?.trim() || '',
-    contenido: blog.contenido?.trim() || '',
-    etiquetas: Array.isArray(blog.etiquetas) ? blog.etiquetas.join(', ') : '',
+    titulo: blog.titulo?.trim() || "",
+    subtitulo: blog.subtitulo?.trim() || "",
+    resumen: blog.resumen?.trim() || "",
+    contenido: blog.contenido?.trim() || "",
+    etiquetas: Array.isArray(blog.etiquetas) ? blog.etiquetas.join(", ") : "",
     publicado: blog.publicado === true,
     fechaPublico: toDateTimeLocalValue(blog.fechaPublico),
     imagenes: Array.isArray(blog.imagenes) ? blog.imagenes : [],
@@ -321,7 +392,10 @@ function arraysEqual(left: string[], right: string[]): boolean {
   return left.every((value, index) => value === right[index]);
 }
 
-function imagesEqual(left: BlogImageRecord[], right: BlogImageRecord[]): boolean {
+function imagesEqual(
+  left: BlogImageRecord[],
+  right: BlogImageRecord[],
+): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
@@ -340,7 +414,7 @@ function buildUpdatePayload(
   if (form.subtitulo.trim() !== initial.subtitulo.trim()) {
     payload.subtitulo = form.subtitulo.trim();
   }
-  if ((form.resumen.trim() || '') !== (initial.resumen.trim() || '')) {
+  if ((form.resumen.trim() || "") !== (initial.resumen.trim() || "")) {
     payload.resumen = form.resumen.trim() || undefined;
   }
   if (form.contenido.trim() !== initial.contenido.trim()) {
@@ -352,7 +426,7 @@ function buildUpdatePayload(
   if (form.publicado !== initial.publicado) {
     payload.publicado = form.publicado;
   }
-  if ((form.fechaPublico || '') !== (initial.fechaPublico || '')) {
+  if ((form.fechaPublico || "") !== (initial.fechaPublico || "")) {
     payload.fechaPublico = form.fechaPublico || undefined;
   }
   if (!imagesEqual(form.imagenes, initial.imagenes)) {
@@ -363,26 +437,27 @@ function buildUpdatePayload(
 }
 
 function validateForm(form: FormState): string | null {
-  if (!form.titulo.trim()) return 'Titulo es obligatorio.';
-  if (!form.subtitulo.trim()) return 'Subtitulo es obligatorio.';
-  if (!form.contenido.trim()) return 'Contenido es obligatorio.';
-  if (form.resumen.trim().length > 300) return 'Resumen no puede exceder 300 caracteres.';
+  if (!form.titulo.trim()) return "Titulo es obligatorio.";
+  if (!form.subtitulo.trim()) return "Subtitulo es obligatorio.";
+  if (!form.contenido.trim()) return "Contenido es obligatorio.";
+  if (form.resumen.trim().length > 300)
+    return "Resumen no puede exceder 300 caracteres.";
 
   return null;
 }
 
 function parseTags(value: string): string[] {
   return value
-    .split(',')
+    .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean);
 }
 
 function toDateTimeLocalValue(value?: string | null): string {
-  if (!value) return '';
+  if (!value) return "";
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
+  if (Number.isNaN(date.getTime())) return "";
 
   const offset = date.getTimezoneOffset();
   const localDate = new Date(date.getTime() - offset * 60_000);

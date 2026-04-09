@@ -67,10 +67,15 @@ function parseFormattedNumber(value: string): number {
 }
 
 function getDefaultImageTitle(fileName: string): string {
-  return fileName.replace(/\.[^/.]+$/, "").replace(/[_-]+/g, " ").trim();
+  return fileName
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
 }
 
-function ensureSinglePrimary<T extends { principal: boolean }>(images: T[]): T[] {
+function ensureSinglePrimary<T extends { principal: boolean }>(
+  images: T[],
+): T[] {
   if (images.length === 0) {
     return images;
   }
@@ -132,10 +137,10 @@ const INITIAL_FORM_STATE: FormState = {
   municipio: "",
   estado: "",
   referencias: "",
-  terreno_m2: "1",
-  construccion_m2: "1",
-  frente: "1",
-  fondo: "1",
+  terreno_m2: "0",
+  construccion_m2: "0",
+  frente: "0",
+  fondo: "0",
   recamaras: "0",
   banos: "1",
   estacionamiento: "0",
@@ -242,15 +247,15 @@ function toFormState(property?: PropertyRecord | null): FormState {
     terreno_m2:
       property.medidas?.terreno_m2 != null
         ? String(property.medidas.terreno_m2)
-        : "1",
+        : "0",
     construccion_m2:
       property.medidas?.construccion_m2 != null
         ? String(property.medidas.construccion_m2)
-        : "1",
+        : "0",
     frente:
-      property.medidas?.frente != null ? String(property.medidas.frente) : "1",
+      property.medidas?.frente != null ? String(property.medidas.frente) : "0",
     fondo:
-      property.medidas?.fondo != null ? String(property.medidas.fondo) : "1",
+      property.medidas?.fondo != null ? String(property.medidas.fondo) : "0",
     recamaras:
       property.caracteristicas?.recamaras != null
         ? String(property.caracteristicas.recamaras)
@@ -345,7 +350,8 @@ function buildInitialPayload(
       : {
           banos: property.caracteristicas?.banos ?? undefined,
           recamaras: property.caracteristicas?.recamaras ?? undefined,
-          estacionamiento: property.caracteristicas?.estacionamiento ?? undefined,
+          estacionamiento:
+            property.caracteristicas?.estacionamiento ?? undefined,
           sala: Boolean(property.caracteristicas?.sala),
           comedor: Boolean(property.caracteristicas?.comedor),
           cocina: Boolean(property.caracteristicas?.cocina),
@@ -562,8 +568,9 @@ export function usePropertyForm(
   function handleExistingImageTitleChange(index: number, titulo: string) {
     setForm((prev) => ({
       ...prev,
-      imagenes_existentes: prev.imagenes_existentes.map((image, currentIndex) =>
-        currentIndex === index ? { ...image, titulo } : image,
+      imagenes_existentes: prev.imagenes_existentes.map(
+        (image, currentIndex) =>
+          currentIndex === index ? { ...image, titulo } : image,
       ),
     }));
   }
@@ -731,10 +738,12 @@ export function usePropertyForm(
         })),
       ),
       imagenes_nuevas_metadata: ensureSinglePrimary(
-        form.imagenes.map((image): ImagenMetadata => ({
-          titulo: image.titulo.trim(),
-          principal: Boolean(image.principal),
-        })),
+        form.imagenes.map(
+          (image): ImagenMetadata => ({
+            titulo: image.titulo.trim(),
+            principal: Boolean(image.principal),
+          }),
+        ),
       ),
     };
 
@@ -746,6 +755,10 @@ export function usePropertyForm(
         propertyData as Record<string, unknown>,
         initialPayload as Record<string, unknown>,
       ) as UpdatePropertyPayload;
+
+      if (property.carpeta_id) {
+        changedPayload.carpeta_id = property.carpeta_id;
+      }
 
       if (
         Object.keys(changedPayload).length === 0 &&

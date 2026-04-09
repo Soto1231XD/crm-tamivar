@@ -1,27 +1,41 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { CreateUserPayload, UpdateUserPayload, UserRecord } from '@/interfaces/user.interface';
-import toast from 'react-hot-toast';
-import { FilterCard, FilterSearchInput, FilterSelect } from '@/components/ui/AppFilters';
-import { getSoftBadgeStyles } from '@/components/ui/badgeStyles';
-import agregarIcon from '../../../assets/images/Agregar.png';
-import borrarIcon from '../../../assets/images/Borrar.png';
-import editarDosIcon from '../../../assets/images/editar2.png';
-import { extractUserRoles, getHighestPriorityRoleLabel, isSuperAdminRole, normalizeRoleName } from '@/shared/auth/role.utils';
-import { useAuthStore } from '@/shared/auth/useAuthStore';
-import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
-import { getFullImageUrl } from '@/shared/utils/imageUrl';
-import { UserModal } from '../components/UserModal';
-import { useUsersStore } from '../store/useUsersStore';
+import { useEffect, useMemo, useState } from "react";
+import type {
+  CreateUserPayload,
+  UpdateUserPayload,
+  UserRecord,
+} from "@/interfaces/user.interface";
+import toast from "react-hot-toast";
+import {
+  FilterCard,
+  FilterSearchInput,
+  FilterSelect,
+} from "@/components/ui/AppFilters";
+import { getSoftBadgeStyles } from "@/components/ui/badgeStyles";
+import agregarIcon from "../../../assets/images/Agregar.png";
+import borrarIcon from "../../../assets/images/Borrar.png";
+import editarDosIcon from "../../../assets/images/editar2.png";
+import {
+  extractUserRoles,
+  getHighestPriorityRoleLabel,
+  isSuperAdminRole,
+  normalizeRoleName,
+} from "@/shared/auth/role.utils";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import { getFullImageUrl } from "@/shared/utils/imageUrl";
+import { UserModal } from "../components/UserModal";
+import { useUsersStore } from "../store/useUsersStore";
+import { processImageToWebP } from "@/shared/utils/imageProcessor";
 
-const ALL_USER_STATES = 'Todos los estados';
+const ALL_USER_STATES = "Todos los estados";
 
 export function UsersPage() {
   const sessionUser = useAuthStore((state) => state.user);
   const { can } = useHasPermission();
-  
-  const canCreate = can('usuarios', 'crear');
-  const canEdit = can('usuarios', 'actualizar');
-  const canDelete = can('usuarios', 'eliminar');
+
+  const canCreate = can("usuarios", "crear");
+  const canEdit = can("usuarios", "actualizar");
+  const canDelete = can("usuarios", "eliminar");
 
   const {
     users,
@@ -34,7 +48,7 @@ export function UsersPage() {
     toggleStatus,
   } = useUsersStore();
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(ALL_USER_STATES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
@@ -51,9 +65,11 @@ export function UsersPage() {
     const query = normalizeRoleName(search);
 
     return users.filter((user) => {
-      const matchesSearch = query.length === 0 || normalizeRoleName(user.nombres).includes(query);
+      const matchesSearch =
+        query.length === 0 || normalizeRoleName(user.nombres).includes(query);
       const matchesStatus =
-        statusFilter === ALL_USER_STATES || getUserStatusLabel(user.activo) === statusFilter;
+        statusFilter === ALL_USER_STATES ||
+        getUserStatusLabel(user.activo) === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
@@ -63,7 +79,9 @@ export function UsersPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900">Usuarios</h2>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">
+            Usuarios
+          </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
             Gestiona usuarios, estados y roles dentro del CRM.
           </p>
@@ -74,7 +92,12 @@ export function UsersPage() {
           onClick={() => setIsCreateModalOpen(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+          <img
+            src={agregarIcon}
+            alt=""
+            className="h-6 w-6 shrink-0"
+            aria-hidden="true"
+          />
           <span>Nuevo usuario</span>
         </button>
       </header>
@@ -88,8 +111,11 @@ export function UsersPage() {
             onChange={(event) => setSearch(event.target.value)}
           />
 
-          <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            {[ALL_USER_STATES, 'Activo', 'Baja'].map((option) => (
+          <FilterSelect
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            {[ALL_USER_STATES, "Activo", "Baja"].map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -134,18 +160,22 @@ export function UsersPage() {
                           />
                         ) : (
                           <span>
-                            {`${user.nombres?.[0] || ''}${user.apellido_paterno?.[0] || ''}`.toUpperCase() || 'U'}
+                            {`${user.nombres?.[0] || ""}${user.apellido_paterno?.[0] || ""}`.toUpperCase() ||
+                              "U"}
                           </span>
                         )}
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Usuario</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          Usuario
+                        </p>
                         <h3 className="mt-2 truncate text-lg font-bold tracking-tight text-slate-900">
                           {getUserFullName(user)}
                         </h3>
                         <p className="mt-1 truncate text-sm text-slate-600">
-                          {user.correo_electronico?.trim() || 'Sin correo electrónico'}
+                          {user.correo_electronico?.trim() ||
+                            "Sin correo electrónico"}
                         </p>
                       </div>
                     </div>
@@ -159,9 +189,11 @@ export function UsersPage() {
 
                   <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-slate-700">Rol principal</p>
+                      <p className="text-sm font-semibold text-slate-700">
+                        Rol principal
+                      </p>
                       <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
-                        {roles.length} {roles.length === 1 ? 'rol' : 'roles'}
+                        {roles.length} {roles.length === 1 ? "rol" : "roles"}
                       </span>
                     </div>
 
@@ -170,23 +202,31 @@ export function UsersPage() {
                         <>
                           <span
                             className="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
-                            style={getSoftBadgeStyles('indigo')}
+                            style={getSoftBadgeStyles("indigo")}
                           >
                             {primaryRole}
                           </span>
                           {extraRolesCount > 0 ? (
-                            <span className="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" style={getSoftBadgeStyles('slate')}>
-                              +{extraRolesCount} {extraRolesCount === 1 ? 'rol adicional' : 'roles adicionales'}
+                            <span
+                              className="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
+                              style={getSoftBadgeStyles("slate")}
+                            >
+                              +{extraRolesCount}{" "}
+                              {extraRolesCount === 1
+                                ? "rol adicional"
+                                : "roles adicionales"}
                             </span>
                           ) : null}
                         </>
                       ) : (
-                        <span className="text-sm text-slate-500">Sin roles asignados</span>
+                        <span className="text-sm text-slate-500">
+                          Sin roles asignados
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  {(!isSuperAdmin && !isCurrentUser) ? (
+                  {!isSuperAdmin && !isCurrentUser ? (
                     <div className="mt-5 flex flex-wrap items-center justify-center gap-2 border-t border-slate-200 pt-4">
                       {canEdit && (
                         <button
@@ -194,7 +234,12 @@ export function UsersPage() {
                           onClick={() => setEditingUser(user)}
                           className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100"
                         >
-                          <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                          <img
+                            src={editarDosIcon}
+                            alt=""
+                            className="h-5 w-5 shrink-0"
+                            aria-hidden="true"
+                          />
                           <span>Editar</span>
                         </button>
                       )}
@@ -205,8 +250,17 @@ export function UsersPage() {
                           onClick={() => handleToggleUserStatus(user)}
                           className="inline-flex items-center gap-2 rounded-lg border border-orange-100 bg-orange-50 px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition-colors hover:bg-orange-100"
                         >
-                          <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                          <span>{user.activo === false ? 'Reactivar' : 'Dar de baja'}</span>
+                          <img
+                            src={borrarIcon}
+                            alt=""
+                            className="h-5 w-5 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span>
+                            {user.activo === false
+                              ? "Reactivar"
+                              : "Dar de baja"}
+                          </span>
                         </button>
                       )}
                     </div>
@@ -215,10 +269,14 @@ export function UsersPage() {
                       <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-slate-700">
                         {isSuperAdmin ? (
                           <span>
-                            Este usuario pertenece a un perfil de alto rango. Su información no se puede manipular desde esta vista.
+                            Este usuario pertenece a un perfil de alto rango. Su
+                            información no se puede manipular desde esta vista.
                           </span>
                         ) : (
-                          <span>Este usuario corresponde a tu sesión actual y no puede manipularse desde esta vista.</span>
+                          <span>
+                            Este usuario corresponde a tu sesión actual y no
+                            puede manipularse desde esta vista.
+                          </span>
                         )}
                       </div>
                     </div>
@@ -240,7 +298,7 @@ export function UsersPage() {
           onSubmit={handleCreateUser}
         />
       )}
-      
+
       {canEdit && (
         <UserModal
           isOpen={Boolean(editingUser)}
@@ -250,8 +308,12 @@ export function UsersPage() {
           onClose={() => setEditingUser(null)}
           onSubmit={(payload, photoFile) =>
             editingUser
-              ? handleEditUser(editingUser.id, payload as UpdateUserPayload, photoFile)
-              : Promise.resolve('Usuario no valido.')
+              ? handleEditUser(
+                  editingUser.id,
+                  payload as UpdateUserPayload,
+                  photoFile,
+                )
+              : Promise.resolve("Usuario no valido.")
           }
         />
       )}
@@ -263,11 +325,19 @@ export function UsersPage() {
     photoFile?: File | null,
   ): Promise<string | null> {
     try {
-      await addUser(payload as CreateUserPayload, photoFile);
-      toast.success('El usuario se creó con éxito.');
+      let optimizedPhoto = photoFile;
+      // Solo procesamos si el usuario seleccionó una imagen
+      if (photoFile) {
+        optimizedPhoto = await processImageToWebP(photoFile, 500);
+      }
+
+      await addUser(payload as CreateUserPayload, optimizedPhoto);
+      toast.success("El usuario se creó con éxito.");
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible crear el usuario.';
+      return error instanceof Error
+        ? error.message
+        : "No fue posible crear el usuario.";
     }
   }
 
@@ -277,11 +347,20 @@ export function UsersPage() {
     photoFile?: File | null,
   ): Promise<string | null> {
     try {
-      await editUser(userId, payload, photoFile);
-      toast.success('El usuario se actualizó con éxito.');
+      let optimizedPhoto = photoFile;
+
+      // Aplicamos la misma lógica para la edición
+      if (photoFile) {
+        optimizedPhoto = await processImageToWebP(photoFile, 500);
+      }
+
+      await editUser(userId, payload, optimizedPhoto);
+      toast.success("El usuario se actualizó con éxito.");
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible actualizar el usuario.';
+      return error instanceof Error
+        ? error.message
+        : "No fue posible actualizar el usuario.";
     }
   }
 
@@ -291,34 +370,37 @@ export function UsersPage() {
       toast.success(
         response.activo === false
           ? `Se dio de baja a ${getUserFullName(targetUser)}.`
-          : `Se reactivó a ${getUserFullName(targetUser)}.`
+          : `Se reactivó a ${getUserFullName(targetUser)}.`,
       );
     } catch {
-      toast.error('No fue posible actualizar el estado del usuario.');
+      toast.error("No fue posible actualizar el estado del usuario.");
     }
   }
 }
 
-function getUserStatusLabel(isActive?: boolean | null): 'Activo' | 'Baja' {
-  return isActive === false ? 'Baja' : 'Activo';
+function getUserStatusLabel(isActive?: boolean | null): "Activo" | "Baja" {
+  return isActive === false ? "Baja" : "Activo";
 }
 
-function getUserStatusStyles(isActive?: boolean | null): { backgroundColor: string; color: string } {
+function getUserStatusStyles(isActive?: boolean | null): {
+  backgroundColor: string;
+  color: string;
+} {
   if (isActive === false) {
-    const tone = getSoftBadgeStyles('amber');
-    return { backgroundColor: tone.backgroundColor, color: '#CA5874' };
+    const tone = getSoftBadgeStyles("amber");
+    return { backgroundColor: tone.backgroundColor, color: "#CA5874" };
   }
 
-  const tone = getSoftBadgeStyles('green');
+  const tone = getSoftBadgeStyles("green");
   return { backgroundColor: tone.backgroundColor, color: tone.color };
 }
 
 function getUserFullName(user: UserRecord): string {
   const parts = [user.nombres, user.apellido_paterno]
-    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+    .map((part) => (typeof part === "string" ? part.trim() : ""))
     .filter(Boolean);
 
-  return parts.length > 0 ? parts.join(' ') : 'Sin nombre';
+  return parts.length > 0 ? parts.join(" ") : "Sin nombre";
 }
 
 function getUserRoles(user: UserRecord): string[] {

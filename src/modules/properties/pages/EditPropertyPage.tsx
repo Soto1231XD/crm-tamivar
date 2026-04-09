@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { PropertyForm } from "../components/PropertyForm";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
+import { processImageToWebP } from "@/shared/utils/imageProcessor";
 import type { NuevaImagen } from "@/interfaces/property.interface";
 
 export function EditPropertyPage() {
@@ -37,7 +38,6 @@ export function EditPropertyPage() {
     navigate("/modulos/propiedades");
   }
 
-  // Mantenemos la misma firma que espera tu PropertyForm ({ payload, files })
   async function handleEditProperty({
     payload,
     files,
@@ -47,14 +47,25 @@ export function EditPropertyPage() {
   }): Promise<string | null> {
     if (!currentProperty) return "No se encontró la propiedad.";
 
+    // Optimizar las imágenes a WebP
+    // Desempaquetamos, convertimos y reempaquetamos manteniendo la interfaz NuevaImagen
+    const optimizedFiles: NuevaImagen[] = await Promise.all(
+      files.map(async (imgObj) => {
+        // Extraemos el archivo crudo y lo convertimos a WebP
+        const webpFile = await processImageToWebP(imgObj.file);
+
+        // Retornamos el objeto reconstruido con el nuevo archivo y los metadatos intactos
+        return {
+          ...imgObj, // Mantiene el 'titulo' y 'principal' originales
+          file: webpFile, // Sobrescribe el archivo original con la versión optimizada
+        };
+      }),
+    );
+
     try {
       setIsSubmitting(true);
 
-      await editProperty(
-        currentProperty.id,
-        payload,
-        files,
-      );
+      await editProperty(currentProperty.id, payload, optimizedFiles);
 
       toast.success("La propiedad se actualizó con éxito.");
       navigate("/modulos/propiedades");

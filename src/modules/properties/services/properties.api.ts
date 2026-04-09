@@ -56,13 +56,18 @@ export async function updateProperty(
 ): Promise<PropertyRecord> {
   const formData = new FormData();
 
-  // Si hay archivos nuevos, los agregamos
-  if (files && files.length > 0) {
-    files.forEach((image) => formData.append("files", image.file));
+  // Enviamos el carpeta_id suelto para que Multer lo lea a la primera
+  if (payload.carpeta_id) {
+    formData.append("carpeta_id", payload.carpeta_id);
   }
 
   // Empaquetamos todo el JSON en el campo "datos"
   formData.append("datos", JSON.stringify(payload));
+
+  // Si hay archivos nuevos, los agregamos
+  if (files && files.length > 0) {
+    files.forEach((image) => formData.append("files", image.file));
+  }
 
   return apiRequest<PropertyRecord>(`${PATH}/${id}`, {
     method: "PATCH",
