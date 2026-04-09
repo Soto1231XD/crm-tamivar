@@ -6,7 +6,7 @@ import {
   usePropertiesStore,
   type PropertiesState,
 } from "../store/usePropertiesStore";
-import type { CreatePropertyPayload } from "@/interfaces/property.interface";
+import type { CreatePropertyPayload, NuevaImagen } from "@/interfaces/property.interface";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 import { processImageToWebP } from "@/shared/utils/imageProcessor";
 
@@ -28,17 +28,24 @@ export function CreatePropertyPage() {
     files,
   }: {
     payload: PropertySubmitPayload;
-    files: File[];
+    files: NuevaImagen[];
   }): Promise<string | null> {
     try {
       setIsSubmitting(true);
 
-      // Optimizar las imágenes a WebP
-      const optimizedFiles = await Promise.all(
-        files.map(async (file) => {
-          return await processImageToWebP(file);
-        }),
-      );
+      // Optimizar las imágenes a WebP manteniendo la estructura NuevaImagen
+    const optimizedFiles: NuevaImagen[] = await Promise.all(
+      files.map(async (imgObj) => {
+        // Convertimos solo el archivo crudo
+        const webpFile = await processImageToWebP(imgObj.file);
+        
+        // Reconstruimos el objeto para el Store
+        return {
+          ...imgObj,
+          file: webpFile,
+        };
+      }),
+    );
 
       // Llamamos a la acción del Store de Zustand
       await addProperty(payload as CreatePropertyPayload, optimizedFiles);

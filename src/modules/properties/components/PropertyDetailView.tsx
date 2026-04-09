@@ -718,6 +718,13 @@ export const PropertyDetailView = () => {
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500"
                         loading="lazy"
                       />
+                      {img.titulo ? (
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/75 to-transparent px-4 py-3">
+                          <p className="text-sm font-semibold text-white">
+                            {img.titulo}
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
                   </SwiperSlide>
                 ))}

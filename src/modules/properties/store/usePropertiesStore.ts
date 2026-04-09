@@ -9,7 +9,8 @@ import {
 import type { 
   PropertyRecord, 
   CreatePropertyPayload, 
-  UpdatePropertyPayload 
+  UpdatePropertyPayload,
+  NuevaImagen,
 } from '@/interfaces/property.interface'
 
 export interface PropertiesState {
@@ -22,8 +23,8 @@ export interface PropertiesState {
   // Acciones
   fetchProperties: () => Promise<void>;
   fetchProperty: (id: number) => Promise<void>;
-  addProperty: (payload: CreatePropertyPayload, files: File[]) => Promise<void>;
-  editProperty: (id: number, payload: UpdatePropertyPayload, files?: File[]) => Promise<void>;
+  addProperty: (payload: CreatePropertyPayload, files: NuevaImagen[]) => Promise<void>;
+  editProperty: (id: number, payload: UpdatePropertyPayload, files?: NuevaImagen[]) => Promise<void>;
   removeProperty: (id: number) => Promise<void>;
   clearCurrentProperty: () => void;
 }
@@ -63,7 +64,7 @@ export const usePropertiesStore = create<PropertiesState>((set) => ({
   },
 
   // Crear una nueva propiedad
-  addProperty: async (payload: CreatePropertyPayload, files: File[]) => {
+  addProperty: async (payload: CreatePropertyPayload, files: NuevaImagen[]) => {
     set({ isLoading: true, error: null });
     try {
       const newProperty = await createProperty(payload, files);
@@ -82,7 +83,7 @@ export const usePropertiesStore = create<PropertiesState>((set) => ({
   },
 
   // Actualizar una propiedad
-  editProperty: async (id: number, payload: UpdatePropertyPayload, files: File[] = []) => {
+  editProperty: async (id: number, payload: UpdatePropertyPayload, files: NuevaImagen[] = []) => {
     set({ isLoading: true, error: null });
     try {
       const updatedProperty = await updateProperty(id, payload, files);

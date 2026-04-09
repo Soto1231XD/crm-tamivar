@@ -492,6 +492,11 @@ export const PropertyPdfDocument = ({
                     src={getFullImageUrl(img.url)}
                     style={styles.galleryImage}
                   />
+                  {img.titulo ? (
+                    <Text style={[styles.value, { marginTop: 6 }]}>
+                      {stripEmojis(img.titulo)}
+                    </Text>
+                  ) : null}
                 </View>
               ))}
             </View>

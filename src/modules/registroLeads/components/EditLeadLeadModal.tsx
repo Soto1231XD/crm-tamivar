@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import { AppModal } from '@/components/ui/AppModal';
 import {
+  buildLeadLeadUpdatePayload,
+  LeadLeadFieldLabel,
   LEAD_LEADS_CHANNEL_OPTIONS,
   LEAD_LEADS_OPERATION_OPTIONS,
   LEAD_LEADS_PAYMENT_METHOD_OPTIONS,
@@ -12,16 +13,16 @@ import {
   LEAD_LEADS_SOURCE_OPTIONS,
   LEAD_LEADS_STATUS_OPTIONS,
   formatLeadBudgetInput,
-  isValidLeadLeadName,
+  leadLeadSchema,
   leadLeadFieldClassName,
   normalizeLeadBudgetValue,
-  parseLeadPaymentMethods,
   sanitizeLeadLeadLada,
   sanitizeLeadLeadName,
   sanitizeLeadLeadPhone,
+  toLeadLeadDefaultValues,
+  type LeadLeadFormInput,
+  type LeadLeadFormValues,
 } from './leadLeads.shared';
-
-const LADA_REGEX = /^\+?[0-9]+$/;
 
 type UserOption = {
   id: number;
@@ -35,71 +36,6 @@ type EditLeadLeadModalProps = {
   onEdit: (leadId: number, payload: UpdateLeadPayload) => Promise<string | null>;
   userOptions: UserOption[];
 };
-
-const editLeadLeadSchema = z.object({
-  nombres: z
-    .string()
-    .trim()
-    .min(1, 'Nombres es obligatorio.')
-    .refine((value) => isValidLeadLeadName(value), 'Nombres solo permite letras y espacios.'),
-  apellidos: z
-    .string()
-    .trim()
-    .min(1, 'Apellidos es obligatorio.')
-    .refine((value) => isValidLeadLeadName(value), 'Apellidos solo permite letras y espacios.'),
-  telefono: z.string().trim().regex(/^\d{10}$/, 'El telefono debe tener exactamente 10 digitos numericos.'),
-  lada: z
-    .string()
-    .trim()
-    .max(6, 'Lada no puede exceder 6 caracteres.')
-    .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no valida.')
-    .optional(),
-  comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
-  estado: z.string().optional(),
-  prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
-  vendedor_asignado_id: z.string().trim().min(1, 'Vendedor asignado es obligatorio.'),
-  operacion: z.string().trim().min(1, 'Operacion es obligatoria.'),
-  canal: z.string().trim().min(1, 'Canal es obligatorio.'),
-  solicitud: z.string().max(1000, 'Solicitud no puede exceder 1000 caracteres.').optional(),
-  presupuesto: z.string().optional(),
-  ubicacion_propiedad: z.string().max(1000, 'La zona de preferencia no puede exceder 1000 caracteres.').optional(),
-  metodo_pago: z.array(z.string()).min(1, 'Metodo de pago es obligatorio.'),
-  caracteristicas: z.string().max(1000, 'Caracteristicas no puede exceder 1000 caracteres.').optional(),
-  origen_lead: z.string().trim().min(1, 'Origen del lead es obligatorio.'),
-});
-
-type EditLeadLeadFormInput = z.input<typeof editLeadLeadSchema>;
-type EditLeadLeadFormValues = z.output<typeof editLeadLeadSchema>;
-
-function FieldLabel({ children, required = false }: { children: string; required?: boolean }) {
-  return (
-    <span className="text-sm font-medium text-slate-700">
-      {children}
-      {required ? <span className="ml-1 font-semibold text-red-600">*</span> : null}
-    </span>
-  );
-}
-
-function toDefaultValues(lead: LeadRecord | null): EditLeadLeadFormInput {
-  return {
-    nombres: lead?.nombres ?? '',
-    apellidos: lead?.apellidos ?? '',
-    telefono: lead?.telefono != null ? String(lead.telefono) : '',
-    lada: lead?.lada ?? '+52',
-    comentarios: lead?.comentarios ?? '',
-    estado: lead?.estado ?? 'En seguimiento',
-    prioridad: lead?.prioridad ?? 'Normal',
-    vendedor_asignado_id: lead?.vendedor_asignado_id != null ? String(lead.vendedor_asignado_id) : '',
-    operacion: lead?.operacion ?? '',
-    canal: lead?.canal ?? '',
-    solicitud: lead?.solicitud ?? '',
-    presupuesto: lead?.presupuesto != null ? formatLeadBudgetInput(String(lead.presupuesto)) : '',
-    ubicacion_propiedad: lead?.ubicacion_propiedad ?? '',
-    metodo_pago: parseLeadPaymentMethods(lead?.metodo_pago),
-    caracteristicas: lead?.caracteristicas ?? '',
-    origen_lead: lead?.origen_lead ?? '',
-  };
-}
 
 export function EditLeadLeadModal({
   isOpen,
@@ -116,13 +52,13 @@ export function EditLeadLeadModal({
     reset,
     handleSubmit,
     formState: { errors, dirtyFields },
-  } = useForm<EditLeadLeadFormInput, unknown, EditLeadLeadFormValues>({
-    resolver: zodResolver(editLeadLeadSchema),
-    defaultValues: toDefaultValues(lead),
+  } = useForm<LeadLeadFormInput, unknown, LeadLeadFormValues>({
+    resolver: zodResolver(leadLeadSchema),
+    defaultValues: toLeadLeadDefaultValues(lead),
   });
 
   useEffect(() => {
-    reset(toDefaultValues(lead));
+    reset(toLeadLeadDefaultValues(lead));
     setSubmitError('');
     setIsSubmitting(false);
   }, [lead, isOpen, reset]);
@@ -136,34 +72,17 @@ export function EditLeadLeadModal({
     onClose();
   }
 
-  async function onSubmit(values: EditLeadLeadFormValues) {
+  async function onSubmit(values: LeadLeadFormValues) {
     const presupuestoValue = normalizeLeadBudgetValue(values.presupuesto);
     if (presupuestoValue && Number.isNaN(Number(presupuestoValue))) {
-      setSubmitError('El presupuesto debe ser numerico.');
+      setSubmitError('El presupuesto debe ser numérico.');
       return;
     }
 
     setSubmitError('');
     setIsSubmitting(true);
 
-    const payload: UpdateLeadPayload = {};
-
-    if (dirtyFields.nombres) payload.nombres = values.nombres.trim();
-    if (dirtyFields.apellidos) payload.apellidos = values.apellidos.trim();
-    if (dirtyFields.telefono) payload.telefono = values.telefono;
-    if (dirtyFields.lada) payload.lada = values.lada?.trim() || undefined;
-    if (dirtyFields.comentarios) payload.comentarios = values.comentarios?.trim() || undefined;
-    if (dirtyFields.estado) payload.estado = values.estado?.trim() || undefined;
-    if (dirtyFields.prioridad) payload.prioridad = values.prioridad.trim();
-    if (dirtyFields.vendedor_asignado_id) payload.vendedor_asignado_id = Number(values.vendedor_asignado_id);
-    if (dirtyFields.operacion) payload.operacion = values.operacion.trim();
-    if (dirtyFields.canal) payload.canal = values.canal.trim();
-    if (dirtyFields.solicitud) payload.solicitud = values.solicitud?.trim() || undefined;
-    if (dirtyFields.presupuesto) payload.presupuesto = presupuestoValue ? Number(presupuestoValue) : undefined;
-    if (dirtyFields.ubicacion_propiedad) payload.ubicacion_propiedad = values.ubicacion_propiedad?.trim() || undefined;
-    if (dirtyFields.metodo_pago) payload.metodo_pago = values.metodo_pago.join(', ');
-    if (dirtyFields.caracteristicas) payload.caracteristicas = values.caracteristicas?.trim() || undefined;
-    if (dirtyFields.origen_lead) payload.origen_lead = values.origen_lead.trim();
+    const payload: UpdateLeadPayload = buildLeadLeadUpdatePayload(values, dirtyFields);
 
     if (Object.keys(payload).length === 0) {
       setIsSubmitting(false);
@@ -200,7 +119,7 @@ export function EditLeadLeadModal({
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Nombres</FieldLabel>
+              <LeadLeadFieldLabel required>Nombres</LeadLeadFieldLabel>
               <input
                 type="text"
                 {...register('nombres', {
@@ -214,7 +133,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Apellidos</FieldLabel>
+              <LeadLeadFieldLabel required>Apellidos</LeadLeadFieldLabel>
               <input
                 type="text"
                 {...register('apellidos', {
@@ -228,7 +147,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Lada</FieldLabel>
+              <LeadLeadFieldLabel>Lada</LeadLeadFieldLabel>
               <input
                 type="text"
                 {...register('lada', {
@@ -242,7 +161,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Celular</FieldLabel>
+              <LeadLeadFieldLabel required>Celular</LeadLeadFieldLabel>
               <input
                 type="text"
                 inputMode="numeric"
@@ -259,7 +178,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">
-              <FieldLabel>Zona de preferencia</FieldLabel>
+              <LeadLeadFieldLabel>Zona de preferencia</LeadLeadFieldLabel>
               <input
                 type="text"
                 {...register('ubicacion_propiedad')}
@@ -272,7 +191,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Vendedor asignado</FieldLabel>
+              <LeadLeadFieldLabel required>Vendedor asignado</LeadLeadFieldLabel>
               <select {...register('vendedor_asignado_id')} className={leadLeadFieldClassName}>
                 <option value="">Selecciona un usuario</option>
                 {userOptions.map((option) => (
@@ -294,7 +213,7 @@ export function EditLeadLeadModal({
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Estado</FieldLabel>
+              <LeadLeadFieldLabel>Estado</LeadLeadFieldLabel>
               <select {...register('estado')} className={leadLeadFieldClassName}>
                 {LEAD_LEADS_STATUS_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -305,7 +224,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Prioridad</FieldLabel>
+              <LeadLeadFieldLabel required>Prioridad</LeadLeadFieldLabel>
               <select {...register('prioridad')} className={leadLeadFieldClassName}>
                 {LEAD_LEADS_PRIORITY_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -317,9 +236,9 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Operación</FieldLabel>
+              <LeadLeadFieldLabel required>Operación</LeadLeadFieldLabel>
               <select {...register('operacion')} className={leadLeadFieldClassName}>
-                <option value="">Selecciona una operacion</option>
+                <option value="">Selecciona una operación</option>
                 {LEAD_LEADS_OPERATION_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
@@ -330,7 +249,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Canal</FieldLabel>
+              <LeadLeadFieldLabel required>Canal</LeadLeadFieldLabel>
               <select {...register('canal')} className={leadLeadFieldClassName}>
                 <option value="">Selecciona un canal</option>
                 {LEAD_LEADS_CHANNEL_OPTIONS.map((option) => (
@@ -343,7 +262,7 @@ export function EditLeadLeadModal({
             </label>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel required>Método de pago</FieldLabel>
+              <LeadLeadFieldLabel required>Método de pago</LeadLeadFieldLabel>
               <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
                 {LEAD_LEADS_PAYMENT_METHOD_OPTIONS.map((option) => (
                   <label key={option} className="flex items-center gap-2 text-sm text-slate-700">
@@ -361,7 +280,7 @@ export function EditLeadLeadModal({
             </div>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Presupuesto</FieldLabel>
+              <LeadLeadFieldLabel>Presupuesto</LeadLeadFieldLabel>
               <input
                 type="text"
                 inputMode="decimal"
@@ -376,7 +295,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel required>Origen del lead</FieldLabel>
+              <LeadLeadFieldLabel required>Origen del lead</LeadLeadFieldLabel>
               <select {...register('origen_lead')} className={leadLeadFieldClassName}>
                 <option value="">Selecciona un origen</option>
                 {LEAD_LEADS_SOURCE_OPTIONS.map((option) => (
@@ -389,7 +308,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">
-              <FieldLabel>Solicitud</FieldLabel>
+              <LeadLeadFieldLabel>Solicitud</LeadLeadFieldLabel>
               <textarea
                 {...register('solicitud')}
                 rows={3}
@@ -400,7 +319,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">
-              <FieldLabel>Características</FieldLabel>
+              <LeadLeadFieldLabel>Características</LeadLeadFieldLabel>
               <textarea
                 {...register('caracteristicas')}
                 rows={3}
@@ -411,7 +330,7 @@ export function EditLeadLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">
-              <FieldLabel>Comentarios</FieldLabel>
+              <LeadLeadFieldLabel>Comentarios</LeadLeadFieldLabel>
               <textarea
                 {...register('comentarios')}
                 rows={3}
