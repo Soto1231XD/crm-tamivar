@@ -126,6 +126,7 @@ const INITIAL_FORM_STATE: FormState = {
   tipos_pago: [],
   estatus: "Disponible",
   etiquetas: "",
+  enlace_direccion: "",
   cp: "",
   fraccionamiento: "",
   smz: "",
@@ -226,6 +227,7 @@ function toFormState(property?: PropertyRecord | null): FormState {
     etiquetas: Array.isArray(property.etiquetas)
       ? property.etiquetas.join(", ")
       : "",
+    enlace_direccion: property.enlace_direccion ?? "",
     cp: property.direccion?.cp != null ? String(property.direccion.cp) : "",
     fraccionamiento: property.direccion?.fraccionamiento ?? "",
     smz: property.direccion?.smz != null ? String(property.direccion.smz) : "",
@@ -332,6 +334,7 @@ function buildInitialPayload(
       frente: property.medidas?.frente,
       fondo: property.medidas?.fondo,
     },
+    enlace_direccion: property.enlace_direccion,
     direccion: {
       cp: property.direccion.cp,
       fraccionamiento: property.direccion.fraccionamiento,
@@ -698,6 +701,7 @@ export function usePropertyForm(
         frente: parsedNumbers.frente,
         fondo: parsedNumbers.fondo,
       },
+      enlace_direccion: form.enlace_direccion.trim(),
       direccion: {
         cp: parsedNumbers.cp,
         fraccionamiento: form.fraccionamiento.trim(),

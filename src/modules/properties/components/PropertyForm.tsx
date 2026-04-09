@@ -375,6 +375,14 @@ export function PropertyForm({
               error={errors.cp}
               type="number"
             />
+            <FieldInput 
+              label="Enlace de Google Maps"
+              name="enlace_direccion"
+              value={form.enlace_direccion}
+              onChange={handleInputChange}
+              error={errors.enlace_direccion}
+              className="md:col-span-4"
+            />
             <FieldTextarea
               label="Referencias"
               name="referencias"
@@ -402,7 +410,7 @@ export function PropertyForm({
               onChange={handleInputChange}
               error={errors.terreno_m2}
               type="number"
-              min="1"
+              min="0"
               step="0.01"
             />
             {!isTerreno ? (
@@ -413,7 +421,7 @@ export function PropertyForm({
                 onChange={handleInputChange}
                 error={errors.construccion_m2}
                 type="number"
-                min="1"
+                min="0"
                 step="0.01"
               />
             ) : null}
@@ -424,7 +432,7 @@ export function PropertyForm({
               onChange={handleInputChange}
               error={errors.frente}
               type="number"
-              min="1"
+              min="0"
               step="0.01"
             />
             <FieldInput
@@ -434,7 +442,7 @@ export function PropertyForm({
               onChange={handleInputChange}
               error={errors.fondo}
               type="number"
-              min="1"
+              min="0"
               step="0.01"
             />
             {!isTerreno ? (

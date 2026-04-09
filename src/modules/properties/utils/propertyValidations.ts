@@ -14,6 +14,7 @@ export type FormState = {
   tipos_pago: string[];
   estatus: string;
   etiquetas: string;
+  enlace_direccion: string;
   cp: string;
   fraccionamiento: string;
   smz: string;

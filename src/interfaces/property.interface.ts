@@ -15,6 +15,7 @@ export interface PropertyRecord {
   comentarios?: string;
   pisos_tiene?: number;
   servicios_instalaciones?: string;
+  enlace_direccion: string;
   amenidades?: string;
   medidas: Medidas;
   direccion: Direccion;

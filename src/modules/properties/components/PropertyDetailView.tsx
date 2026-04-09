@@ -259,9 +259,38 @@ export const PropertyDetailView = () => {
               <div className="lg:col-span-2 space-y-8">
                 {/* Dirección */}
                 <div>
-                  <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Dirección
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">
+                      Dirección
+                    </p>
+
+                    {/* Botón condicional de Google Maps */}
+                    {currentProperty.enlace_direccion && (
+                      <a
+                        href={currentProperty.enlace_direccion}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors bg-blue-50 p-2 rounded-md"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                        Ver en Google Maps
+                      </a>
+                    )}
+                  </div>
+
                   <p className="text-base sm:text-lg text-slate-800 font-medium flex items-start gap-2">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
