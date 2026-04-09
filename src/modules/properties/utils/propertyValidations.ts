@@ -156,20 +156,20 @@ export function validatePropertyForm(
     errors.num_int = "Debe ser un numero valido.";
   }
 
-  if (Number.isNaN(parsed.terreno) || parsed.terreno <= 0) {
-    errors.terreno_m2 = "Ingresa una medida de terreno valida mayor a 0.";
+  if (Number.isNaN(parsed.terreno) || parsed.terreno < 0) {
+    errors.terreno_m2 = "Ingresa una medida de terreno valida mayor o igual a 0.";
   }
-  if (Number.isNaN(parsed.frente) || parsed.frente <= 0) {
-    errors.frente = "Ingresa un frente valido mayor a 0.";
+  if (Number.isNaN(parsed.frente) || parsed.frente < 0) {
+    errors.frente = "Ingresa un frente valido mayor o igual a 0.";
   }
-  if (Number.isNaN(parsed.fondo) || parsed.fondo <= 0) {
-    errors.fondo = "Ingresa un fondo valido mayor a 0.";
+  if (Number.isNaN(parsed.fondo) || parsed.fondo < 0) {
+    errors.fondo = "Ingresa un fondo valido mayor o igual a 0.";
   }
 
   if (!isTerreno) {
-    if (Number.isNaN(parsed.construccion) || parsed.construccion <= 0) {
+    if (Number.isNaN(parsed.construccion) || parsed.construccion < 0) {
       errors.construccion_m2 =
-        "Ingresa una medida de construcción valida mayor a 0.";
+        "Ingresa una medida de construcción valida mayor o igual a 0.";
     }
     if (Number.isNaN(parsed.banos) || parsed.banos < 0) {
       errors.banos = "Ingresa un numero de baños valido.";
