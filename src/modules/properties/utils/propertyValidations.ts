@@ -80,6 +80,8 @@ export interface ParsedNumbers {
 
 export type FormErrors = Partial<Record<keyof FormState, string>>;
 
+const LOCATION_TEXT_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s.'-]+$/;
+
 export function validatePropertyForm(
   form: FormState,
   parsed: ParsedNumbers,
@@ -137,9 +139,20 @@ export function validatePropertyForm(
     }
   }
 
-  const cpString = String(parsed.cp);
-  if (cpString.length !== 5 || Number.isNaN(parsed.cp)) {
-    errors.cp = "El código postal debe tener exactamente 5 dígitos.";
+  const cpTrimmed = form.cp.trim();
+  if (cpTrimmed.length > 0) {
+    const cpString = String(parsed.cp);
+    if (cpString.length !== 5 || Number.isNaN(parsed.cp)) {
+      errors.cp = "El código postal debe tener exactamente 5 dígitos.";
+    }
+  }
+
+  if (form.estado.trim().length > 0 && !LOCATION_TEXT_REGEX.test(form.estado.trim())) {
+    errors.estado = "El estado solo puede contener letras y espacios.";
+  }
+
+  if (form.municipio.trim().length > 0 && !LOCATION_TEXT_REGEX.test(form.municipio.trim())) {
+    errors.municipio = "El municipio solo puede contener letras y espacios.";
   }
 
   if (form.tipos_pago.length === 0) {
