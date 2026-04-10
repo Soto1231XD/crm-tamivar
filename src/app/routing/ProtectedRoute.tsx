@@ -1,26 +1,31 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { canAccessModule, hasAnyRole } from '../../shared/constants/roles';
-import { useAuth } from '../../shared/context/AuthContext';
-import type { ModuleKey, Role } from '../../shared/types/rbac';
+import { Navigate, Outlet } from "react-router-dom";
+import { canAccessDashboard } from "@/shared/auth/navigation.util";
+import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
 
 type ProtectedRouteProps = {
-  allowedRoles?: Role[];
   module?: ModuleKey;
 };
 
-export function ProtectedRoute({ allowedRoles, module }: ProtectedRouteProps) {
-  const { user } = useAuth();
+export function ProtectedRoute({ module }: ProtectedRouteProps) {
+  const { can, userPermissions } = useHasPermission();
 
-  if (!user) {
+  if (!userPermissions || userPermissions.length === 0) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !hasAnyRole(user.roles, allowedRoles)) {
-    return <Navigate to="/" replace />;
+  if (module === "dashboard" && !canAccessDashboard(userPermissions)) {
+    return <Navigate to="/login" replace />;
   }
 
-  if (module && !canAccessModule(user.roles, module)) {
-    return <Navigate to="/" replace />;
+  if (
+    module &&
+    module !== "dashboard" &&
+    !can(module, "leer") &&
+    !can(module, "leer_todos") &&
+    !can(module, "*")
+  ) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

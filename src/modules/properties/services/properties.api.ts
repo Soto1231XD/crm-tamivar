@@ -1,113 +1,83 @@
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+import { apiRequest } from "@/shared/apiRequest";
+import type {
+  PropertyRecord,
+  CreatePropertyPayload,
+  UpdatePropertyPayload,
+  NuevaImagen,
+} from "@/interfaces/property.interface";
 
-export type PropertyRecord = {
-  id: number;
-  tipo_inmueble: string;
-  direccion: {
-    calle?: string;
-    municipio?: string;
-    fraccionamiento?: string;
-  };
-  precio: string | number;
-  estatus: string;
+const PATH = "/properties";
+
+export type PropertySearchParams = {
+  tipo_operacion?: string;
 };
 
-export type CreatePropertyPayload = {
-  tipo_inmueble: string;
-  tipo_operacion: string;
-  descripcion?: string;
-  precio_condicionado?: {
-    descripcion?: string;
-    monto: number;
-  };
-  tipos_pago: string[];
-  estatus: string;
-  tiene_gravamen?: boolean;
-  cuota_mantenimiento?: number;
-  comentarios?: string;
-  pisos_tiene?: number;
-  servicios_instalaciones?: string;
-  amenidades?: string;
-  medidas: {
-    terreno_m2: number;
-    construccion_m2: number;
-    frente: number;
-    fondo: number;
-  };
-  direccion: {
-    cp: number;
-    fraccionamiento: string;
-    smz?: number;
-    mza?: number;
-    lote?: number;
-    calle: string;
-    num_ext: number;
-    num_int?: number;
-    municipio: string;
-    estado: string;
-    referencias?: string;
-  };
-  caracteristicas: {
-    banos: number;
-    recamaras: number;
-    estacionamiento: number;
-    sala: boolean;
-    comedor: boolean;
-    cocina: boolean;
-    area_servicio: boolean;
-    patio: boolean;
-    jardin: boolean;
-    alberca: boolean;
-    terraza: boolean;
-    amueblado: boolean;
-    bodega: boolean;
-  };
-  imagenes: Array<{
-    url: string;
-    titulo: string;
-    principal: boolean;
-  }>;
-  precio: number;
-  creado_por_id: number;
-};
-
+// Obtener todas las propiedades
 export async function getProperties(): Promise<PropertyRecord[]> {
-  const response = await fetch(`${API_URL}/properties`, { method: 'GET' });
-  const data = (await response.json().catch(() => null)) as PropertyRecord[] | null;
-
-  if (!response.ok || !Array.isArray(data)) {
-    return [];
-  }
-
-  return data;
+  return apiRequest<PropertyRecord[]>(PATH);
 }
 
+export async function searchProperties(
+  params: PropertySearchParams,
+): Promise<PropertyRecord[]> {
+  return apiRequest<PropertyRecord[]>(`${PATH}/search`, {
+    params,
+  });
+}
+
+// Obtener una propiedad por ID
+export async function getProperty(id: number): Promise<PropertyRecord> {
+  return apiRequest<PropertyRecord>(`${PATH}/${id}`);
+}
+
+// Crear propiedad
 export async function createProperty(
   payload: CreatePropertyPayload,
-  accessToken?: string | null,
+  files: NuevaImagen[],
 ): Promise<PropertyRecord> {
-  const response = await fetch(`${API_URL}/properties`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    body: JSON.stringify(payload),
+  const formData = new FormData();
+
+  // Agregar archivos al FormData
+  files.forEach((image) => formData.append("files", image.file));
+  // Agregar todo el JSON empaquetado en un solo campo llamado "datos"
+  formData.append("datos", JSON.stringify(payload));
+  
+  return apiRequest<PropertyRecord>(PATH, {
+    method: "POST",
+    data: formData,
   });
+}
 
-  const data = (await response.json().catch(() => null)) as
-    | PropertyRecord
-    | { message?: string | string[] }
-    | null;
+// Actualizar propiedad
+export async function updateProperty(
+  id: number,
+  payload: UpdatePropertyPayload,
+  files: NuevaImagen[] = [],
+): Promise<PropertyRecord> {
+  const formData = new FormData();
 
-  if (!response.ok || !data || Array.isArray(data)) {
-    const message = Array.isArray((data as { message?: string | string[] } | null)?.message)
-      ? ((data as { message: string[] }).message[0] ?? 'No fue posible crear la propiedad.')
-      : typeof (data as { message?: string | string[] } | null)?.message === 'string'
-        ? ((data as { message: string }).message)
-        : 'No fue posible crear la propiedad.';
-    throw new Error(message);
+  // Enviamos el carpeta_id suelto para que Multer lo lea a la primera
+  if (payload.carpeta_id) {
+    formData.append("carpeta_id", payload.carpeta_id);
   }
 
-  return data as PropertyRecord;
+  // Empaquetamos todo el JSON en el campo "datos"
+  formData.append("datos", JSON.stringify(payload));
+
+  // Si hay archivos nuevos, los agregamos
+  if (files && files.length > 0) {
+    files.forEach((image) => formData.append("files", image.file));
+  }
+
+  return apiRequest<PropertyRecord>(`${PATH}/${id}`, {
+    method: "PATCH",
+    data: formData,
+  });
+}
+
+// Eliminar propiedad
+export async function deleteProperty(id: number): Promise<void> {
+  return apiRequest<void>(`${PATH}/${id}`, {
+    method: "DELETE",
+  });
 }

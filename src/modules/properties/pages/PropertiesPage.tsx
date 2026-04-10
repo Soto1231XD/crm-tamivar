@@ -1,267 +1,477 @@
-import { useEffect, useMemo, useState } from 'react';
-import { createProperty, getProperties, type CreatePropertyPayload, type PropertyRecord } from '../services/properties.api';
-import { CreatePropertyModal } from '../components/CreatePropertyModal';
-import { useAuth } from '../../../shared/context/AuthContext';
-import descInfIcon from '../../../assets/images/DescInf.png';
-import editarIcon from '../../../assets/images/Editar.png';
-import borrarIcon from '../../../assets/images/Borrar.png';
-import agregarIcon from '../../../assets/images/Agregar.png';
-import desArcIcon from '../../../assets/images/DesArc.png';
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import type { PropertyRecord } from "@/interfaces/property.interface";
+import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmModal";
+import descInfIcon from "@/assets/images/DescInf.png";
+import agregarIcon from "@/assets/images/Agregar.png";
+import desArcIcon from "@/assets/images/DesArc.png";
+import verIcon from "@/assets/images/Ver.png";
+import {
+  PROPERTY_OPERATION_FILTER_OPTIONS,
+  STATUS_OPTIONS,
+  TYPE_OPTIONS,
+} from "../utils/property-constants";
+import { usePropertiesStore } from "../store/usePropertiesStore";
+import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
+import { BadgeSelect } from "@/components/ui/BadgeSelect";
+import {
+  formatDireccion,
+  getPropertyStatusStyles,
+  formatCurrency,
+  calculateFinalPrice,
+  getFullImageUrl,
+} from "../utils/formatters";
+import { downloadPropertiesAsExcel } from "../utils/propertyExport";
+import { DownloadPdfButton } from "../utils/DownloadPdfButton";
+import { searchProperties } from "../services/properties.api";
+import {
+  FilterCard,
+  FilterSearchInput,
+  FilterSelect,
+} from "@/components/ui/AppFilters";
 
-const STATUS_OPTIONS = ['Todos los estados', 'Disponible', 'Apartado', 'Vendido', 'Preventa', 'Baja'] as const;
-const TYPE_OPTIONS = [
-  'Todos los tipos',
-  'Casa',
-  'Departamento',
-  'Desarrollo',
-  'Terreno',
-  'Local comercial',
-  'Edificio comercial',
-] as const;
-
-const PROPERTY_STATUS_STYLES: Record<string, { backgroundColor: string; color: string }> = {
-  disponible: { backgroundColor: '#D0FAE5', color: '#4D8236' },
-  apartado: { backgroundColor: '#FEF9C2', color: '#E4AE1F' },
-  vendido: { backgroundColor: '#B3B3B5', color: '#000000' },
-  preventa: { backgroundColor: '#DBEAFE', color: '#1480F0' },
-  baja: { backgroundColor: '#FEF3C7', color: '#CA5874' },
-};
+const COMMISSION_CALCULATOR_URL = "https://tamivar-tabulador.netlify.app/";
 
 export function PropertiesPage() {
-  const { user, accessToken } = useAuth();
-  const [properties, setProperties] = useState<PropertyRecord[]>([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>('Todos los estados');
-  const [typeFilter, setTypeFilter] = useState<(typeof TYPE_OPTIONS)[number]>('Todos los tipos');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const { can } = useHasPermission();
+
+  const {
+    properties,
+    isLoading,
+    fetchProperties,
+    removeProperty,
+    editProperty,
+  } = usePropertiesStore();
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<(typeof STATUS_OPTIONS)[number]>("Todos los estados");
+  const [typeFilter, setTypeFilter] =
+    useState<(typeof TYPE_OPTIONS)[number]>("Todos los tipos");
+  const [operationFilter, setOperationFilter] = useState<
+    (typeof PROPERTY_OPERATION_FILTER_OPTIONS)[number]
+  >("Todas las operaciones");
+  const [deletingProperty, setDeletingProperty] =
+    useState<PropertyRecord | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
+  const [operationProperties, setOperationProperties] = useState<
+    PropertyRecord[]
+  >([]);
+  const [isFilteringByOperation, setIsFilteringByOperation] = useState(false);
+
+  const canEdit = can("propiedades", "actualizar");
+  const canCreate = can("propiedades", "crear");
+  const canDelete = can("propiedades", "eliminar");
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
 
   useEffect(() => {
     let active = true;
-    setIsLoading(true);
-    getProperties()
-      .then((data) => {
+
+    async function syncOperationFilter() {
+      if (operationFilter === "Todas las operaciones") {
+        setOperationProperties([]);
+        setIsFilteringByOperation(false);
+        return;
+      }
+
+      setIsFilteringByOperation(true);
+
+      try {
+        const data = await searchProperties({
+          tipo_operacion: operationFilter,
+        });
         if (!active) return;
-        setProperties(data);
-      })
-      .finally(() => {
+        setOperationProperties(data);
+      } catch {
         if (!active) return;
-        setIsLoading(false);
-      });
+        toast.error("No fue posible filtrar por tipo de operación.");
+        setOperationProperties([]);
+      } finally {
+        if (active) {
+          setIsFilteringByOperation(false);
+        }
+      }
+    }
+
+    void syncOperationFilter();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [operationFilter]);
+
+  // Configuración dinámica de las columnas de la tabla
+  const columns: ColumnDef<PropertyRecord>[] = useMemo(
+    () => [
+      {
+        header: "Propiedad",
+        headerClassName: "min-w-[200px]",
+        cellClassName: "min-w-[200px] whitespace-normal align-top",
+        render: (property) => (
+          <span className="font-medium text-slate-800">
+            {property.titulo || "Sin título"}
+          </span>
+        ),
+      },
+      {
+        header: "Tipo de inmueble",
+        render: (property) => (
+          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+            {property.tipo_inmueble}
+          </span>
+        ),
+      },
+      {
+        header: "Operación",
+        render: (property) => (
+          <div className="flex flex-col gap-1.5 items-start">
+            {property.esquema_comercial.map((esquema, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 ring-1 ring-inset ring-slate-200"
+              >
+                {esquema.tipo_operacion}
+              </span>
+            ))}
+          </div>
+        ),
+      },
+      {
+        header: "Exclusivo",
+        headerClassName: "w-[100px]",
+        cellClassName: "w-[100px] align-top",
+        render: (property) => (
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
+              property.exclusiva
+                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                : "text-slate-500"
+            }`}
+          >
+            {property.exclusiva ? "Sí" : "No"}
+          </span>
+        ),
+      },
+      {
+        header: "Dirección",
+        headerClassName: "w-[320px]",
+        cellClassName: "w-[320px] whitespace-normal align-top",
+        render: (property) => (
+          <div className="min-w-[300px] max-w-[320px] break-words text-sm leading-6 text-slate-600">
+            {formatDireccion(property.direccion)}
+          </div>
+        ),
+      },
+      {
+        header: "Precio (MXN)",
+        headerClassName: "w-[160px]",
+        cellClassName: "w-[160px] align-top",
+        render: (property) => (
+          <div className="flex flex-col gap-2 justify-center mt-0.5">
+            {property.esquema_comercial.map((esquema, idx) => {
+              const { finalPrice } = calculateFinalPrice(
+                esquema.precio,
+                esquema.descuento_cantidad,
+              );
+
+              return (
+                <span
+                  key={idx}
+                  className="whitespace-nowrap font-semibold text-[#4F5EF8] leading-tight"
+                >
+                  <span className="text-xs text-slate-400 font-medium mr-1.5">
+                    {esquema.tipo_operacion.charAt(0).toUpperCase()}:
+                  </span>
+                  {formatCurrency(finalPrice)}
+                </span>
+              );
+            })}
+          </div>
+        ),
+      },
+      {
+        header: "Registrado por",
+        headerClassName: "min-w-[250px]",
+        cellClassName: "min-w-[250px] align-top",
+        render: (property) => (
+          <div className="flex items-center justify-center gap-2 text-slate-700">
+            <div className="h-6 w-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold uppercase overflow-hidden">
+              {property.creador?.foto_url ? (
+                <img
+                  src={getFullImageUrl(property.creador.foto_url)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                `${property.creador?.nombres?.[0] || ""}${property.creador?.apellido_paterno?.[0] || ""}`
+              )}
+            </div>
+            <span>{`${property.creador?.nombres || ""} ${property.creador?.apellido_paterno || ""}`}</span>
+          </div>
+        ),
+      },
+      {
+        header: "Estado",
+        render: (property) => (
+          <BadgeSelect
+            value={property.estatus}
+            options={STATUS_OPTIONS}
+            onChange={(val) => handleStatusChange(property.id, val)}
+            disabled={updatingStatusId === property.id}
+            canEdit={canEdit}
+            getStyles={getPropertyStatusStyles}
+            omitFirstOption={true}
+          />
+        ),
+      },
+    ],
+    [updatingStatusId, canEdit],
+  );
+
+  const sourceProperties =
+    operationFilter === "Todas las operaciones"
+      ? properties
+      : operationProperties;
 
   const filteredProperties = useMemo(() => {
-    return properties.filter((property) => {
+    return sourceProperties.filter((property) => {
       const matchesStatus =
-        statusFilter === 'Todos los estados' ||
-        property.estatus.trim().toLowerCase() === statusFilter.trim().toLowerCase();
+        statusFilter === "Todos los estados" ||
+        property.estatus.toLowerCase() === statusFilter.toLowerCase();
 
       const matchesType =
-        typeFilter === 'Todos los tipos' ||
-        property.tipo_inmueble.trim().toLowerCase() === typeFilter.trim().toLowerCase();
+        typeFilter === "Todos los tipos" ||
+        property.tipo_inmueble.toLowerCase() === typeFilter.toLowerCase();
 
-      const address = formatDireccion(property.direccion).toLowerCase();
       const query = search.trim().toLowerCase();
       const matchesSearch =
-        query.length === 0 ||
-        property.tipo_inmueble.toLowerCase().includes(query) ||
-        address.includes(query) ||
-        property.estatus.toLowerCase().includes(query);
+        query === "" ||
+        property.titulo.toLowerCase().includes(query) ||
+        (property.direccion.calle ?? "").toLowerCase().includes(query) ||
+        property.creador.nombres.toLowerCase().includes(query);
 
       return matchesStatus && matchesType && matchesSearch;
     });
-  }, [properties, search, statusFilter, typeFilter]);
+  }, [search, sourceProperties, statusFilter, typeFilter]);
 
-  function openCreateModal() {
-    setIsCreateModalOpen(true);
+  function openDeleteModal(property: PropertyRecord) {
+    setDeletingProperty(property);
   }
 
-  function closeCreateModal() {
-    setIsCreateModalOpen(false);
+  function closeDeleteModal() {
+    setDeletingProperty(null);
   }
 
-  async function handleCreateProperty(payload: Omit<CreatePropertyPayload, 'creado_por_id'>): Promise<string | null> {
-    if (!user?.id) {
-      return 'No hay una sesion valida para asociar el creador.';
-    }
-
+  async function handleDelete(propertyId: number): Promise<string | null> {
     try {
-      const createdPayload: CreatePropertyPayload = {
-        ...payload,
-        creado_por_id: user.id,
-      };
-      const createdProperty = await createProperty(createdPayload, accessToken);
-      setProperties((prev) => [createdProperty, ...prev]);
+      await removeProperty(propertyId);
+      setDeletingProperty(null);
+      toast.success("La propiedad se elimino con éxito.");
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible crear la propiedad.';
+      toast.error("No fue posible eliminar la propiedad.");
+      return error instanceof Error
+        ? error.message
+        : "No fue posible eliminar la propiedad.";
     }
+  }
+
+  const handleStatusChange = async (id: number, nextStatus: string) => {
+    setUpdatingStatusId(id);
+    try {
+      await editProperty(id, { estatus: nextStatus });
+      toast.success(`El estado de la propiedad cambio a ${nextStatus}.`);
+    } catch {
+      toast.error("No fue posible actualizar el estado de la propiedad.");
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
+  function handleDownloadProperties() {
+    downloadPropertiesAsExcel(filteredProperties);
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Propiedades</h2>
-          <p className="mt-1 text-sm text-slate-600">Gestiona el catálogo de propiedades</p>
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Catalogo inmobiliario
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-[2rem]">
+            Propiedades
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Gestiona el catalogo de propiedades, revisa su estado y encuentra
+            inmuebles más rápido con filtros claros.
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm"
-        >
-          <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
-          <span>Nueva propiedad</span>
-        </button>
+
+        <div className="ml-auto flex flex-col items-end gap-3">
+          <button
+            type="button"
+            disabled={!canCreate}
+            onClick={() => navigate("/modulos/propiedades/nuevo")}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <img
+              src={agregarIcon}
+              alt=""
+              className="h-6 w-6 shrink-0"
+              aria-hidden="true"
+            />
+            <span>Nueva propiedad</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              window.open(
+                COMMISSION_CALCULATOR_URL,
+                "_blank",
+                "noopener,noreferrer",
+              )
+            }
+            className="inline-flex items-center gap-2 rounded-xl bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1E293B]"
+          >
+            <span>Tabulador de comisiones</span>
+          </button>
+        </div>
       </header>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
-          <input
+      <FilterCard description="Busca propiedades por titulo y combina los filtros para ubicar resultados más rápido.">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(0,0.95fr)_auto]">
+          <FilterSearchInput
             type="text"
-            placeholder="Buscar propiedades"
+            placeholder="Buscar por titulo, calle o asesor"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
           />
 
-          <select
+          <FilterSelect
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as (typeof STATUS_OPTIONS)[number])}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+            onChange={(event) =>
+              setStatusFilter(
+                event.target.value as (typeof STATUS_OPTIONS)[number],
+              )
+            }
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
             ))}
-          </select>
+          </FilterSelect>
 
-          <select
+          <FilterSelect
             value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value as (typeof TYPE_OPTIONS)[number])}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-700 focus:ring"
+            onChange={(event) =>
+              setTypeFilter(event.target.value as (typeof TYPE_OPTIONS)[number])
+            }
           >
             {TYPE_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
             ))}
-          </select>
+          </FilterSelect>
+
+          <FilterSelect
+            value={operationFilter}
+            onChange={(event) =>
+              setOperationFilter(
+                event.target
+                  .value as (typeof PROPERTY_OPERATION_FILTER_OPTIONS)[number],
+              )
+            }
+          >
+            {PROPERTY_OPERATION_FILTER_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </FilterSelect>
 
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-lg bg-[#16A34A] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+            onClick={handleDownloadProperties}
+            disabled={isFilteringByOperation}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <img src={desArcIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+            <img
+              src={desArcIcon}
+              alt=""
+              className="h-6 w-6 shrink-0"
+              aria-hidden="true"
+            />
             <span>Descargar</span>
           </button>
         </div>
-      </section>
+      </FilterCard>
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">tipo inmueble</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">direccion</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Precio</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Estatus</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-600">
-                    Cargando propiedades...
-                  </td>
-                </tr>
-              ) : filteredProperties.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-600">
-                    No se encontraron propiedades
-                  </td>
-                </tr>
-              ) : (
-                filteredProperties.map((property) => (
-                  <tr key={property.id} className="border-b border-slate-100">
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800">{property.tipo_inmueble}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{formatDireccion(property.direccion)}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-[#4F5EF8]">{formatCurrency(property.precio)}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-                        style={getPropertyStatusStyles(property.estatus)}
-                      >
-                        {property.estatus}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          aria-label="Editar"
-                          title="Editar"
-                          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                        >
-                          <img src={editarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="Descargar"
-                          title="Descargar"
-                          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                        >
-                          <img src={descInfIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="Eliminar"
-                          title="Eliminar"
-                          className="rounded-md border border-slate-300 p-1.5 text-slate-700"
-                        >
-                          <img src={borrarIcon} alt="" className="h-6 w-6" aria-hidden="true" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <BaseTable
+        data={filteredProperties}
+        columns={columns}
+        isLoading={isLoading || isFilteringByOperation}
+        emptyMessage="No se encontraron propiedades"
+        wrapperClassName="rounded-2xl"
+        tableClassName="min-w-full text-left"
+        actionsClassName="mx-auto flex w-max items-center justify-center gap-2"
+        canEdit={canEdit}
+        canDelete={canDelete}
+        onEdit={(property) =>
+          navigate(`/modulos/propiedades/${property.id}/editar`)
+        }
+        onDelete={(property) => openDeleteModal(property)}
+        customActions={(property) => (
+          <>
+            <button
+              type="button"
+              aria-label="Ver detalles"
+              title="Ver detalles"
+              className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
+              onClick={() => navigate(`/modulos/propiedades/${property.id}`)}
+            >
+              <img
+                src={verIcon}
+                alt=""
+                className="h-5 w-5"
+                aria-hidden="true"
+              />
+            </button>
 
-      <CreatePropertyModal isOpen={isCreateModalOpen} onClose={closeCreateModal} onCreate={handleCreateProperty} />
+            {/* Botón Descargar */}
+            <DownloadPdfButton
+              property={property}
+              className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center"
+            >
+              {(loading) =>
+                loading ? (
+                  <div className="h-5 w-5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" />
+                ) : (
+                  <img src={descInfIcon} alt="Descargar" className="h-5 w-5" />
+                )
+              }
+            </DownloadPdfButton>
+          </>
+        )}
+      />
+
+      {deletingProperty && (
+        <DeletePropertyConfirmModal
+          isOpen={true}
+          property={deletingProperty}
+          onConfirm={() => handleDelete(deletingProperty.id)}
+          onClose={closeDeleteModal}
+        />
+      )}
     </div>
   );
-}
-
-function getPropertyStatusStyles(estatus: string): { backgroundColor: string; color: string } {
-  const normalizedStatus = estatus.trim().toLowerCase();
-  return PROPERTY_STATUS_STYLES[normalizedStatus] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
-}
-
-function formatDireccion(direccion: { calle?: string; municipio?: string; fraccionamiento?: string }): string {
-  const parts = [direccion.calle, direccion.municipio, direccion.fraccionamiento]
-    .map((part) => (typeof part === 'string' ? part.trim() : ''))
-    .filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : 'Sin direccion';
-}
-
-function formatCurrency(value: string | number): string {
-  const parsedValue = typeof value === 'number' ? value : Number(value);
-  if (Number.isNaN(parsedValue)) return '$0.00';
-
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    maximumFractionDigits: 2,
-  }).format(parsedValue);
 }

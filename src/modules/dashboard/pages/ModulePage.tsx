@@ -1,14 +1,25 @@
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { MODULE_LABELS, getModulePermissions } from '../../../shared/constants/roles';
-import { useAuth } from '../../../shared/context/AuthContext';
-import type { ModuleKey } from '../../../shared/types/rbac';
+import { MODULE_LABELS } from '@/shared/auth/navigation.util';
+import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
+import type { ModuleKey } from '@/shared/auth/interfaces/rbac.interface';
 
-const validModules: ModuleKey[] = ['properties', 'leads', 'content', 'users', 'system_roles', 'system_logs'];
+const validModules: ModuleKey[] = [
+  'propiedades', 
+  'registros', 
+  'blogs', 
+  'usuarios', 
+  'roles', 
+  'movimientos'
+];
 
 export function ModulePage() {
   const { module } = useParams<{ module: string }>();
-  const { user } = useAuth();
+  
+  // Extraemos el usuario directo del Store y la función 'can' del Hook
+  const user = useAuthStore((state) => state.user);
+  const { can } = useHasPermission();
 
   const moduleKey = useMemo<ModuleKey | null>(() => {
     if (!module) return null;
@@ -16,21 +27,20 @@ export function ModulePage() {
   }, [module]);
 
   if (!moduleKey || !user) {
-    return null;
+    return null; 
   }
-
-  const permissions = getModulePermissions(user.roles, moduleKey);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <h1 className="text-2xl font-bold text-slate-900">{MODULE_LABELS[moduleKey]}</h1>
-      <p className="mt-2 text-sm text-slate-600">Vista reutilizable por modulo.</p>
+      <p className="mt-2 text-sm text-slate-600">Vista reutilizable por módulo.</p>
 
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <PermissionRow label="Ver" value={permissions.view} />
-        <PermissionRow label="Crear" value={permissions.create} />
-        <PermissionRow label="Editar" value={permissions.edit} />
-        <PermissionRow label="Eliminar" value={permissions.delete} />
+        {/* Reemplazamos el objeto permissions estático por validaciones dinámicas */}
+        <PermissionRow label="Ver" value={can(moduleKey, 'leer')} />
+        <PermissionRow label="Crear" value={can(moduleKey, 'crear')} />
+        <PermissionRow label="Editar" value={can(moduleKey, 'actualizar')} />
+        <PermissionRow label="Eliminar" value={can(moduleKey, 'eliminar')} />
       </div>
     </section>
   );
