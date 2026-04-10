@@ -143,6 +143,10 @@ export function UsersPage() {
               const isSuperAdmin = roles.some((role) => isSuperAdminRole(role));
 
               const isCurrentUser = sessionUser?.id === user.id;
+              const canEditThisUser =
+                canEdit && (!isSuperAdmin || isCurrentUser);
+              const canToggleThisUser =
+                canDelete && !isSuperAdmin && !isCurrentUser;
 
               return (
                 <article
@@ -226,9 +230,9 @@ export function UsersPage() {
                     </div>
                   </div>
 
-                  {!isSuperAdmin && !isCurrentUser ? (
+                  {canEditThisUser || canToggleThisUser ? (
                     <div className="mt-5 flex flex-wrap items-center justify-center gap-2 border-t border-slate-200 pt-4">
-                      {canEdit && (
+                      {canEditThisUser && (
                         <button
                           type="button"
                           onClick={() => setEditingUser(user)}
@@ -244,7 +248,7 @@ export function UsersPage() {
                         </button>
                       )}
 
-                      {canDelete && (
+                      {canToggleThisUser && (
                         <button
                           type="button"
                           onClick={() => handleToggleUserStatus(user)}
@@ -267,7 +271,13 @@ export function UsersPage() {
                   ) : (
                     <div className="mt-5 border-t border-slate-200 pt-4">
                       <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-slate-700">
-                        {isSuperAdmin ? (
+                        {isSuperAdmin && isCurrentUser ? (
+                          <span>
+                            Tu perfil cuenta con el rol Super Administrador.
+                            Puedes actualizar tu información, pero no darte de
+                            baja desde esta vista.
+                          </span>
+                        ) : isSuperAdmin ? (
                           <span>
                             Este usuario pertenece a un perfil de alto rango. Su
                             información no se puede manipular desde esta vista.
