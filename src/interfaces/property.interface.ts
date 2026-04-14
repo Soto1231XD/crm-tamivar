@@ -105,3 +105,12 @@ export type CreatePropertyPayload =
 export type UpdatePropertyPayload = Partial<CreatePropertyPayload> & {
   carpeta_id?: string;
 };
+
+// Interfaz para los filtros
+export interface PropertyFilters {
+  tipo_operacion?: string;
+  tipo_inmueble?: string;
+  estatus?: string;
+  minPrecio?: number;
+  maxPrecio?: number;
+}
