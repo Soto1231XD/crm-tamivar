@@ -17,6 +17,7 @@ export interface LeadPropertyRecord {
 
 export interface LeadRecord {
   id: number;
+  registro_lead_id?: number | null;
   folio?: string | null;
   nombres: string;
   apellidos: string;

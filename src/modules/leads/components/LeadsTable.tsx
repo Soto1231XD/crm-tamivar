@@ -18,6 +18,7 @@ type LeadsTableProps = {
   isLoading: boolean;
   updatingLeadId: number | null;
   propertyTitleById: Map<number, string>;
+  currentUserId?: number | null;
   hideResponsibleColumn?: boolean;
   showFolioColumn?: boolean;
   canQuickEdit?: boolean;
@@ -34,6 +35,7 @@ export function LeadsTable({
   isLoading,
   updatingLeadId,
   propertyTitleById,
+  currentUserId,
   hideResponsibleColumn = false,
   showFolioColumn = false,
   canQuickEdit = true,
@@ -54,6 +56,14 @@ export function LeadsTable({
             {`${lead.nombres ?? ""} ${lead.apellidos ?? ""}`.trim() ||
               "Sin nombre"}
           </p>
+          {currentUserId != null &&
+          lead.registro_lead_id != null &&
+          lead.vendedor_asignado_id === currentUserId &&
+          (lead.creado_por_id ?? lead.creador?.id ?? null) !== currentUserId ? (
+            <p className="mt-1 text-xs font-medium text-[#2563EB]">
+              Este lead te lo proporcionó el coordinador de ventas.
+            </p>
+          ) : null}
         </div>
       ),
     },

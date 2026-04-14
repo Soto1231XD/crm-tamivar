@@ -701,9 +701,9 @@ export function usePropertyForm(
         frente: parsedNumbers.frente,
         fondo: parsedNumbers.fondo,
       },
-      enlace_direccion: form.enlace_direccion.trim(),
+      enlace_direccion: form.enlace_direccion.trim() || undefined,
       direccion: {
-        cp: parsedNumbers.cp,
+        cp: form.cp.trim() ? parsedNumbers.cp : undefined,
         fraccionamiento: form.fraccionamiento.trim(),
         smz: form.smz ? parsedNumbers.smz : undefined,
         mza: form.mza ? parsedNumbers.mza : undefined,

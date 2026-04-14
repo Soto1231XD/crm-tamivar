@@ -97,7 +97,8 @@ export interface NuevaImagen extends ImagenMetadata {
 
 // Payloads para peticiones
 export type CreatePropertyPayload = 
-  Omit<PropertyRecord, 'id' | 'carpeta_id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador'> & {
+  Omit<PropertyRecord, 'id' | 'carpeta_id' | 'creado_por_id' | 'slug' | 'creado_en' | 'imagenes' | 'creador' | 'enlace_direccion'> & {
+  enlace_direccion?: string;
   imagenes?: Imagen[];
   imagenes_nuevas_metadata?: ImagenMetadata[];
 };

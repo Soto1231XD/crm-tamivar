@@ -15,6 +15,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
   contactado: { backgroundColor: '#DBEAFE', color: '#1D4ED8' },
   cancelado: { backgroundColor: '#FEE2E2', color: '#B91C1C' },
   'cita agendada': { backgroundColor: '#FDE68A', color: '#92400E' },
+  'cita cerrada': { backgroundColor: '#E0F2FE', color: '#0369A1' },
   'en proceso': { backgroundColor: '#EDE9FE', color: '#6D28D9' },
   cerrado: { backgroundColor: '#DCFCE7', color: '#166534' },
   disponible: { backgroundColor: '#DCFCE7', color: '#166534' },
