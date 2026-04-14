@@ -74,7 +74,11 @@ export function LeadsPage() {
   const canEditVisit = (lead: { creado_por_id?: number | null; creador?: { id?: number | null } | null }) => {
     if (canEditAll) return true;
     if (!canEditOwn || !user?.id) return false;
-    return (lead.creado_por_id ?? lead.creador?.id ?? null) === user.id;
+    return (
+      (lead.creado_por_id ?? lead.creador?.id ?? null) === user.id ||
+      ('vendedor_asignado_id' in lead &&
+        (lead as { vendedor_asignado_id?: number | null }).vendedor_asignado_id === user.id)
+    );
   };
 
   return (
@@ -126,6 +130,7 @@ export function LeadsPage() {
           isLoading={isLoading}
           updatingLeadId={updatingLeadId}
           propertyTitleById={propertyTitleById}
+          currentUserId={user?.id ?? null}
           hideResponsibleColumn={isSalesAdvisor}
           showFolioColumn={isSuperAdmin}
           canQuickEdit={canEditAll || canEditOwn}

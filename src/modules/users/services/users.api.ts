@@ -57,7 +57,16 @@ function buildUserFormData(payload: CreateUserPayload | UpdateUserPayload): Form
     photoFile?: File | null;
   };
 
-  formData.append('datos', JSON.stringify(data));
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => formData.append(key, String(item)));
+      return;
+    }
+
+    formData.append(key, String(value));
+  });
 
   if (photoFile instanceof File) {
     formData.append('file', photoFile);

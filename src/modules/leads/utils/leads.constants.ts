@@ -2,7 +2,7 @@ export const ALL_STATES = 'Todos los estados';
 export const ALL_PRIORITIES = 'Todas las prioridades';
 export const ALL_PROPERTIES = 'Todas las propiedades';
 
-export const VISIT_STATUS_OPTIONS = ['Agendado', 'Cancelado', 'Cerrado'] as const;
+export const VISIT_STATUS_OPTIONS = ['Agendado', 'Cancelado', 'Cita cerrada', 'Cerrado'] as const;
 
 export const LEAD_STATUS_OPTIONS = [
   'En seguimiento',

@@ -87,6 +87,15 @@ export function LeadLeadsTable({
       ),
     },
     {
+      header: "Celular",
+      cellClassName: "min-w-[150px]",
+      render: (lead) => (
+        <span className="text-sm text-slate-700">
+          {formatPhone(lead.lada, lead.telefono)}
+        </span>
+      ),
+    },
+    {
       header: "Prioridad",
       cellClassName: "min-w-[150px]",
       render: (lead) => {
@@ -113,15 +122,6 @@ export function LeadLeadsTable({
             : lead.vendedor_asignado_id
               ? (userNameById.get(lead.vendedor_asignado_id) ?? "Sin asignar")
               : "Sin asignar"}
-        </span>
-      ),
-    },
-    {
-      header: "Celular",
-      cellClassName: "min-w-[150px]",
-      render: (lead) => (
-        <span className="text-sm text-slate-700">
-          {formatPhone(lead.lada, lead.telefono)}
         </span>
       ),
     },
