@@ -1,4 +1,9 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes
+} from "react";
+import React, { useState, useEffect } from "react";
 
 type FilterCardProps = {
   title?: string;
@@ -12,13 +17,13 @@ type FilterSelectProps = SelectHTMLAttributes<HTMLSelectElement>;
 type FilterDateInputProps = InputHTMLAttributes<HTMLInputElement>;
 
 const baseControlClassName =
-  'w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10';
+  "w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10";
 
 export function FilterCard({
-  title = 'Filtros',
+  title = "Filtros",
   description,
   children,
-  className = '',
+  className = "",
 }: FilterCardProps) {
   return (
     <section
@@ -26,8 +31,12 @@ export function FilterCard({
     >
       <div className="space-y-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
-          {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            {title}
+          </p>
+          {description ? (
+            <p className="mt-1 text-sm text-slate-600">{description}</p>
+          ) : null}
         </div>
 
         {children}
@@ -37,7 +46,7 @@ export function FilterCard({
 }
 
 export function FilterSearchInput({
-  className = '',
+  className = "",
   ...props
 }: FilterSearchInputProps) {
   return (
@@ -51,22 +60,91 @@ export function FilterSearchInput({
           strokeWidth="1.8"
           className="h-4 w-4"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m21 21-4.35-4.35"
+          />
           <circle cx="11" cy="11" r="6.25" />
         </svg>
       </span>
 
-      <input {...props} className={`${baseControlClassName} pl-10 ${className}`.trim()} />
+      <input
+        {...props}
+        className={`${baseControlClassName} pl-10 ${className}`.trim()}
+      />
     </label>
   );
 }
 
-export function FilterSelect({ className = '', ...props }: FilterSelectProps) {
-  return <select {...props} className={`${baseControlClassName} ${className}`.trim()} />;
+interface FilterPriceInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
+  value?: number | string;
+  onChange?: (value: number | undefined) => void;
 }
 
-export function FilterDateInput({ className = '', ...props }: FilterDateInputProps) {
-  return <input {...props} className={`${baseControlClassName} ${className}`.trim()} />;
+export const FilterPriceInput = ({ value, onChange, className, ...props }: FilterPriceInputProps) => {
+  const [displayValue, setDisplayValue] = useState("");
+
+  // Sincroniza el valor numérico externo con el string formateado local
+  useEffect(() => {
+    if (value === undefined || value === null || value === "") {
+      setDisplayValue("");
+    } else {
+      setDisplayValue(Number(value).toLocaleString("en-US"));
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, "");
+
+    // Actualizamos la vista y emitimos el valor real
+    if (rawValue === "") {
+      setDisplayValue("");
+      onChange?.(undefined);
+    } else {
+      const numericValue = parseInt(rawValue, 10);
+      setDisplayValue(numericValue.toLocaleString("en-US")); // Ponemos las comas
+      onChange?.(numericValue); // Enviamos el número limpio a Zustand
+    }
+  };
+
+  return (
+    <div className="relative flex items-center">
+      <span className="absolute left-3.5 font-bold text-slate-600">
+        $
+      </span>
+      <input
+        type="text"
+        value={displayValue}
+        onChange={handleChange}
+        {...props}
+        className={`w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-8 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-500 focus:border-[#312C85] focus:ring-1 focus:ring-[#312C85] ${
+          className || ""
+        }`}
+      />
+    </div>
+  );
+};
+
+export function FilterSelect({ className = "", ...props }: FilterSelectProps) {
+  return (
+    <select
+      {...props}
+      className={`${baseControlClassName} ${className}`.trim()}
+    />
+  );
+}
+
+export function FilterDateInput({
+  className = "",
+  ...props
+}: FilterDateInputProps) {
+  return (
+    <input
+      {...props}
+      className={`${baseControlClassName} ${className}`.trim()}
+    />
+  );
 }
 
 export { baseControlClassName as filterControlClassName };
