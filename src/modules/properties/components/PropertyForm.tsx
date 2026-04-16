@@ -112,6 +112,7 @@ export function PropertyForm({
   } = usePropertyForm(property, onSubmit);
 
   const isTerreno = form.tipo_inmueble.trim().toLowerCase() === "terreno";
+  const shouldShowLienToggle = form.operaciones.includes("Venta");
   const selectedOperationBlocks = OPERATION_BLOCKS.filter((operation) =>
     form.operaciones.includes(operation.key),
   );
@@ -207,7 +208,7 @@ export function PropertyForm({
                 checked={form.tiene_gravamen}
                 onChange={handleInputChange}
                 label="¿Tiene gravamen?"
-                className="!min-h-[48px] h-[48px]"
+                className={shouldShowLienToggle ? "!min-h-[48px] h-[48px]" : "hidden"}
               />
               <Toggle
                 name="exclusiva"
@@ -589,7 +590,7 @@ export function PropertyForm({
                   checked={form.tiene_gravamen}
                   onChange={handleInputChange}
                   label="Tiene gravamen"
-                  className="min-w-[220px]"
+                  className={shouldShowLienToggle ? "min-w-[220px]" : "hidden"}
                 />
               </div>
               <p className="mt-3 text-sm leading-6 text-slate-600">

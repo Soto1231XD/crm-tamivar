@@ -1,16 +1,24 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { canAccessDashboard } from "@/shared/auth/navigation.util";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
+import { isTokenExpired } from "@/shared/auth/token.utils";
 
 type ProtectedRouteProps = {
   module?: ModuleKey;
 };
 
 export function ProtectedRoute({ module }: ProtectedRouteProps) {
+  const token = useAuthStore((state) => state.token);
   const { can, userPermissions } = useHasPermission();
 
-  if (!userPermissions || userPermissions.length === 0) {
+  if (
+    !token ||
+    isTokenExpired(token) ||
+    !userPermissions ||
+    userPermissions.length === 0
+  ) {
     return <Navigate to="/login" replace />;
   }
 

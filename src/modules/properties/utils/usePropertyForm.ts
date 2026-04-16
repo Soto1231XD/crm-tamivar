@@ -508,6 +508,9 @@ export function usePropertyForm(
       return {
         ...prev,
         operaciones,
+        tiene_gravamen: operaciones.includes("Venta")
+          ? prev.tiene_gravamen
+          : false,
       };
     });
   }
@@ -683,7 +686,9 @@ export function usePropertyForm(
       tipos_pago: form.tipos_pago,
       estatus: form.estatus.trim(),
       exclusiva: form.exclusiva,
-      tiene_gravamen: form.tiene_gravamen,
+      tiene_gravamen: selectedOperations.includes("Venta")
+        ? form.tiene_gravamen
+        : false,
       etiquetas: form.etiquetas
         .split(",")
         .map((item) => item.trim())
