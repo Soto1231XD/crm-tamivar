@@ -1,6 +1,7 @@
 import agregarIcon from '../../../assets/images/Agregar.png';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
+import { extractUserRoles, normalizeRoleName } from '@/shared/auth/role.utils';
 import { TablePagination } from '../../../shared/components/TablePagination';
 import { LeadLeadsFilters } from '../components/LeadLeadsFilters';
 import { LeadLeadsTable } from '../components/LeadLeadsTable';
@@ -14,6 +15,9 @@ export function LeadLeadsPage() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.token);
   const { can, isSuperAdmin } = useHasPermission();
+  const isSalesCoordinator = extractUserRoles(user ?? { rol: null, roles: [] }).some(
+    (role) => normalizeRoleName(role) === 'coordinador de ventas',
+  );
 
   const canCreate = can('registros_leads', 'crear');
   const canEdit = can('registros_leads', 'actualizar');
@@ -99,8 +103,9 @@ export function LeadLeadsPage() {
           propertyAddressById={propertyAddressById}
           userNameById={userNameById}
           canQuickEdit={canEdit}
-          canEdit={canEdit}
+          canEdit={canEdit && !isSalesCoordinator}
           canDelete={canDelete}
+          userChoices={userChoices}
           onQuickChange={handleQuickLeadChange}
           onEdit={setEditingLead}
           onDelete={setDeletingLead}
@@ -125,7 +130,7 @@ export function LeadLeadsPage() {
         />
       ) : null}
 
-      {canEdit ? (
+      {canEdit && !isSalesCoordinator ? (
         <EditLeadLeadModal
           isOpen={Boolean(editingLead)}
           lead={editingLead}

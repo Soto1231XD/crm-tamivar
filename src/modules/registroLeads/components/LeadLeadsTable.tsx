@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
 import { BadgeSelect } from "@/components/ui/BadgeSelect";
 import type { LeadRecord } from "@/interfaces/lead.interface";
@@ -26,10 +27,11 @@ type LeadLeadsTableProps = {
   canQuickEdit?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
+  userChoices?: Array<{ id: number; label: string }>;
   onQuickChange: (
     leadId: number,
-    field: "estado" | "prioridad",
-    value: string,
+    field: "estado" | "prioridad" | "comentarios" | "vendedor_asignado_id",
+    value: string | number,
   ) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
@@ -44,10 +46,27 @@ export function LeadLeadsTable({
   canQuickEdit = true,
   canEdit = true,
   canDelete = true,
+  userChoices = [],
   onQuickChange,
   onEdit,
   onDelete,
 }: LeadLeadsTableProps) {
+  const [commentDrafts, setCommentDrafts] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    setCommentDrafts((current) => {
+      const nextDrafts = { ...current };
+
+      leads.forEach((lead) => {
+        if (!(lead.id in nextDrafts)) {
+          nextDrafts[lead.id] = lead.comentarios ?? "";
+        }
+      });
+
+      return nextDrafts;
+    });
+  }, [leads]);
+
   const columns: ColumnDef<LeadRecord>[] = [
     {
       header: "Fecha de lead",
@@ -115,15 +134,39 @@ export function LeadLeadsTable({
     {
       header: "Vendedor asignado",
       cellClassName: "min-w-[180px]",
-      render: (lead) => (
-        <span className="text-sm text-slate-700">
-          {lead.vendedor_asignado
-            ? `${lead.vendedor_asignado.nombres ?? ""} ${lead.vendedor_asignado.apellido_paterno ?? ""}`.trim()
-            : lead.vendedor_asignado_id
-              ? (userNameById.get(lead.vendedor_asignado_id) ?? "Sin asignar")
-              : "Sin asignar"}
-        </span>
-      ),
+      render: (lead) => {
+        if (!canQuickEdit) {
+          return (
+            <span className="text-sm text-slate-700">
+              {lead.vendedor_asignado
+                ? `${lead.vendedor_asignado.nombres ?? ""} ${lead.vendedor_asignado.apellido_paterno ?? ""}`.trim()
+                : lead.vendedor_asignado_id
+                  ? (userNameById.get(lead.vendedor_asignado_id) ?? "Sin asignar")
+                  : "Sin asignar"}
+            </span>
+          );
+        }
+
+        return (
+          <select
+            value={lead.vendedor_asignado_id ?? ""}
+            onChange={(event) =>
+              onQuickChange(lead.id, "vendedor_asignado_id", Number(event.target.value))
+            }
+            disabled={updatingLeadId === lead.id}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-2 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <option value="" disabled>
+              Seleccionar vendedor
+            </option>
+            {userChoices.map((choice) => (
+              <option key={choice.id} value={choice.id}>
+                {choice.label}
+              </option>
+            ))}
+          </select>
+        );
+      },
     },
     {
       header: "Operación",
@@ -223,11 +266,50 @@ export function LeadLeadsTable({
     {
       header: "Comentarios",
       cellClassName: "min-w-[240px] whitespace-normal",
-      render: (lead) => (
-        <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">
-          {lead.comentarios || "Sin comentarios"}
-        </div>
-      ),
+      render: (lead) => {
+        if (!canQuickEdit) {
+          return (
+            <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">
+              {lead.comentarios || "Sin comentarios"}
+            </div>
+          );
+        }
+
+        const draft = commentDrafts[lead.id] ?? lead.comentarios ?? "";
+        const hasChanges = draft.trim() !== (lead.comentarios ?? "").trim();
+
+        return (
+          <div className="flex max-w-[260px] flex-col gap-2">
+            <textarea
+              value={draft}
+              rows={3}
+              maxLength={500}
+              disabled={updatingLeadId === lead.id}
+              onChange={(event) =>
+                setCommentDrafts((current) => ({
+                  ...current,
+                  [lead.id]: event.target.value,
+                }))
+              }
+              className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm leading-5 text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-2 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
+              placeholder="Agregar comentario"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] text-slate-400">
+                {draft.length}/500
+              </span>
+              <button
+                type="button"
+                disabled={!hasChanges || updatingLeadId === lead.id}
+                onClick={() => onQuickChange(lead.id, "comentarios", draft)}
+                className="inline-flex items-center rounded-lg bg-[#312C85] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        );
+      },
     },
     {
       header: "Origen de lead",

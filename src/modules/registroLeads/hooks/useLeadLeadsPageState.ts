@@ -4,7 +4,7 @@ import type { PropertyRecord } from '@/interfaces/property.interface';
 import type { UserRecord } from '@/interfaces/user.interface';
 import toast from 'react-hot-toast';
 import { getProperties } from '../../properties/services/properties.api';
-import { getUsers } from '../../users/services/users.api';
+import { getSalesUserOptions } from '../../users/services/users.api';
 import { formatDireccion } from '../../properties/utils/formatters';
 import { useLeadLeadsStore } from '../store/useLeadLeadsStore';
 import { ALL_STATES, PAGE_SIZE } from '../../leads/utils/leads.constants';
@@ -47,7 +47,7 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([getProperties(), accessToken ? getUsers(accessToken) : Promise.resolve([])]).then((results) => {
+    Promise.allSettled([getProperties(), accessToken ? getSalesUserOptions(accessToken) : Promise.resolve([])]).then((results) => {
       if (!active) return;
 
       const [propertiesResult, usersResult] = results;
@@ -118,12 +118,12 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
   const userChoices = useMemo(
     () =>
       users.map((user) => ({
-        id: user.id,
-        label:
-          `${user.nombres ?? ''} ${user.apellido_paterno ?? ''}`.trim() ||
-          user.correo_electronico ||
-          'Sin nombre',
-      })),
+          id: user.id,
+          label:
+            `${user.nombres ?? ''} ${user.apellido_paterno ?? ''}`.trim() ||
+            user.correo_electronico ||
+            'Sin nombre',
+        })),
     [users],
   );
 
@@ -192,23 +192,82 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
     );
   }
 
-  async function handleQuickLeadChange(leadId: number, field: 'estado' | 'prioridad', value: string) {
+  async function handleQuickLeadChange(
+    leadId: number,
+    field: 'estado' | 'prioridad' | 'comentarios' | 'vendedor_asignado_id',
+    value: string | number,
+  ) {
     const targetLead = leads.find((lead) => lead.id === leadId);
-    if (!targetLead || targetLead[field] === value) return;
+    if (!targetLead) return;
 
-    const previousValue = targetLead[field];
+    const normalizedValue =
+      field === 'comentarios'
+        ? String(value).trim()
+        : field === 'vendedor_asignado_id'
+          ? Number(value)
+          : value;
+
+    const currentValue =
+      field === 'comentarios'
+        ? (targetLead.comentarios ?? '').trim()
+        : field === 'vendedor_asignado_id'
+          ? (targetLead.vendedor_asignado_id ?? null)
+          : targetLead[field];
+
+    if (currentValue === normalizedValue) return;
+
+    const previousValue =
+      field === 'comentarios'
+        ? targetLead.comentarios ?? ''
+        : field === 'vendedor_asignado_id'
+          ? targetLead.vendedor_asignado_id ?? null
+          : targetLead[field];
     const previousLeads = leads;
     setUpdatingLeadId(leadId);
     useLeadLeadsStore.setState({
-      leads: previousLeads.map((lead) => (lead.id === leadId ? { ...lead, [field]: value } : lead)),
+      leads: previousLeads.map((lead) => {
+        if (lead.id !== leadId) return lead;
+
+        if (field === 'vendedor_asignado_id') {
+          const assignedId = Number(normalizedValue);
+          const assignedUser = users.find((user) => user.id === assignedId);
+
+          return {
+            ...lead,
+            vendedor_asignado_id: assignedId,
+            vendedor_asignado: assignedUser
+              ? {
+                  id: assignedUser.id,
+                  nombres: assignedUser.nombres,
+                  apellido_paterno: assignedUser.apellido_paterno,
+                  apellido_materno: assignedUser.apellido_materno,
+                  correo_electronico: assignedUser.correo_electronico,
+                  foto_url: assignedUser.foto_url,
+                }
+              : lead.vendedor_asignado,
+          };
+        }
+
+        return { ...lead, [field]: normalizedValue };
+      }),
     });
 
     try {
-      await editLeadLead(leadId, { [field]: value });
-      toast.success(`El ${field === 'estado' ? 'estatus' : 'prioridad'} del lead se actualizo.`);
+      await editLeadLead(leadId, { [field]: normalizedValue });
+      const fieldLabel =
+        field === 'estado'
+          ? 'estatus'
+          : field === 'prioridad'
+            ? 'prioridad'
+            : field === 'vendedor_asignado_id'
+              ? 'vendedor asignado'
+              : 'comentario';
+      toast.success(`El ${fieldLabel} del lead se actualizo.`);
     } catch {
       useLeadLeadsStore.setState({
-        leads: previousLeads.map((lead) => (lead.id === leadId ? { ...lead, [field]: previousValue } : lead)),
+        leads: previousLeads.map((lead) =>
+          lead.id === leadId ? { ...lead, [field]: previousValue } : lead,
+        ),
       });
       toast.error('No fue posible actualizar el registro lead.');
     } finally {

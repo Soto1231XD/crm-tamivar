@@ -13,6 +13,12 @@ export async function getUsers(accessToken?: string | null): Promise<UserRecord[
   return Array.isArray(data) ? data : [];
 }
 
+export async function getSalesUserOptions(accessToken?: string | null): Promise<UserRecord[]> {
+  void accessToken;
+  const data = await apiRequest<UserRecord[]>('/users/sales-options');
+  return Array.isArray(data) ? data : [];
+}
+
 export async function getRoles(accessToken?: string | null): Promise<RoleOptionRecord[]> {
   void accessToken;
   const data = await apiRequest<RoleOptionRecord[]>('/roles');
