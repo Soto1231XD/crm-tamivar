@@ -87,7 +87,7 @@ export const leadLeadSchema = z.object({
     .max(6, 'Lada no puede exceder 6 caracteres.')
     .refine((value) => value.length === 0 || LADA_REGEX.test(value), 'Lada no valida.')
     .optional(),
-  comentarios: z.string().max(500, 'Comentarios no puede exceder 500 caracteres.').optional(),
+  comentarios: z.string().max(1500, 'Comentarios no puede exceder 1500 caracteres.').optional(),
   estado: z.string().optional(),
   prioridad: z.string().trim().min(1, 'Prioridad es obligatoria.'),
   vendedor_asignado_id: z.string().trim().min(1, 'Vendedor asignado es obligatorio.'),
@@ -96,7 +96,7 @@ export const leadLeadSchema = z.object({
   solicitud: z.string().max(1000, 'Solicitud no puede exceder 1000 caracteres.').optional(),
   presupuesto: z.string().optional(),
   ubicacion_propiedad: z.string().max(1000, 'La zona de preferencia no puede exceder 1000 caracteres.').optional(),
-  metodo_pago: z.array(z.string()).min(1, 'Método de pago es obligatorio.'),
+  metodo_pago: z.array(z.string()).optional().default([]),
   caracteristicas: z.string().max(1000, 'Características no puede exceder 1000 caracteres.').optional(),
   origen_lead: z.string().trim().min(1, 'Origen del lead es obligatorio.'),
 });
@@ -217,7 +217,7 @@ export function buildLeadLeadUpdatePayload(
     canal: (input) => input.canal.trim(),
     solicitud: (input) => input.solicitud?.trim() || undefined,
     ubicacion_propiedad: (input) => input.ubicacion_propiedad?.trim() || undefined,
-    metodo_pago: (input) => input.metodo_pago.join(', '),
+    metodo_pago: (input) => input.metodo_pago.length > 0 ? input.metodo_pago.join(', ') : undefined,
     caracteristicas: (input) => input.caracteristicas?.trim() || undefined,
     origen_lead: (input) => input.origen_lead.trim(),
   };

@@ -150,8 +150,13 @@ export function PropertyForm({
           Captura la información principal, condiciones, dirección,
           características e imágenes de la propiedad en un solo flujo.
         </p>
-        <div className="mt-4 inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600 ring-1 ring-inset ring-red-100">
-          <span className="mr-1 font-semibold">*</span> Campo obligatorio
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600 ring-1 ring-inset ring-red-100">
+            <span className="mr-1 font-semibold">*</span> Campo obligatorio
+          </div>
+          <div className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
+            Solo se permiten 40 imagenes de la propiedad
+          </div>
         </div>
       </header>
 

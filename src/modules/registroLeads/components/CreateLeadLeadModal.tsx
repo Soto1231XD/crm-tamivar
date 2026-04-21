@@ -85,7 +85,7 @@ export function CreateLeadLeadModal({
       solicitud: values.solicitud?.trim() || undefined,
       presupuesto: presupuestoValue ? Number(presupuestoValue) : undefined,
       ubicacion_propiedad: values.ubicacion_propiedad?.trim() || undefined,
-      metodo_pago: values.metodo_pago.join(', '),
+      metodo_pago: values.metodo_pago.length > 0 ? values.metodo_pago.join(', ') : undefined,
       caracteristicas: values.caracteristicas?.trim() || undefined,
       origen_lead: values.origen_lead.trim(),
     };
@@ -267,7 +267,7 @@ export function CreateLeadLeadModal({
             </label>
 
             <div className="flex flex-col gap-1.5">
-              <LeadLeadFieldLabel required>Método de pago</LeadLeadFieldLabel>
+              <LeadLeadFieldLabel>Método de pago</LeadLeadFieldLabel>
               <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
                 {LEAD_LEADS_PAYMENT_METHOD_OPTIONS.map((option) => (
                   <label key={option} className="flex items-center gap-2 text-sm text-slate-700">

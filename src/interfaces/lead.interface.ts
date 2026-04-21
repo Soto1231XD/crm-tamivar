@@ -31,6 +31,11 @@ export interface LeadRecord {
   asesor_externo?: boolean | null;
   asesor_externo_nombre?: string | null;
   creado_en?: string;
+  asignado_en?: string | null;
+  ultimo_seguimiento_en?: string | null;
+  vigencia_hasta?: string | null;
+  vigencia_activa?: boolean | null;
+  dias_vigencia_restantes?: number | null;
   creado_por_id?: number | null;
   propiedad_id?: number | null;
   vendedor_asignado_id?: number | null;

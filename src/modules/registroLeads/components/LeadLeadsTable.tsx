@@ -24,7 +24,10 @@ type LeadLeadsTableProps = {
   updatingLeadId: number | null;
   propertyAddressById: Map<number, string>;
   userNameById: Map<number, string>;
-  canQuickEdit?: boolean;
+  canEditStatus?: boolean;
+  canEditPriority?: boolean;
+  canEditAssignedSeller?: boolean;
+  canEditComments?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
   userChoices?: Array<{ id: number; label: string }>;
@@ -43,7 +46,10 @@ export function LeadLeadsTable({
   updatingLeadId,
   propertyAddressById,
   userNameById,
-  canQuickEdit = true,
+  canEditStatus = false,
+  canEditPriority = false,
+  canEditAssignedSeller = false,
+  canEditComments = false,
   canEdit = true,
   canDelete = true,
   userChoices = [],
@@ -88,7 +94,7 @@ export function LeadLeadsTable({
             options={LEAD_LEADS_STATUS_OPTIONS}
             onChange={(value) => onQuickChange(lead.id, "estado", value)}
             disabled={updatingLeadId === lead.id}
-            canEdit={canQuickEdit}
+            canEdit={canEditStatus}
             getStyles={() => getStatusStyles(lead.estado ?? "")}
             omitFirstOption={false}
           />
@@ -125,7 +131,7 @@ export function LeadLeadsTable({
             options={LEAD_LEADS_PRIORITY_OPTIONS}
             onChange={(value) => onQuickChange(lead.id, "prioridad", value)}
             disabled={updatingLeadId === lead.id}
-            canEdit={canQuickEdit}
+            canEdit={canEditPriority}
             getStyles={() => getPriorityStyles(lead.prioridad ?? "")}
           />
         );
@@ -135,7 +141,7 @@ export function LeadLeadsTable({
       header: "Vendedor asignado",
       cellClassName: "min-w-[180px]",
       render: (lead) => {
-        if (!canQuickEdit) {
+        if (!canEditAssignedSeller) {
           return (
             <span className="text-sm text-slate-700">
               {lead.vendedor_asignado
@@ -267,7 +273,7 @@ export function LeadLeadsTable({
       header: "Comentarios",
       cellClassName: "min-w-[240px] whitespace-normal",
       render: (lead) => {
-        if (!canQuickEdit) {
+        if (!canEditComments) {
           return (
             <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">
               {lead.comentarios || "Sin comentarios"}
@@ -283,7 +289,7 @@ export function LeadLeadsTable({
             <textarea
               value={draft}
               rows={3}
-              maxLength={500}
+              maxLength={1500}
               disabled={updatingLeadId === lead.id}
               onChange={(event) =>
                 setCommentDrafts((current) => ({
@@ -296,7 +302,7 @@ export function LeadLeadsTable({
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] text-slate-400">
-                {draft.length}/500
+                {draft.length}/1500
               </span>
               <button
                 type="button"
@@ -332,7 +338,7 @@ export function LeadLeadsTable({
       isLoading={isLoading}
       emptyMessage="No se encontraron registros leads"
       wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
-      tableClassName="w-max min-w-[2750px] text-left"
+      tableClassName="w-max min-w-[2580px] text-left"
       actionsClassName="flex items-center gap-2"
       onEdit={canEdit ? onEdit : undefined}
       onDelete={canDelete ? onDelete : undefined}

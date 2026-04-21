@@ -9,6 +9,7 @@ import {
 import type { CreatePropertyPayload, NuevaImagen } from "@/interfaces/property.interface";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 import { processImageToWebP } from "@/shared/utils/imageProcessor";
+import { validatePropertyImageSelection } from "../utils/propertyValidations";
 
 export function CreatePropertyPage() {
   const navigate = useNavigate();
@@ -48,6 +49,16 @@ export function CreatePropertyPage() {
     );
 
       // Llamamos a la acción del Store de Zustand
+      const optimizedFilesValidation = validatePropertyImageSelection(
+        optimizedFiles.map((image) => image.file),
+        0,
+        0,
+      );
+
+      if (optimizedFilesValidation) {
+        return optimizedFilesValidation;
+      }
+
       await addProperty(payload as CreatePropertyPayload, optimizedFiles);
       toast.success("La propiedad se creó con éxito.");
 

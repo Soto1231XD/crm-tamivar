@@ -1,5 +1,14 @@
 import type { Imagen, NuevaImagen } from "@/interfaces/property.interface";
 
+export const MAX_PROPERTY_IMAGES = 40;
+export const MAX_PROPERTY_IMAGE_SIZE_MB = 25;
+export const MAX_PROPERTY_IMAGES_TOTAL_SIZE_MB = 200;
+export const PROPERTY_IMAGE_ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
 export type FormState = {
   titulo: string;
   tipo_inmueble: string;
@@ -81,6 +90,51 @@ export interface ParsedNumbers {
 export type FormErrors = Partial<Record<keyof FormState, string>>;
 
 const LOCATION_TEXT_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s.'-]+$/;
+
+function bytesToMb(bytes: number): number {
+  return bytes / (1024 * 1024);
+}
+
+export function validatePropertyImageSelection(
+  newFiles: File[],
+  currentImagesCount: number,
+  currentImagesTotalSize: number,
+): string | null {
+  if (newFiles.length === 0) {
+    return null;
+  }
+
+  const nextTotalImages = currentImagesCount + newFiles.length;
+
+  if (nextTotalImages > MAX_PROPERTY_IMAGES) {
+    return `Solo puedes cargar hasta ${MAX_PROPERTY_IMAGES} imagenes por propiedad.`;
+  }
+
+  const invalidTypeFile = newFiles.find(
+    (file) => !PROPERTY_IMAGE_ALLOWED_TYPES.includes(file.type as never),
+  );
+
+  if (invalidTypeFile) {
+    return `La imagen "${invalidTypeFile.name}" no tiene un formato permitido. Usa JPG, PNG o WEBP.`;
+  }
+
+  const maxFileSizeBytes = MAX_PROPERTY_IMAGE_SIZE_MB * 1024 * 1024;
+  const oversizedFile = newFiles.find((file) => file.size > maxFileSizeBytes);
+
+  if (oversizedFile) {
+    return `La imagen "${oversizedFile.name}" pesa ${bytesToMb(oversizedFile.size).toFixed(1)} MB. El maximo por imagen es ${MAX_PROPERTY_IMAGE_SIZE_MB} MB.`;
+  }
+
+  const selectedFilesTotalSize = newFiles.reduce((sum, file) => sum + file.size, 0);
+  const nextTotalSize = currentImagesTotalSize + selectedFilesTotalSize;
+  const maxTotalSizeBytes = MAX_PROPERTY_IMAGES_TOTAL_SIZE_MB * 1024 * 1024;
+
+  if (nextTotalSize > maxTotalSizeBytes) {
+    return `El peso total de las imagenes no puede exceder ${MAX_PROPERTY_IMAGES_TOTAL_SIZE_MB} MB por envio. Actualmente llevas ${bytesToMb(nextTotalSize).toFixed(1)} MB.`;
+  }
+
+  return null;
+}
 
 export function validatePropertyForm(
   form: FormState,

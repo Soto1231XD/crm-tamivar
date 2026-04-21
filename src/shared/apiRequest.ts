@@ -93,6 +93,12 @@ export async function apiRequest<T>(
       throw new Error(finalMessage || "Datos de solicitud inválidos.");
     }
 
+    if (err.response?.status === 413) {
+      throw new Error(
+        "Las imágenes exceden el límite permitido. Revisa el peso por archivo o el peso total del envío.",
+      );
+    }
+
     if (err.response?.status === 404) {
       throw new Error("El recurso solicitado no existe.");
     }

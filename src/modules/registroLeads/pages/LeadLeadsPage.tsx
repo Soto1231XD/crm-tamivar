@@ -18,10 +18,17 @@ export function LeadLeadsPage() {
   const isSalesCoordinator = extractUserRoles(user ?? { rol: null, roles: [] }).some(
     (role) => normalizeRoleName(role) === 'coordinador de ventas',
   );
+  const isSalesAdvisor = extractUserRoles(user ?? { rol: null, roles: [] }).some(
+    (role) => normalizeRoleName(role) === 'asesor de ventas',
+  );
 
   const canCreate = can('registros_leads', 'crear');
   const canEdit = can('registros_leads', 'actualizar');
   const canDelete = isSuperAdmin && can('registros_leads', 'eliminar');
+  const canQuickEditStatus = canEdit || isSalesAdvisor;
+  const canQuickEditComments = canEdit || isSalesAdvisor;
+  const canQuickEditPriority = canEdit && !isSalesAdvisor;
+  const canQuickEditAssignedSeller = canEdit && !isSalesAdvisor;
 
   const {
     isLoading,
@@ -102,8 +109,11 @@ export function LeadLeadsPage() {
           updatingLeadId={updatingLeadId}
           propertyAddressById={propertyAddressById}
           userNameById={userNameById}
-          canQuickEdit={canEdit}
-          canEdit={canEdit && !isSalesCoordinator}
+          canEditStatus={canQuickEditStatus}
+          canEditPriority={canQuickEditPriority}
+          canEditAssignedSeller={canQuickEditAssignedSeller}
+          canEditComments={canQuickEditComments}
+          canEdit={canEdit && !isSalesCoordinator && !isSalesAdvisor}
           canDelete={canDelete}
           userChoices={userChoices}
           onQuickChange={handleQuickLeadChange}
@@ -130,7 +140,7 @@ export function LeadLeadsPage() {
         />
       ) : null}
 
-      {canEdit && !isSalesCoordinator ? (
+      {canEdit && !isSalesCoordinator && !isSalesAdvisor ? (
         <EditLeadLeadModal
           isOpen={Boolean(editingLead)}
           lead={editingLead}

@@ -10,6 +10,7 @@ import type {
 } from "@/interfaces/property.interface";
 import {
   validatePropertyForm,
+  validatePropertyImageSelection,
   type FormState,
   type FormErrors,
 } from "./propertyValidations";
@@ -30,6 +31,14 @@ const CURRENCY_FIELD_NAMES = new Set([
   "descuento_renta",
   "precio_preventa",
   "descuento_preventa",
+]);
+
+const UPPERCASE_ADDRESS_FIELD_NAMES = new Set([
+  "fraccionamiento",
+  "calle",
+  "municipio",
+  "estado",
+  "referencias",
 ]);
 
 export type OperationOption = "Venta" | "Renta" | "Preventa";
@@ -470,6 +479,14 @@ export function usePropertyForm(
       return;
     }
 
+    if (UPPERCASE_ADDRESS_FIELD_NAMES.has(name)) {
+      setForm((prev) => ({
+        ...prev,
+        [name]: event.target.value.toUpperCase(),
+      }));
+      return;
+    }
+
     const value =
       event.target instanceof HTMLInputElement &&
       event.target.type === "checkbox"
@@ -518,6 +535,20 @@ export function usePropertyForm(
   function handleAddImages(event: ChangeEvent<HTMLInputElement>) {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
+
+      const imageValidationError = validatePropertyImageSelection(
+        newFiles,
+        form.imagenes.length + form.imagenes_existentes.length,
+        form.imagenes.reduce((sum, image) => sum + image.file.size, 0),
+      );
+
+      if (imageValidationError) {
+        setErrors((prev) => ({ ...prev, imagenes: imageValidationError }));
+        setSubmitError(imageValidationError);
+        event.target.value = "";
+        return;
+      }
+
       setForm((prev) => ({
         ...prev,
         imagenes: ensureSinglePrimary([
@@ -532,6 +563,8 @@ export function usePropertyForm(
           })),
         ]),
       }));
+      setErrors((prev) => ({ ...prev, imagenes: undefined }));
+      setSubmitError("");
     }
     event.target.value = "";
   }
@@ -547,6 +580,7 @@ export function usePropertyForm(
         imagenes: nextImages,
       };
     });
+    setErrors((prev) => ({ ...prev, imagenes: undefined }));
   }
 
   function handleRemoveExistingImage(indexToRemove: number) {
@@ -560,6 +594,7 @@ export function usePropertyForm(
         imagenes_existentes: nextExistingImages,
       };
     });
+    setErrors((prev) => ({ ...prev, imagenes: undefined }));
   }
 
   function handleImageTitleChange(index: number, titulo: string) {

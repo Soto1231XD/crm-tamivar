@@ -1,5 +1,10 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import type { Imagen, NuevaImagen } from "@/interfaces/property.interface";
+import {
+  MAX_PROPERTY_IMAGES,
+  MAX_PROPERTY_IMAGE_SIZE_MB,
+  MAX_PROPERTY_IMAGES_TOTAL_SIZE_MB,
+} from "../utils/propertyValidations";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const PROPERTY_IMAGES_INPUT_ID = "property-images-input";
@@ -226,6 +231,9 @@ export function ImageGridUploader({
               imagenes
             </p>
             <p className="text-xs">Formatos soportados: JPG, PNG, WEBP</p>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Maximo {MAX_PROPERTY_IMAGES} imagenes, {MAX_PROPERTY_IMAGE_SIZE_MB} MB por imagen y {MAX_PROPERTY_IMAGES_TOTAL_SIZE_MB} MB por envio.
+            </p>
           </div>
           <input
             id={PROPERTY_IMAGES_INPUT_ID}
