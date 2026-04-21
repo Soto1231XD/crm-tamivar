@@ -12,6 +12,21 @@ export function getPropertyStatusStyles(estatus: string): {
   return getSharedPropertyStatusStyles(estatus);
 }
 
+function hasMeaningfulLocationValue(
+  value: string | number | undefined | null,
+): boolean {
+  if (value == null) return false;
+  if (typeof value === "number") return value > 0;
+
+  const normalized = value.trim();
+  if (!normalized) return false;
+
+  const parsed = Number(normalized);
+  if (!Number.isNaN(parsed)) return parsed > 0;
+
+  return true;
+}
+
 export function formatDireccion(direccion: {
   smz?: number;
   mza?: number;
@@ -23,9 +38,9 @@ export function formatDireccion(direccion: {
   if (!direccion) return "Sin dirección";
 
   const bloqueEstructural = [
-    direccion.smz != null ? `SMZ ${direccion.smz}` : "",
-    direccion.mza != null ? `MZ ${direccion.mza}` : "",
-    direccion.lote != null ? `Lote ${direccion.lote}` : "",
+    hasMeaningfulLocationValue(direccion.smz) ? `SMZ ${direccion.smz}` : "",
+    hasMeaningfulLocationValue(direccion.mza) ? `MZ ${direccion.mza}` : "",
+    hasMeaningfulLocationValue(direccion.lote) ? `Lote ${direccion.lote}` : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -33,9 +48,11 @@ export function formatDireccion(direccion: {
   // Unimos el bloque inicial con el resto de la dirección, separando por comas
   const parts = [
     bloqueEstructural,
-    direccion.fraccionamiento ? `Fracc. ${direccion.fraccionamiento}` : "",
+    direccion.fraccionamiento?.trim() || "",
     direccion.calle ? `Calle ${direccion.calle}` : "",
-    direccion.num_ext != null ? `No. Ext ${direccion.num_ext}` : "",
+    hasMeaningfulLocationValue(direccion.num_ext)
+      ? `No. Ext ${direccion.num_ext}`
+      : "",
   ]
     .map((part) => (typeof part === "string" ? part.trim() : ""))
     .filter(Boolean);
@@ -52,10 +69,10 @@ export function formatPublicDireccion(direccion?: {
   if (!direccion) return "Ubicación no especificada";
 
   const parts = [
-    direccion.smz != null ? `SMZ ${direccion.smz}` : "",
+    hasMeaningfulLocationValue(direccion.smz) ? `SMZ ${direccion.smz}` : "",
     direccion.municipio,
     direccion.estado,
-    direccion.cp != null ? `CP ${direccion.cp}` : "",
+    hasMeaningfulLocationValue(direccion.cp) ? `CP ${direccion.cp}` : "",
   ]
     .map((part) =>
       typeof part === "string"
@@ -85,14 +102,18 @@ export function formatFullDireccion(direccion?: {
   if (!direccion) return "Sin dirección";
 
   const parts = [
-    direccion.smz != null ? `SMZ ${direccion.smz}` : "",
-    direccion.mza != null ? `MZ ${direccion.mza}` : "",
-    direccion.lote != null ? `Lote ${direccion.lote}` : "",
+    hasMeaningfulLocationValue(direccion.smz) ? `SMZ ${direccion.smz}` : "",
+    hasMeaningfulLocationValue(direccion.mza) ? `MZ ${direccion.mza}` : "",
+    hasMeaningfulLocationValue(direccion.lote) ? `Lote ${direccion.lote}` : "",
     direccion.calle ? `Calle ${direccion.calle}` : "",
-    direccion.fraccionamiento ? `Fracc. ${direccion.fraccionamiento}` : "",
-    direccion.num_ext != null ? `No. Ext ${direccion.num_ext}` : "",
-    direccion.num_int != null ? `No. Int ${direccion.num_int}` : "",
-    direccion.cp != null ? `CP ${direccion.cp}` : "",
+    direccion.fraccionamiento?.trim() || "",
+    hasMeaningfulLocationValue(direccion.num_ext)
+      ? `No. Ext ${direccion.num_ext}`
+      : "",
+    hasMeaningfulLocationValue(direccion.num_int)
+      ? `No. Int ${direccion.num_int}`
+      : "",
+    hasMeaningfulLocationValue(direccion.cp) ? `CP ${direccion.cp}` : "",
     direccion.municipio,
     direccion.estado,
     direccion.referencias,
