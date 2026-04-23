@@ -128,11 +128,11 @@ export function formatFullDireccion(direccion?: {
 
 export function formatCurrency(value: string | number): string {
   const parsedValue = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(parsedValue)) return "$0.00";
+  if (Number.isNaN(parsedValue)) return "$0 MXN";
 
   const formattedValue = new Intl.NumberFormat("es-MX", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(parsedValue);
 
   return `$${formattedValue} MXN`;

@@ -14,6 +14,7 @@ export interface DashboardRecentPropertyRecord {
   };
   estatus: string;
   precio: string;
+  imagenes?: DashboardPublicationImageRecord[] | null;
 }
 
 export interface DashboardRecentUserRecord {

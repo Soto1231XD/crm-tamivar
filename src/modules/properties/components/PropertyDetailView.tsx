@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import {
   formatFullDireccion,
   formatCurrency,
@@ -31,6 +33,7 @@ export const PropertyDetailView = () => {
 
   // Estado para controlar las pestañas
   const [activeTab, setActiveTab] = useState<"info" | "visitas">("info");
+  const [isDownloadingImages, setIsDownloadingImages] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -61,17 +64,76 @@ export const PropertyDetailView = () => {
     );
   }
 
-  if (!currentProperty) return null;
-
-  const statusStyle = getPropertyStatusStyles(currentProperty.estatus);
-
   const imagenesFormateadas =
-    currentProperty.imagenes && currentProperty.imagenes.length > 0
+    currentProperty?.imagenes && currentProperty.imagenes.length > 0
       ? currentProperty.imagenes.map((img) => ({
           ...img,
           url: getFullImageUrl(img.url),
         }))
       : [{ url: "/placeholder-image.jpg", titulo: "Sin imagen" }];
+
+  const imagenesDescargables = imagenesFormateadas.filter(
+    (img) => img.url && !img.url.includes("/placeholder-image.jpg"),
+  );
+
+  const slugBase = currentProperty?.slug?.trim() || `propiedad-${currentProperty?.id ?? "detalle"}`;
+
+  function sanitizeFileNamePart(value: string) {
+    return value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9-_]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase();
+  }
+
+  function getImageExtension(url: string) {
+    try {
+      const path = new URL(url, window.location.origin).pathname;
+      const match = path.match(/\.([a-zA-Z0-9]+)$/);
+      return match?.[1] ?? "jpg";
+    } catch {
+      const match = url.match(/\.([a-zA-Z0-9]+)$/);
+      return match?.[1] ?? "jpg";
+    }
+  }
+
+  async function downloadAllPropertyImages() {
+    if (imagenesDescargables.length === 0 || isDownloadingImages) return;
+
+    setIsDownloadingImages(true);
+
+    try {
+      const zip = new JSZip();
+
+      for (const [index, image] of imagenesDescargables.entries()) {
+        const response = await fetch(image.url);
+
+        if (!response.ok) {
+          throw new Error("No fue posible descargar una o más imágenes.");
+        }
+
+        const blob = await response.blob();
+        const safeTitle = sanitizeFileNamePart(
+          image.titulo || `imagen-${index + 1}`,
+        );
+        const extension = getImageExtension(image.url);
+        const fileName = `${sanitizeFileNamePart(slugBase)}-${safeTitle || `imagen-${index + 1}`}.${extension}`;
+
+        zip.file(fileName, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      saveAs(zipBlob, `${sanitizeFileNamePart(slugBase)}-imagenes.zip`);
+    } finally {
+      setIsDownloadingImages(false);
+    }
+  }
+
+  if (!currentProperty) return null;
+
+  const statusStyle = getPropertyStatusStyles(currentProperty.estatus);
 
   return (
     <div className="mx-auto p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-screen">
@@ -710,6 +772,40 @@ export const PropertyDetailView = () => {
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-6 sm:mb-8 border-b border-slate-200 pb-4">
               Galería Fotográfica
             </h3>
+
+            <div className="mb-6 flex justify-end">
+              <button
+                type="button"
+                onClick={downloadAllPropertyImages}
+                disabled={isDownloadingImages || imagenesDescargables.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDownloadingImages ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
+                    Descargando...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Descargar imagenes
+                  </>
+                )}
+              </button>
+            </div>
 
             <div
               className="relative w-full overflow-hidden bg-slate-100 rounded-xl"

@@ -23,6 +23,11 @@ export type RecentPropertyItem = {
   };
   estatus: string;
   precio: string;
+  imagenes?: Array<{
+    url?: string;
+    titulo?: string;
+    principal?: boolean;
+  }> | null;
 };
 
 export type RecentUserItem = {
@@ -139,16 +144,34 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
         key={`${propiedad.tipo_inmueble}-${propiedad.precio}-${index}`}
         className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
       >
-        <p className="text-sm font-semibold text-slate-800">{propiedad.tipo_inmueble}</p>
-        <p className="mt-1 text-xs leading-5 text-slate-600">{formatDireccion(propiedad.direccion)}</p>
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <span
-            className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
-            style={getPropertyStatusStyles(propiedad.estatus)}
-          >
-            {propiedad.estatus}
-          </span>
-          {renderPrice(propiedad.precio)}
+        <div className="flex items-start gap-3">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-200 ring-1 ring-inset ring-slate-200">
+            {getPropertyImageUrl(propiedad.imagenes) ? (
+              <img
+                src={getPropertyImageUrl(propiedad.imagenes) ?? ''}
+                alt={propiedad.tipo_inmueble}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-[10px] font-medium text-slate-500">
+                Sin imagen
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-800">{propiedad.tipo_inmueble}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">{formatDireccion(propiedad.direccion)}</p>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span
+                className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                style={getPropertyStatusStyles(propiedad.estatus)}
+              >
+                {propiedad.estatus}
+              </span>
+              {renderPrice(propiedad.precio)}
+            </div>
+          </div>
         </div>
       </li>
     ));
@@ -236,6 +259,17 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
 }
 
 function getPublicationImageUrl(images?: RecentPublicationItem['imagenes']): string | null {
+  if (!Array.isArray(images) || images.length === 0) return null;
+
+  const principalImage = images.find((image) => image?.principal) ?? images[0];
+  if (!principalImage?.url) return null;
+
+  return principalImage.url.startsWith('http')
+    ? principalImage.url
+    : `${API_URL}/${principalImage.url}`;
+}
+
+function getPropertyImageUrl(images?: RecentPropertyItem['imagenes']): string | null {
   if (!Array.isArray(images) || images.length === 0) return null;
 
   const principalImage = images.find((image) => image?.principal) ?? images[0];

@@ -13,7 +13,8 @@ type DashboardSummaryCardsProps = {
 
 const DASHBOARD_CARD_ICONS: Partial<Record<string, string>> = {
   'Propiedades Disponibles': propertyAvailableIcon,
-  Registros: leadsIcon,
+  'Registros visitas': leadsIcon,
+  'Registros leads': leadsIcon,
   'Propiedades vendidas': propertySoldIcon,
   Blogs: blogsIcon,
   'Usuarios del sistema': systemUsersIcon,

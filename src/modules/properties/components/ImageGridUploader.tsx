@@ -196,14 +196,19 @@ export function ImageGridUploader({
   onUpdateImageTitle,
   onUpdateExistingImageTitle,
   onSetPrimaryImage,
-  label = "Imagenes de la propiedad",
+  label = "Imágenes de la propiedad",
   error,
 }: ImageGridUploaderProps) {
   return (
     <div className="md:col-span-2 flex flex-col gap-3 text-sm text-slate-700">
-      <label htmlFor={PROPERTY_IMAGES_INPUT_ID} className="font-medium">
-        {label} <span className="font-semibold text-red-600">*</span>
-      </label>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <label htmlFor={PROPERTY_IMAGES_INPUT_ID} className="font-medium">
+          {label} <span className="font-semibold text-red-600">*</span>
+        </label>
+        <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
+          Solo se permiten 40 imágenes de la propiedad
+        </span>
+      </div>
 
       <div className="flex w-full items-center justify-center">
         <label
@@ -228,11 +233,11 @@ export function ImageGridUploader({
             </svg>
             <p className="mb-1 text-sm">
               <span className="font-semibold">Haz clic para seleccionar</span>{" "}
-              imagenes
+              imágenes
             </p>
             <p className="text-xs">Formatos soportados: JPG, PNG, WEBP</p>
             <p className="mt-1 text-[11px] text-slate-400">
-              Maximo {MAX_PROPERTY_IMAGES} imagenes, {MAX_PROPERTY_IMAGE_SIZE_MB} MB por imagen y {MAX_PROPERTY_IMAGES_TOTAL_SIZE_MB} MB por envio.
+              Máximo {MAX_PROPERTY_IMAGES} imágenes, {MAX_PROPERTY_IMAGE_SIZE_MB} MB por imagen y {MAX_PROPERTY_IMAGES_TOTAL_SIZE_MB} MB por envió.
             </p>
           </div>
           <input

@@ -8,6 +8,7 @@ import { canAccessDashboard } from "@/shared/auth/navigation.util";
 import { getBlogs } from "../../content/services/content.api";
 import { getLeads } from "../../leads/services/leads.api";
 import { getProperties } from "../../properties/services/properties.api";
+import { getLeadLeads } from "../../registroLeads/services/leadLeads.api";
 import { getPrimaryPropertyPrice } from "../../properties/utils/formatters";
 import { getSystemRoles } from "../../systemRoles/services/systemRoles.api";
 import { getUsers } from "../../users/services/users.api";
@@ -31,6 +32,7 @@ type DashboardSummaryState = {
   propiedadesDisponibles: number;
   propiedadesVendidas: number;
   registros: number;
+  registrosLeads: number;
   blogs: number;
   rolesSistema: number;
   usuariosSistema: number;
@@ -45,6 +47,7 @@ const INITIAL_SUMMARY: DashboardSummaryState = {
   propiedadesDisponibles: 0,
   propiedadesVendidas: 0,
   registros: 0,
+  registrosLeads: 0,
   blogs: 0,
   rolesSistema: 0,
   usuariosSistema: 0,
@@ -71,6 +74,7 @@ export function DashboardPage() {
 
   const canReadProperties = can("propiedades", "leer");
   const canReadRegistros = can("registros", "leer");
+  const canReadRegistrosLeads = can("registros_leads", "leer");
   const canReadBlogs = can("blogs", "leer");
   const canReadUsers = can("usuarios", "leer");
   const canReadRoles = can("roles", "leer");
@@ -91,11 +95,12 @@ export function DashboardPage() {
     Promise.all([
       canReadProperties ? getProperties() : Promise.resolve([]),
       canReadRegistros ? getLeads() : Promise.resolve([]),
+      canReadRegistrosLeads ? getLeadLeads() : Promise.resolve([]),
       canReadBlogs ? getBlogs() : Promise.resolve([]),
       canReadUsers ? getUsers(accessToken) : Promise.resolve([]),
       canReadRoles ? getSystemRoles(accessToken) : Promise.resolve([]),
     ])
-      .then(([properties, leads, blogs, users, roles]) => {
+      .then(([properties, leads, leadLeads, blogs, users, roles]) => {
         if (!isActive) return;
 
         const propiedadesDisponiblesActivas = Array.isArray(properties)
@@ -134,7 +139,14 @@ export function DashboardPage() {
                 },
                 estatus: property.estatus,
                 precio: String(getPrimaryPropertyPrice(property)),
+                imagenes: Array.isArray(property.imagenes) ? property.imagenes : [],
               }))
+          : [];
+
+        const activeLeadLeads = Array.isArray(leadLeads)
+          ? leadLeads.filter(
+              (lead) => (lead.estado ?? "").trim().toLowerCase() !== "cancelado",
+            )
           : [];
 
         const visibleRecentLeads = leads
@@ -154,6 +166,12 @@ export function DashboardPage() {
             apellido: lead.apellidos,
             estado: lead.estado ?? "Sin estado",
           }));
+
+        const activeVisitRecords = Array.isArray(leads)
+          ? leads.filter(
+              (lead) => (lead.estado ?? "").trim().toLowerCase() !== "cancelado",
+            )
+          : [];
 
         const recentUsers = Array.isArray(users)
           ? users
@@ -195,7 +213,8 @@ export function DashboardPage() {
         setSummary({
           propiedadesDisponibles: propiedadesDisponiblesActivas,
           propiedadesVendidas,
-          registros: leads.length,
+          registros: activeVisitRecords.length,
+          registrosLeads: activeLeadLeads.length,
           blogs: Array.isArray(blogs) ? blogs.length : 0,
           rolesSistema: Array.isArray(roles) ? roles.length : 0,
           usuariosSistema: Array.isArray(users) ? users.length : 0,
@@ -227,6 +246,7 @@ export function DashboardPage() {
     canReadBlogs,
     canReadProperties,
     canReadRegistros,
+    canReadRegistrosLeads,
     canReadRoles,
     canReadUsers,
     canViewDashboard,
@@ -235,7 +255,8 @@ export function DashboardPage() {
   const cardValues = useMemo(
     () => ({
       "Propiedades Disponibles": summary.propiedadesDisponibles,
-      Registros: summary.registros,
+      "Registros visitas": summary.registros,
+      "Registros leads": summary.registrosLeads,
       "Propiedades vendidas": summary.propiedadesVendidas,
       Blogs: summary.blogs,
       "Roles del sistema": summary.rolesSistema,
@@ -246,6 +267,7 @@ export function DashboardPage() {
       summary.propiedadesDisponibles,
       summary.propiedadesVendidas,
       summary.registros,
+      summary.registrosLeads,
       summary.rolesSistema,
       summary.usuariosSistema,
     ],
