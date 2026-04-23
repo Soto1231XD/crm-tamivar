@@ -23,6 +23,10 @@ type FormState = {
   contrasena: string;
   foto_url: string;
   folio_certificacion: string;
+  slug: string;
+  cargo_publico: string;
+  bio_publica: string;
+  perfil_publico: boolean;
   roles_ids: number[];
 };
 
@@ -35,6 +39,10 @@ const INITIAL_FORM: FormState = {
   contrasena: '',
   foto_url: '',
   folio_certificacion: '',
+  slug: '',
+  cargo_publico: '',
+  bio_publica: '',
+  perfil_publico: false,
   roles_ids: [],
 };
 
@@ -164,6 +172,10 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
             correo_electronico: form.correo_electronico.trim(),
             foto_url: form.foto_url.trim() || undefined,
             folio_certificacion: form.folio_certificacion.trim() || undefined,
+            slug: form.slug.trim() || undefined,
+            cargo_publico: form.cargo_publico.trim() || undefined,
+            bio_publica: form.bio_publica.trim() || undefined,
+            perfil_publico: form.perfil_publico,
             roles_ids: form.roles_ids,
             contrasena: form.contrasena.trim(),
           }
@@ -265,6 +277,55 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
               value={form.folio_certificacion}
               onChange={(value) => updateField('folio_certificacion', value)}
             />
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Perfil publico del sitio</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Estos datos se usan para la vista publica del equipo. El cargo publico es independiente del rol interno del CRM.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field
+                label="Cargo publico"
+                value={form.cargo_publico}
+                placeholder="Community Manager"
+                onChange={(value) => updateField('cargo_publico', value)}
+              />
+              <Field
+                label="Slug publico"
+                value={form.slug}
+                placeholder="nombre-apellido"
+                onChange={(value) => updateField('slug', slugifyInput(value))}
+              />
+            </div>
+
+            <label className="mt-4 flex flex-col gap-1.5">
+              <FieldLabel>Biografia publica</FieldLabel>
+              <textarea
+                value={form.bio_publica}
+                rows={4}
+                maxLength={600}
+                placeholder="Resumen breve para presentar al usuario dentro del sitio web."
+                onChange={(event) => updateField('bio_publica', event.target.value)}
+                className={`${fieldClassName} min-h-28 resize-y`}
+              />
+            </label>
+
+            <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.perfil_publico}
+                onChange={(event) => updateField('perfil_publico', event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#312C85] focus:ring-[#312C85]"
+              />
+              <span>
+                <span className="block font-semibold text-slate-800">Mostrar perfil en el sitio web</span>
+                <span className="text-xs text-slate-500">Activa esto solo para usuarios que deben tener una vista publica.</span>
+              </span>
+            </label>
           </div>
 
           <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
@@ -382,6 +443,10 @@ function getInitialForm(user?: UserRecord | null): FormState {
     contrasena: '',
     foto_url: user.foto_url?.trim() || '',
     folio_certificacion: user.folio_certificacion?.trim() || '',
+    slug: user.slug?.trim() || '',
+    cargo_publico: user.cargo_publico?.trim() || '',
+    bio_publica: user.bio_publica?.trim() || '',
+    perfil_publico: Boolean(user.perfil_publico),
     roles_ids: getRoleIds(user),
   };
 }
@@ -433,6 +498,18 @@ function buildUpdatePayload(form: FormState, user?: UserRecord | null, photoRemo
   if ((form.folio_certificacion.trim() || '') !== (initial.folio_certificacion.trim() || '')) {
     payload.folio_certificacion = form.folio_certificacion.trim() || undefined;
   }
+  if ((form.slug.trim() || '') !== (initial.slug.trim() || '')) {
+    payload.slug = form.slug.trim() || undefined;
+  }
+  if ((form.cargo_publico.trim() || '') !== (initial.cargo_publico.trim() || '')) {
+    payload.cargo_publico = form.cargo_publico.trim() || undefined;
+  }
+  if ((form.bio_publica.trim() || '') !== (initial.bio_publica.trim() || '')) {
+    payload.bio_publica = form.bio_publica.trim() || undefined;
+  }
+  if (form.perfil_publico !== initial.perfil_publico) {
+    payload.perfil_publico = form.perfil_publico;
+  }
   if (!arraysEqual(form.roles_ids, initial.roles_ids)) {
     payload.roles_ids = form.roles_ids;
   }
@@ -445,6 +522,17 @@ function buildUpdatePayload(form: FormState, user?: UserRecord | null, photoRemo
 
 function sanitizeName(value: string): string {
   return value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, '');
+}
+
+function slugifyInput(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 
 function validateForm(form: FormState, mode: UserModalMode): string | null {

@@ -43,7 +43,7 @@ export function DashboardSummaryCards({
                 {title}
               </h3>
               <p className="mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-[2rem]">
-                {isLoading ? '...' : values[title]}
+                {isLoading ? '...' : (values[title] ?? 0)}
               </p>
             </div>
 

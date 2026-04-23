@@ -72,12 +72,15 @@ export function DashboardPage() {
   const dashboardCards = getVisibleDashboardCards(can);
   const dashboardSections = getVisibleDashboardSections(can);
 
-  const canReadProperties = can("propiedades", "leer");
-  const canReadRegistros = can("registros", "leer");
-  const canReadRegistrosLeads = can("registros_leads", "leer");
-  const canReadBlogs = can("blogs", "leer");
-  const canReadUsers = can("usuarios", "leer");
-  const canReadRoles = can("roles", "leer");
+  const canReadProperties =
+    can("propiedades", "leer") || can("propiedades", "leer_todos");
+  const canReadRegistros =
+    can("registros", "leer") || can("registros", "leer_todos");
+  const canReadRegistrosLeads =
+    can("registros_leads", "leer") || can("registros_leads", "leer_todos");
+  const canReadBlogs = can("blogs", "leer") || can("blogs", "leer_todos");
+  const canReadUsers = can("usuarios", "leer") || can("usuarios", "leer_todos");
+  const canReadRoles = can("roles", "leer") || can("roles", "leer_todos");
 
   const [summary, setSummary] = useState<DashboardSummaryState>(INITIAL_SUMMARY);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);

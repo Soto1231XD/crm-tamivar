@@ -18,6 +18,10 @@ export type DashboardSectionTitle =
 
 type DashboardCan = (module: ModuleKey, action?: PermissionAction) => boolean;
 
+function canReadDashboardModule(can: DashboardCan, module: ModuleKey): boolean {
+  return can(module, "leer") || can(module, "leer_todos");
+}
+
 const DASHBOARD_CARD_MODULES: Record<DashboardCardTitle, ModuleKey> = {
   "Propiedades Disponibles": "propiedades",
   "Registros visitas": "registros",
@@ -58,10 +62,12 @@ export function getVisibleDashboardCards(can: DashboardCan): DashboardCardTitle[
       return can("dashboard", "ver_propiedades_vendidas");
     }
 
-    return can(DASHBOARD_CARD_MODULES[title], "leer");
+    return canReadDashboardModule(can, DASHBOARD_CARD_MODULES[title]);
   });
 }
 
 export function getVisibleDashboardSections(can: DashboardCan): DashboardSectionTitle[] {
-  return DASHBOARD_SECTION_ORDER.filter((title) => can(DASHBOARD_SECTION_MODULES[title], "leer"));
+  return DASHBOARD_SECTION_ORDER.filter((title) =>
+    canReadDashboardModule(can, DASHBOARD_SECTION_MODULES[title]),
+  );
 }
