@@ -221,8 +221,8 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
         key={`${publicacion.titulo}-${publicacion.fecha_creacion}-${index}`}
         className="overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#EEF2FF)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#E8EDFF)]"
       >
-        <div className="flex items-start gap-3">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-200 ring-1 ring-inset ring-slate-200">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <div className="h-28 w-full shrink-0 overflow-hidden rounded-xl bg-slate-200 ring-1 ring-inset ring-slate-200 sm:h-16 sm:w-16">
             {getPublicationImageUrl(publicacion.imagenes) ? (
               <img
                 src={getPublicationImageUrl(publicacion.imagenes) ?? ''}
@@ -237,7 +237,7 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-800">{publicacion.titulo}</p>
+            <p className="break-words text-sm font-semibold leading-5 text-slate-800 sm:line-clamp-2">{publicacion.titulo}</p>
             <p className="mt-1 text-xs font-medium text-slate-500">
               {formatDate(publicacion.fechaPublico || publicacion.fecha_creacion)}
             </p>

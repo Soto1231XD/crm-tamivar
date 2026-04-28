@@ -151,7 +151,7 @@ export function UsersPage() {
               return (
                 <article
                   key={user.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -174,10 +174,10 @@ export function UsersPage() {
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                           Usuario
                         </p>
-                        <h3 className="mt-2 truncate text-lg font-bold tracking-tight text-slate-900">
+                        <h3 className="mt-2 break-words text-lg font-bold tracking-tight text-slate-900">
                           {getUserFullName(user)}
                         </h3>
-                        <p className="mt-1 truncate text-sm text-slate-600">
+                        <p className="mt-1 break-all text-sm leading-6 text-slate-600">
                           {user.correo_electronico?.trim() ||
                             "Sin correo electrónico"}
                         </p>
@@ -192,7 +192,7 @@ export function UsersPage() {
                   </div>
 
                   <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm font-semibold text-slate-700">
                         Rol principal
                       </p>
@@ -231,12 +231,12 @@ export function UsersPage() {
                   </div>
 
                   {canEditThisUser || canToggleThisUser ? (
-                    <div className="mt-5 flex flex-wrap items-center justify-center gap-2 border-t border-slate-200 pt-4">
+                    <div className="mt-5 grid grid-cols-1 gap-2 border-t border-slate-200 pt-4 sm:flex sm:flex-wrap sm:items-center sm:justify-center">
                       {canEditThisUser && (
                         <button
                           type="button"
                           onClick={() => setEditingUser(user)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100 sm:w-auto"
                         >
                           <img
                             src={editarDosIcon}
@@ -252,7 +252,7 @@ export function UsersPage() {
                         <button
                           type="button"
                           onClick={() => handleToggleUserStatus(user)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-orange-100 bg-orange-50 px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition-colors hover:bg-orange-100"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-orange-100 bg-orange-50 px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition-colors hover:bg-orange-100 sm:w-auto"
                         >
                           <img
                             src={borrarIcon}

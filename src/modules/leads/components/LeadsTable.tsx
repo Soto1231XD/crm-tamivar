@@ -49,7 +49,8 @@ export function LeadsTable({
   const columns: ColumnDef<LeadRecord>[] = [
     {
       header: "Cliente",
-      cellClassName: "min-w-[220px]",
+      headerClassName: "min-w-[160px] md:min-w-[220px]",
+      cellClassName: "min-w-[160px] md:min-w-[220px]",
       render: (lead) => (
         <div>
           <p className="font-semibold text-slate-900">
@@ -69,7 +70,8 @@ export function LeadsTable({
     },
     {
       header: "Telefono",
-      cellClassName: "min-w-[150px]",
+      headerClassName: "min-w-[110px] md:min-w-[150px]",
+      cellClassName: "min-w-[110px] md:min-w-[150px]",
       render: (lead) => (
         <span className="text-sm text-slate-700">
           {formatPhoneLastFour(lead.telefono)}
@@ -78,9 +80,10 @@ export function LeadsTable({
     },
     {
       header: "Propiedad",
-      cellClassName: "min-w-[220px] whitespace-normal",
+      headerClassName: "min-w-[170px] md:min-w-[220px]",
+      cellClassName: "min-w-[170px] md:min-w-[220px] whitespace-normal",
       render: (lead) => (
-        <div className="max-w-[220px] break-words text-sm leading-6 text-slate-700">
+        <div className="max-w-[170px] break-words text-sm leading-6 text-slate-700 md:max-w-[220px]">
           {lead.propiedad_id != null
             ? (propertyTitleById.get(lead.propiedad_id) ?? "Sin titulo")
             : "Sin propiedad"}
@@ -89,7 +92,8 @@ export function LeadsTable({
     },
     {
       header: "Estado",
-      cellClassName: "min-w-[150px]",
+      headerClassName: "min-w-[130px] md:min-w-[150px]",
+      cellClassName: "min-w-[130px] md:min-w-[150px]",
       render: (lead) => (
         <BadgeSelect
           value={lead.estado || VISIT_STATUS_OPTIONS[0]}
@@ -100,13 +104,14 @@ export function LeadsTable({
             canQuickEdit && (canQuickEditItem == null || canQuickEditItem(lead))
           }
           getStyles={(val) => getStatusStyles(val ?? "")}
-          className="min-w-32"
+          className="min-w-[112px] md:min-w-32"
         />
       ),
     },
     {
       header: "Fecha de creacion",
-      cellClassName: "min-w-[150px]",
+      headerClassName: "min-w-[120px] md:min-w-[150px]",
+      cellClassName: "min-w-[120px] md:min-w-[150px]",
       render: (lead) => (
         <span className="text-sm text-slate-700">
           {formatDate(lead.creado_en)}
@@ -115,7 +120,8 @@ export function LeadsTable({
     },
     {
       header: "Fecha de cita",
-      cellClassName: "min-w-[180px]",
+      headerClassName: "min-w-[135px] md:min-w-[180px]",
+      cellClassName: "min-w-[135px] md:min-w-[180px]",
       render: (lead) => (
         <span className="text-sm text-slate-700">
           {formatDateTime(lead.fecha_cita)}
@@ -124,7 +130,8 @@ export function LeadsTable({
     },
     {
       header: "Asesor externo",
-      cellClassName: "min-w-[220px]",
+      headerClassName: "min-w-[160px] md:min-w-[220px]",
+      cellClassName: "min-w-[160px] md:min-w-[220px]",
       render: (lead) => (
         <span className="text-sm text-slate-700">
           {formatAsesorExterno(lead.asesor_externo, lead.asesor_externo_nombre)}
@@ -133,9 +140,10 @@ export function LeadsTable({
     },
     {
       header: "Comentarios",
-      cellClassName: "min-w-[240px] whitespace-normal",
+      headerClassName: "min-w-[190px] md:min-w-[240px]",
+      cellClassName: "min-w-[190px] md:min-w-[240px] whitespace-normal",
       render: (lead) => (
-        <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">
+        <div className="max-w-[190px] break-words text-sm leading-6 text-slate-700 md:max-w-[260px]">
           {lead.comentarios || "Sin comentarios"}
         </div>
       ),
@@ -145,7 +153,8 @@ export function LeadsTable({
   if (!hideResponsibleColumn) {
     columns.splice(4, 0, {
       header: "Responsable",
-      cellClassName: "min-w-[180px]",
+      headerClassName: "min-w-[140px] md:min-w-[180px]",
+      cellClassName: "min-w-[140px] md:min-w-[180px]",
       render: (lead) => (
         <span className="text-sm text-slate-700">
           {formatCreatorName(lead.creador)}
@@ -157,7 +166,8 @@ export function LeadsTable({
   if (showFolioColumn) {
     columns.splice(hideResponsibleColumn ? 6 : 7, 0, {
       header: "Folio",
-      cellClassName: "min-w-[220px]",
+      headerClassName: "min-w-[160px] md:min-w-[220px]",
+      cellClassName: "min-w-[160px] md:min-w-[220px]",
       render: (lead) => (
         <span className="text-sm font-semibold text-slate-700">
           {lead.folio?.trim() || "Sin folio"}
@@ -173,7 +183,7 @@ export function LeadsTable({
       isLoading={isLoading}
       emptyMessage="No se encontraron registros"
       wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
-      tableClassName="w-max min-w-[1200px] text-left"
+      tableClassName="min-w-full text-left"
       actionsClassName="flex items-center gap-2"
       onEdit={onEdit}
       onDelete={onDelete}
