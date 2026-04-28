@@ -113,7 +113,7 @@ export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string
   downloadTableAsExcel({
     title: 'Registros exportados',
     sheetName: 'Registros',
-    fileName: 'registros-filtrados.xls',
+    fileName: 'registros-filtrados.xlsx',
     headers,
     rows,
   });
@@ -163,7 +163,7 @@ export function downloadLeadLeadsAsExcel(
   downloadTableAsExcel({
     title: 'Registros leads exportados',
     sheetName: 'Registros leads',
-    fileName: 'registros-leads-filtrados.xls',
+    fileName: 'registros-leads-filtrados.xlsx',
     headers,
     rows,
   });

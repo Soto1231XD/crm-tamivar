@@ -798,7 +798,7 @@ export function downloadMovementsAsExcel(movements: MovementRecord[]) {
   downloadTableAsExcel({
     title: "Movimientos exportados",
     sheetName: "Movimientos",
-    fileName: "movimientos-filtrados.xls",
+    fileName: "movimientos-filtrados.xlsx",
     headers,
     rows,
   });

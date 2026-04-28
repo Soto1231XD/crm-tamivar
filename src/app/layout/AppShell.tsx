@@ -37,7 +37,9 @@ export function AppShell() {
   const logout = useAuthStore((state) => state.logout);
   const location = useLocation();
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
 
   const permissions = user?.permisos ?? [];
   const availableModules = getAvailableModules(permissions);
@@ -164,7 +166,7 @@ export function AppShell() {
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <header className="border-b border-slate-200/80 bg-white/95 px-5 py-4 backdrop-blur md:px-8">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap">
               <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
@@ -188,7 +190,7 @@ export function AppShell() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="ml-auto flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-900 text-sm font-bold text-white shadow-sm">
                   {user?.foto_url ? (
                     <img

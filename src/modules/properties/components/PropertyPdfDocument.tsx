@@ -467,20 +467,6 @@ export const PropertyPdfDocument = ({
           </View>
         )}
 
-        {/* Comentarios Internos */}
-        {property.comentarios && (
-          <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Comentarios Internos</Text>
-            <Text
-              style={[
-                styles.textParagraph,
-                { fontStyle: "italic", color: "#353d49" },
-              ]}
-            >
-              {stripEmojis(property.comentarios)}
-            </Text>
-          </View>
-        )}
 
         {/* Galería de imágenes */}
         {property.imagenes && property.imagenes.length > 0 && (

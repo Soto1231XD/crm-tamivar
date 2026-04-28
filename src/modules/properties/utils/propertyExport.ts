@@ -63,7 +63,7 @@ export function downloadPropertiesAsExcel(properties: PropertyRecord[]) {
   downloadTableAsExcel({
     title: 'Propiedades exportadas',
     sheetName: 'Propiedades',
-    fileName: 'propiedades-filtradas.xls',
+    fileName: 'propiedades-filtradas.xlsx',
     headers,
     rows,
   });
