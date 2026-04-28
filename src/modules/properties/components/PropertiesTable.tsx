@@ -52,8 +52,8 @@ export function PropertiesTable({
     () => [
       {
         header: "Propiedad",
-        headerClassName: "min-w-[200px]",
-        cellClassName: "min-w-[200px] whitespace-normal align-top",
+        headerClassName: "min-w-[180px]",
+        cellClassName: "min-w-[180px] whitespace-normal align-top",
         render: (property) => (
           <span className="font-medium text-slate-800">
             {property.titulo || "Sin título"}
@@ -101,10 +101,10 @@ export function PropertiesTable({
       },
       {
         header: "Dirección",
-        headerClassName: "w-[320px]",
-        cellClassName: "w-[320px] whitespace-normal align-top",
+        headerClassName: "min-w-[260px]",
+        cellClassName: "min-w-[260px] whitespace-normal align-top",
         render: (property) => (
-          <div className="min-w-[300px] max-w-[320px] break-words text-sm leading-6 text-slate-600">
+          <div className="min-w-[240px] max-w-[280px] break-words text-sm leading-6 text-slate-600">
             {formatDireccion(property.direccion)}
           </div>
         ),
@@ -182,7 +182,7 @@ export function PropertiesTable({
       isLoading={isLoading}
       emptyMessage="No se encontraron propiedades"
       wrapperClassName="rounded-2xl"
-      tableClassName="min-w-full text-left"
+      tableClassName="w-max min-w-[1240px] text-left"
       actionsClassName="mx-auto flex w-max items-center justify-center gap-2"
       canEdit={canEdit}
       canDelete={canDelete}

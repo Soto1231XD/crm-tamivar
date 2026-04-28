@@ -16,8 +16,8 @@ export function DashboardSectionCard({
   return (
     <article className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-shadow duration-200 hover:shadow-lg">
       <div className="border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.95),rgba(255,255,255,0.98))] px-5 py-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Actividad
             </p>
@@ -31,7 +31,7 @@ export function DashboardSectionCard({
         </div>
       </div>
 
-      <ul className="space-y-3 p-5">
+      <ul className="min-w-0 space-y-3 p-5">
         {hasItems ? (
           children
         ) : (

@@ -333,8 +333,8 @@ export function DashboardPage() {
             isLoading={isLoadingSummary}
           />
 
-          <div className="flex items-center justify-between gap-3 px-1">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Seguimiento
               </p>
@@ -347,7 +347,7 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-2">
             {dashboardSections.map((sectionTitle) => (
               <DashboardSectionCard
                 key={sectionTitle}

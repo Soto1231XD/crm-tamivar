@@ -27,7 +27,7 @@ export function TablePagination({
         Mostrando {startItem}-{endItem} de {totalItems} {itemLabel}
       </p>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
@@ -37,7 +37,7 @@ export function TablePagination({
           Anterior
         </button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {visiblePages.map((page) => (
             <button
               key={page}

@@ -73,7 +73,7 @@ export function ContentPage() {
           type="button"
           disabled={!canCreate}
           onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#312C85] px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           <img
             src={agregarIcon}
@@ -139,12 +139,12 @@ export function ContentPage() {
                 </div>
 
                 <div className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="line-clamp-2 text-lg font-bold leading-6 text-slate-900">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <p className="line-clamp-2 min-w-0 text-lg font-bold leading-6 text-slate-900">
                       {item.titulo?.trim() || "Sin titulo"}
                     </p>
                     <span
-                      className="inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold"
+                      className="inline-flex shrink-0 self-start rounded-full px-2.5 py-1 text-xs font-semibold"
                       style={getPublicationStatusStyles(item.publicado)}
                     >
                       {item.publicado ? "Publicado" : "Borrador"}
@@ -158,13 +158,13 @@ export function ContentPage() {
                     {item.resumen?.trim() || "Sin resumen"}
                   </p>
 
-                  <div className="mt-5 flex items-center gap-2 border-t border-slate-200 pt-4">
+                  <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
                     {canEdit && (
                       <button
                         type="button"
                         onClick={() => handlePublishBlog(item)}
                         disabled={item.publicado === true}
-                        className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-[#16A34A] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-[#16A34A] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                       >
                         <img
                           src={subirIcon}
@@ -180,7 +180,7 @@ export function ContentPage() {
                       <button
                         type="button"
                         onClick={() => setEditingBlog(item)}
-                        className="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition hover:bg-indigo-100"
+                        className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition hover:bg-indigo-100 sm:flex-none"
                         style={{ backgroundColor: "#E0E7FF" }}
                       >
                         <img

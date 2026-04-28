@@ -124,7 +124,7 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     return data.registrosRecientes.map((registro, index) => (
       <li
         key={`${registro.nombre}-${registro.apellido}-${index}`}
-        className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
       >
         <p className="text-sm font-semibold text-slate-800">
           {registro.nombre} {registro.apellido}
@@ -142,7 +142,7 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     return data.propiedadesRecientes.map((propiedad, index) => (
       <li
         key={`${propiedad.tipo_inmueble}-${propiedad.precio}-${index}`}
-        className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
       >
         <div className="flex items-start gap-3">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-200 ring-1 ring-inset ring-slate-200">
@@ -162,7 +162,7 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-800">{propiedad.tipo_inmueble}</p>
             <p className="mt-1 text-xs leading-5 text-slate-600">{formatDireccion(propiedad.direccion)}</p>
-            <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
               <span
                 className="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
                 style={getPropertyStatusStyles(propiedad.estatus)}
@@ -181,7 +181,7 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     return data.usuariosRecientes.map((usuario, index) => (
       <li
         key={`${usuario.correo_electronico}-${index}`}
-        className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#F8FAFC)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#F1F5F9)]"
       >
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-600">
@@ -219,7 +219,7 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
     return data.misPublicaciones.map((publicacion, index) => (
       <li
         key={`${publicacion.titulo}-${publicacion.fecha_creacion}-${index}`}
-        className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#EEF2FF)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#E8EDFF)]"
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#FFFFFF,#EEF2FF)] px-4 py-3 transition-colors hover:bg-[linear-gradient(180deg,#FFFFFF,#E8EDFF)]"
       >
         <div className="flex items-start gap-3">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-200 ring-1 ring-inset ring-slate-200">

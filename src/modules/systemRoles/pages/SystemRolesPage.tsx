@@ -138,27 +138,27 @@ export function SystemRolesPage() {
                   <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900">{role.rol}</h3>
                 </div>
 
-                <div className="flex flex-col gap-5 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="grid flex-1 gap-4 md:grid-cols-[1.4fr_0.7fr]">
+                <div className="flex flex-col gap-5 px-5 py-5 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="grid min-w-0 flex-1 gap-4 md:grid-cols-[1.4fr_0.7fr]">
                     <InfoBlock label="Descripción del rol" value={getRoleDescription(role.rol)} />
                     <InfoBlock label="Usuarios asignados" value={String(getAssignedUsersCount(role, users))} />
                   </div>
 
-                  <div className="flex flex-col gap-3 lg:items-end lg:self-stretch">
+                  <div className="flex flex-col gap-3 xl:items-end xl:self-stretch">
                     <button
                       type="button"
                       onClick={() => setSelectedRole(role)}
-                      className="inline-flex items-center justify-center rounded-xl bg-[#5980FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#456df4]"
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-[#5980FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#456df4] xl:w-auto"
                     >
                       Módulos asignados
                     </button>
 
                     {isProtectedRole(role.rol) ? (
-                      <div className="max-w-[320px] rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm leading-6 text-slate-700 lg:mt-auto">
+                      <div className="w-full max-w-[320px] rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm leading-6 text-slate-700 xl:mt-auto">
                         Este es un rol base del sistema y no puede editarse ni eliminarse desde esta vista.
                       </div>
                     ) : (
-                      <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
+                      <div className="flex flex-wrap justify-start gap-2 xl:justify-end">
                         <button
                           type="button"
                           onClick={() => setEditingRole(role)}
