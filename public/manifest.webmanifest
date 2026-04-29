@@ -1,0 +1,25 @@
+{
+  "name": "CRM TAMIVAR",
+  "short_name": "CRM TAMIVAR",
+  "description": "CRM inmobiliario de Tamivar.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#312C85",
+  "icons": [
+    {
+      "src": "/logo_pwa.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo_pwa.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

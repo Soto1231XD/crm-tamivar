@@ -3,7 +3,12 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './app/App';
 import { AppProviders } from './app/providers/AppProviders';
+import { registerSW } from 'virtual:pwa-register';
 import './styles/globals.css';
+
+registerSW({
+  immediate: true,
+});
 
 ReactDOM.createRoot(document.getElementById('app')!).render(
   <React.StrictMode>
@@ -14,4 +19,3 @@ ReactDOM.createRoot(document.getElementById('app')!).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
-
