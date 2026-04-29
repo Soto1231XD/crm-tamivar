@@ -1,0 +1,201 @@
+import { useEffect, useMemo, useState } from 'react';
+import type {
+  CreateLeadRequestPayload,
+  LeadRequestRecord,
+  UpdateLeadRequestPayload,
+} from '@/interfaces/lead-request.interface';
+import type { UserRecord } from '@/interfaces/user.interface';
+import toast from 'react-hot-toast';
+import { getSalesUserOptions } from '@/modules/users/services/users.api';
+import { ALL_STATES, PAGE_SIZE } from '@/modules/leads/utils/leads.constants';
+import { useLeadRequestsStore } from '../store/useLeadRequestsStore';
+import {
+  downloadLeadRequestsAsExcel,
+  getComparableLeadRequestDate,
+} from '../utils/leadRequests.utils';
+
+type UseLeadRequestsPageStateParams = {
+  userId?: number | null;
+  accessToken?: string | null;
+};
+
+export function useLeadRequestsPageState({ userId, accessToken }: UseLeadRequestsPageStateParams) {
+  const { leadRequests, isLoading, fetchLeadRequests, addLeadRequest, editLeadRequest, removeLeadRequest } =
+    useLeadRequestsStore();
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState(ALL_STATES);
+  const [leadDateFromFilter, setLeadDateFromFilter] = useState('');
+  const [leadDateToFilter, setLeadDateToFilter] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingLeadRequest, setEditingLeadRequest] = useState<LeadRequestRecord | null>(null);
+  const [deletingLeadRequest, setDeletingLeadRequest] = useState<LeadRequestRecord | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    void fetchLeadRequests();
+  }, [fetchLeadRequests]);
+
+  useEffect(() => {
+    let active = true;
+
+    (accessToken ? getSalesUserOptions(accessToken) : Promise.resolve([])).then((data) => {
+      if (!active) return;
+      setUsers(Array.isArray(data) ? data : []);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  const statusOptions = useMemo(() => {
+    const values = new Set<string>();
+    leadRequests.forEach((leadRequest) => {
+      const value = (leadRequest.estado ?? '').trim();
+      if (value) values.add(value);
+    });
+    return [ALL_STATES, ...Array.from(values)];
+  }, [leadRequests]);
+
+  const filteredLeadRequests = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return leadRequests.filter((leadRequest) => {
+      const fullName = (leadRequest.nombre ?? '').trim().toLowerCase();
+      const phone = String(leadRequest.telefono ?? '').toLowerCase();
+      const leadDate = getComparableLeadRequestDate(leadRequest.fecha_alta);
+
+      const matchesSearch = query.length === 0 || fullName.includes(query) || phone.includes(query);
+      const matchesStatus = statusFilter === ALL_STATES || (leadRequest.estado ?? '').trim() === statusFilter;
+      const matchesLeadDateFrom = leadDateFromFilter.length === 0 || (leadDate.length > 0 && leadDate >= leadDateFromFilter);
+      const matchesLeadDateTo = leadDateToFilter.length === 0 || (leadDate.length > 0 && leadDate <= leadDateToFilter);
+
+      return matchesSearch && matchesStatus && matchesLeadDateFrom && matchesLeadDateTo;
+    });
+  }, [leadDateFromFilter, leadDateToFilter, leadRequests, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLeadRequests.length / PAGE_SIZE));
+
+  const paginatedLeadRequests = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredLeadRequests.slice(start, start + PAGE_SIZE);
+  }, [currentPage, filteredLeadRequests]);
+
+  const sellerNameById = useMemo(
+    () =>
+      new Map(
+        users.map((user) => [
+          user.id,
+          `${user.nombres ?? ''} ${user.apellido_paterno ?? ''}`.trim() || user.correo_electronico || 'Sin nombre',
+        ] as const),
+      ),
+    [users],
+  );
+
+  const userChoices = useMemo(
+    () =>
+      users.map((user) => ({
+        id: user.id,
+        label:
+          `${user.nombres ?? ''} ${user.apellido_paterno ?? ''}`.trim() ||
+          user.correo_electronico ||
+          'Sin nombre',
+      })),
+    [users],
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [leadDateFromFilter, leadDateToFilter, search, statusFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  async function handleCreateLeadRequest(
+    payload: Omit<CreateLeadRequestPayload, 'creado_por_id'>,
+  ): Promise<string | null> {
+    if (!userId) {
+      return 'No hay una sesión valida para asociar el creador.';
+    }
+
+    try {
+      await addLeadRequest({
+        ...payload,
+        creado_por_id: userId,
+      });
+      toast.success('La solicitud de lead se creo con éxito.');
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : 'No fue posible crear la solicitud de lead.';
+    }
+  }
+
+  async function handleEditLeadRequest(
+    leadRequestId: number,
+    payload: UpdateLeadRequestPayload,
+  ): Promise<string | null> {
+    try {
+      await editLeadRequest(leadRequestId, payload);
+      toast.success('La solicitud de lead se actualizo con éxito.');
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : 'No fue posible actualizar la solicitud de lead.';
+    }
+  }
+
+  async function handleDeleteLeadRequest(leadRequestId: number): Promise<string | null> {
+    try {
+      await removeLeadRequest(leadRequestId);
+      toast.success('La solicitud de lead se elimino con éxito.');
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : 'No fue posible eliminar la solicitud de lead.';
+    }
+  }
+
+  function handleDownloadFilteredLeadRequests() {
+    downloadLeadRequestsAsExcel(
+      filteredLeadRequests,
+      filteredLeadRequests.map((leadRequest) =>
+        leadRequest.vendedor
+          ? `${leadRequest.vendedor.nombres ?? ''} ${leadRequest.vendedor.apellido_paterno ?? ''}`.trim() || 'Sin vendedor'
+          : leadRequest.vendedor_id
+            ? sellerNameById.get(leadRequest.vendedor_id) ?? 'Sin vendedor'
+            : 'Sin vendedor',
+      ),
+    );
+  }
+
+  return {
+    isLoading,
+    search,
+    statusFilter,
+    leadDateFromFilter,
+    leadDateToFilter,
+    isCreateModalOpen,
+    editingLeadRequest,
+    deletingLeadRequest,
+    currentPage,
+    statusOptions,
+    filteredLeadRequests,
+    paginatedLeadRequests,
+    totalPages,
+    sellerNameById,
+    userChoices,
+    setSearch,
+    setStatusFilter,
+    setLeadDateFromFilter,
+    setLeadDateToFilter,
+    setIsCreateModalOpen,
+    setEditingLeadRequest,
+    setDeletingLeadRequest,
+    setCurrentPage,
+    handleCreateLeadRequest,
+    handleEditLeadRequest,
+    handleDeleteLeadRequest,
+    handleDownloadFilteredLeadRequests,
+  };
+}

@@ -3,6 +3,7 @@ export type ModuleKey =
   | 'propiedades'
   | 'registros'
   | 'registros_leads'
+  | 'solicitudes_leads'
   | 'blogs'
   | 'usuarios'
   | 'roles'

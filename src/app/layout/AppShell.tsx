@@ -26,6 +26,7 @@ const MODULE_ICONS: Record<ModuleKey, string> = {
   propiedades: propiedadesIcon,
   registros: registrosIcon,
   registros_leads: registrosIcon,
+  solicitudes_leads: registrosIcon,
   blogs: contenidoIcon,
   usuarios: usuariosIcon,
   roles: rolIcon,
@@ -244,6 +245,10 @@ function getPageTitle(pathname: string): string {
 
   if (pathname.startsWith("/modulos/registros-leads")) {
     return MODULE_LABELS.registros_leads;
+  }
+
+  if (pathname.startsWith("/modulos/solicitudes-leads")) {
+    return MODULE_LABELS.solicitudes_leads;
   }
 
   if (pathname.startsWith("/modulos/")) {

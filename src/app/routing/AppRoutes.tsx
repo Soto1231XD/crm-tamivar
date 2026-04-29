@@ -8,6 +8,7 @@ import { CreatePropertyPage } from "@/modules/properties/pages/CreatePropertyPag
 import { EditPropertyPage } from "@/modules/properties/pages/EditPropertyPage";
 import { LeadsPage } from "@/modules/leads/pages/LeadsPage";
 import { LeadLeadsPage } from "@/modules/registroLeads/pages/LeadLeadsPage";
+import { LeadRequestsPage } from "@/modules/leadRequests/pages/LeadRequestsPage";
 import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
 import { ContentPage } from "@/modules/content/pages/ContentPage";
@@ -48,6 +49,9 @@ export function AppRoutes() {
           </Route>
           <Route element={<ProtectedRoute module="registros_leads" />}>
             <Route path="modulos/registros-leads" element={<LeadLeadsPage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="solicitudes_leads" />}>
+            <Route path="modulos/solicitudes-leads" element={<LeadRequestsPage />} />
           </Route>
           <Route element={<ProtectedRoute module="usuarios" />}>
             <Route path="modulos/usuarios" element={<UsersPage />} />
