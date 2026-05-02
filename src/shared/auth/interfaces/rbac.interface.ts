@@ -1,6 +1,7 @@
 export type ModuleKey =
   | 'dashboard'
   | 'propiedades'
+  | 'desarrollos'
   | 'registros'
   | 'registros_leads'
   | 'solicitudes_leads'

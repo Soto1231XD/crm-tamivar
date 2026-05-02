@@ -1,0 +1,121 @@
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate, useParams } from "react-router-dom";
+import { PropertyForm } from "../components/PropertyForm";
+import { usePropertiesStore } from "../store/usePropertiesStore";
+import type { PropertySubmitPayload } from "../utils/usePropertyForm";
+import { processImageToWebP } from "@/shared/utils/imageProcessor";
+import type { NuevaImagen } from "@/interfaces/property.interface";
+
+export function EditPropertyPage() {
+  const navigate = useNavigate();
+  const { propertyId } = useParams();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Extraemos las herramientas que necesitamos de nuestro Store
+  const {
+    currentProperty,
+    isLoading,
+    error: loadError,
+    fetchProperty,
+    editProperty,
+    clearCurrentProperty,
+  } = usePropertiesStore();
+
+  useEffect(() => {
+    // Si hay un ID en la URL, le pedimos a Zustand que traiga esa propiedad
+    if (propertyId) {
+      fetchProperty(Number(propertyId));
+    }
+
+    // Cuando el usuario sale de esta página, limpiamos el estado
+    return () => {
+      clearCurrentProperty();
+    };
+  }, [propertyId, fetchProperty, clearCurrentProperty]);
+
+  function handleCancel() {
+    navigate("/modulos/propiedades");
+  }
+
+  async function handleEditProperty({
+    payload,
+    files,
+  }: {
+    payload: PropertySubmitPayload;
+    files: NuevaImagen[];
+  }): Promise<string | null> {
+    if (!currentProperty) return "No se encontró la propiedad.";
+
+    // Optimizar las imágenes a WebP
+    // Desempaquetamos, convertimos y reempaquetamos manteniendo la interfaz NuevaImagen
+    const optimizedFiles: NuevaImagen[] = await Promise.all(
+      files.map(async (imgObj) => {
+        // Extraemos el archivo crudo y lo convertimos a WebP
+        const webpFile = await processImageToWebP(imgObj.file);
+
+        // Retornamos el objeto reconstruido con el nuevo archivo y los metadatos intactos
+        return {
+          ...imgObj, // Mantiene el 'titulo' y 'principal' originales
+          file: webpFile, // Sobrescribe el archivo original con la versión optimizada
+        };
+      }),
+    );
+
+    try {
+      setIsSubmitting(true);
+
+      await editProperty(currentProperty.id, payload, optimizedFiles);
+
+      toast.success("La propiedad se actualizó con éxito.");
+      navigate("/modulos/propiedades");
+      return null;
+    } catch (error: any) {
+      console.error("Error al actualizar:", error);
+      return (
+        error?.response?.data?.message ||
+        error.message ||
+        "No fue posible actualizar la propiedad."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <section className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+        Cargando propiedad...
+      </section>
+    );
+  }
+
+  if (loadError || !currentProperty) {
+    return (
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-sm font-medium text-red-600">
+          {loadError || "No se encontró la propiedad."}
+        </p>
+        <button
+          type="button"
+          onClick={handleCancel}
+          className="mt-4 rounded-lg bg-[#0F172A] px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+        >
+          Volver al listado
+        </button>
+      </section>
+    );
+  }
+
+  // Renderizamos el formulario inyectando la propiedad actual
+  return (
+    <PropertyForm
+      property={currentProperty}
+      title="Editar propiedad"
+      submitLabel="Guardar cambios"
+      isSubmitting={isSubmitting}
+      onCancel={handleCancel}
+      onSubmit={handleEditProperty}
+    />
+  );
+}

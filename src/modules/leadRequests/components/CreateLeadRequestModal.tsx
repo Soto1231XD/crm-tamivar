@@ -20,23 +20,16 @@ import {
   type LeadRequestFormValues,
 } from './leadRequests.shared';
 
-type UserOption = {
-  id: number;
-  label: string;
-};
-
 type CreateLeadRequestModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (payload: Omit<CreateLeadRequestPayload, 'creado_por_id'>) => Promise<string | null>;
-  userOptions: UserOption[];
 };
 
 export function CreateLeadRequestModal({
   isOpen,
   onClose,
   onCreate,
-  userOptions,
 }: CreateLeadRequestModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -70,11 +63,10 @@ export function CreateLeadRequestModal({
     const payload: Omit<CreateLeadRequestPayload, 'creado_por_id'> = {
       estado: values.estado?.trim() || undefined,
       fecha_alta: values.fecha_alta,
-      vendedor_id: Number(values.vendedor_id),
       nombre: values.nombre.trim(),
       telefono: values.telefono?.trim() || undefined,
       solicitud: values.solicitud.trim(),
-      tipo_inmueble: values.tipo_inmueble?.trim() || undefined,
+      tipo_inmueble: values.tipo_inmueble.length > 0 ? values.tipo_inmueble.join(', ') : undefined,
       presupuesto: presupuestoValue ? Number(presupuestoValue) : undefined,
       metodo_pago: values.metodo_pago.length > 0 ? values.metodo_pago.join(', ') : undefined,
       ubicacion: values.ubicacion?.trim() || undefined,
@@ -115,7 +107,7 @@ export function CreateLeadRequestModal({
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Datos de la solicitud</p>
-            <p className="mt-1 text-sm text-slate-600">Documenta al cliente, el vendedor y la necesidad principal para iniciar el seguimiento.</p>
+            <p className="mt-1 text-sm text-slate-600">Documenta al cliente y la necesidad principal para iniciar el seguimiento.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -134,19 +126,6 @@ export function CreateLeadRequestModal({
               <LeadRequestFieldLabel required>Fecha de alta</LeadRequestFieldLabel>
               <input type="date" {...register('fecha_alta')} className={leadRequestFieldClassName} />
               {errors.fecha_alta ? <span className="text-xs text-red-600">{errors.fecha_alta.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <LeadRequestFieldLabel required>Vendedor</LeadRequestFieldLabel>
-              <select {...register('vendedor_id')} className={leadRequestFieldClassName}>
-                <option value="">Selecciona un usuario</option>
-                {userOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {errors.vendedor_id ? <span className="text-xs text-red-600">{errors.vendedor_id.message}</span> : null}
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -174,7 +153,7 @@ export function CreateLeadRequestModal({
                   },
                 })}
                 className={leadRequestFieldClassName}
-                maxLength={10}
+                maxLength={14}
                 placeholder="9981144249"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
@@ -191,17 +170,23 @@ export function CreateLeadRequestModal({
               {errors.solicitud ? <span className="text-xs text-red-600">{errors.solicitud.message}</span> : null}
             </label>
 
-            <label className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5">
               <LeadRequestFieldLabel>Tipo de inmueble</LeadRequestFieldLabel>
-              <select {...register('tipo_inmueble')} className={leadRequestFieldClassName}>
-                <option value="">Selecciona un tipo</option>
+              <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
                 {LEAD_REQUEST_PROPERTY_TYPE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
+                  <label key={option} className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      value={option}
+                      {...register('tipo_inmueble')}
+                      className="h-4 w-4 rounded border-slate-300 text-[#312C85] focus:ring-[#312C85]"
+                    />
+                    <span>{option}</span>
+                  </label>
                 ))}
-              </select>
-            </label>
+              </div>
+              {errors.tipo_inmueble ? <span className="text-xs text-red-600">{errors.tipo_inmueble.message}</span> : null}
+            </div>
 
             <label className="flex flex-col gap-1.5">
               <LeadRequestFieldLabel>Presupuesto (MXN)</LeadRequestFieldLabel>

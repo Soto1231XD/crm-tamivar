@@ -9,6 +9,9 @@ import { EditPropertyPage } from "@/modules/properties/pages/EditPropertyPage";
 import { LeadsPage } from "@/modules/leads/pages/LeadsPage";
 import { LeadLeadsPage } from "@/modules/registroLeads/pages/LeadLeadsPage";
 import { LeadRequestsPage } from "@/modules/leadRequests/pages/LeadRequestsPage";
+import { DevelopmentsPage } from "@/modules/developments/pages/DevelopmentsPage";
+import { CreateDevelopmentPage } from "@/modules/developments/pages/CreateDevelopmentPage";
+import { DevelopmentDetailView } from "@/modules/developments/components/DevelopmentDetailView";
 import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
 import { ContentPage } from "@/modules/content/pages/ContentPage";
@@ -39,6 +42,17 @@ export function AppRoutes() {
               element={<EditPropertyPage />}
             />
             <Route path="modulos/propiedades/:id" element={<PropertyDetailView />} />
+          </Route>
+          <Route element={<ProtectedRoute module="desarrollos" />}>
+            <Route path="modulos/desarrollos" element={<DevelopmentsPage />} />
+            <Route
+              path="modulos/desarrollos/nuevo"
+              element={<CreateDevelopmentPage />}
+            />
+            <Route
+              path="modulos/desarrollos/:id"
+              element={<DevelopmentDetailView />}
+            />
           </Route>
           <Route element={<ProtectedRoute module="registros" />}>
             <Route

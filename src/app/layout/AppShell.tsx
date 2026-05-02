@@ -12,6 +12,7 @@ import {
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
 import dashboardIcon from "@/assets/images/Dashboard.png";
 import propiedadesIcon from "@/assets/images/Propiedades.png";
+import desarrollosIcon from "@/assets/images/edificios.png";
 import registrosIcon from "@/assets/images/Registro.png";
 import contenidoIcon from "@/assets/images/Contenido.png";
 import usuariosIcon from "@/assets/images/Usuarios.png";
@@ -24,6 +25,7 @@ import logoBlanco from "@/assets/images/logo_blanco.png";
 const MODULE_ICONS: Record<ModuleKey, string> = {
   dashboard: dashboardIcon,
   propiedades: propiedadesIcon,
+  desarrollos: desarrollosIcon,
   registros: registrosIcon,
   registros_leads: registrosIcon,
   solicitudes_leads: registrosIcon,

@@ -104,7 +104,7 @@ export async function apiRequest<T>(
     }
 
     if (err.response?.status && err.response.status >= 500) {
-      throw new Error("Error en el servidor. Inténtalo más tarde.");
+      throw new Error(finalMessage || "Error en el servidor. Inténtalo más tarde.");
     }
 
     throw new Error(finalMessage || "Error de conexión con el servidor.");

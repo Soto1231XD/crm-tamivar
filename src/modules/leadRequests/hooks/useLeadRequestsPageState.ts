@@ -4,9 +4,7 @@ import type {
   LeadRequestRecord,
   UpdateLeadRequestPayload,
 } from '@/interfaces/lead-request.interface';
-import type { UserRecord } from '@/interfaces/user.interface';
 import toast from 'react-hot-toast';
-import { getSalesUserOptions } from '@/modules/users/services/users.api';
 import { ALL_STATES, PAGE_SIZE } from '@/modules/leads/utils/leads.constants';
 import { useLeadRequestsStore } from '../store/useLeadRequestsStore';
 import {
@@ -16,13 +14,11 @@ import {
 
 type UseLeadRequestsPageStateParams = {
   userId?: number | null;
-  accessToken?: string | null;
 };
 
-export function useLeadRequestsPageState({ userId, accessToken }: UseLeadRequestsPageStateParams) {
+export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStateParams) {
   const { leadRequests, isLoading, fetchLeadRequests, addLeadRequest, editLeadRequest, removeLeadRequest } =
     useLeadRequestsStore();
-  const [users, setUsers] = useState<UserRecord[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_STATES);
   const [leadDateFromFilter, setLeadDateFromFilter] = useState('');
@@ -35,19 +31,6 @@ export function useLeadRequestsPageState({ userId, accessToken }: UseLeadRequest
   useEffect(() => {
     void fetchLeadRequests();
   }, [fetchLeadRequests]);
-
-  useEffect(() => {
-    let active = true;
-
-    (accessToken ? getSalesUserOptions(accessToken) : Promise.resolve([])).then((data) => {
-      if (!active) return;
-      setUsers(Array.isArray(data) ? data : []);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [accessToken]);
 
   const statusOptions = useMemo(() => {
     const values = new Set<string>();
@@ -80,29 +63,6 @@ export function useLeadRequestsPageState({ userId, accessToken }: UseLeadRequest
     const start = (currentPage - 1) * PAGE_SIZE;
     return filteredLeadRequests.slice(start, start + PAGE_SIZE);
   }, [currentPage, filteredLeadRequests]);
-
-  const sellerNameById = useMemo(
-    () =>
-      new Map(
-        users.map((user) => [
-          user.id,
-          `${user.nombres ?? ''} ${user.apellido_paterno ?? ''}`.trim() || user.correo_electronico || 'Sin nombre',
-        ] as const),
-      ),
-    [users],
-  );
-
-  const userChoices = useMemo(
-    () =>
-      users.map((user) => ({
-        id: user.id,
-        label:
-          `${user.nombres ?? ''} ${user.apellido_paterno ?? ''}`.trim() ||
-          user.correo_electronico ||
-          'Sin nombre',
-      })),
-    [users],
-  );
 
   useEffect(() => {
     setCurrentPage(1);
@@ -157,16 +117,7 @@ export function useLeadRequestsPageState({ userId, accessToken }: UseLeadRequest
   }
 
   function handleDownloadFilteredLeadRequests() {
-    downloadLeadRequestsAsExcel(
-      filteredLeadRequests,
-      filteredLeadRequests.map((leadRequest) =>
-        leadRequest.vendedor
-          ? `${leadRequest.vendedor.nombres ?? ''} ${leadRequest.vendedor.apellido_paterno ?? ''}`.trim() || 'Sin vendedor'
-          : leadRequest.vendedor_id
-            ? sellerNameById.get(leadRequest.vendedor_id) ?? 'Sin vendedor'
-            : 'Sin vendedor',
-      ),
-    );
+    downloadLeadRequestsAsExcel(filteredLeadRequests);
   }
 
   return {
@@ -183,8 +134,6 @@ export function useLeadRequestsPageState({ userId, accessToken }: UseLeadRequest
     filteredLeadRequests,
     paginatedLeadRequests,
     totalPages,
-    sellerNameById,
-    userChoices,
     setSearch,
     setStatusFilter,
     setLeadDateFromFilter,

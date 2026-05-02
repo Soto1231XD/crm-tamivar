@@ -1,17 +1,7 @@
-export interface LeadRequestSellerRecord {
-  id: number;
-  nombres?: string | null;
-  apellido_paterno?: string | null;
-  apellido_materno?: string | null;
-  correo_electronico?: string | null;
-  foto_url?: string | null;
-}
-
 export interface LeadRequestRecord {
   id: number;
   estado?: string | null;
   fecha_alta?: string | null;
-  vendedor_id?: number | null;
   nombre: string;
   telefono: string | number;
   solicitud?: string | null;
@@ -28,13 +18,11 @@ export interface LeadRequestRecord {
   creado_por_id?: number | null;
   creado_en?: string | null;
   actualizado_en?: string | null;
-  vendedor?: LeadRequestSellerRecord | null;
 }
 
 export interface CreateLeadRequestPayload {
   estado?: string;
   fecha_alta: string;
-  vendedor_id: number;
   nombre: string;
   telefono?: string;
   solicitud: string;

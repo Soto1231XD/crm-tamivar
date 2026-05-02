@@ -11,7 +11,6 @@ import {
 type LeadRequestsTableProps = {
   leadRequests: LeadRequestRecord[];
   isLoading: boolean;
-  sellerNameById: Map<number, string>;
   canEdit?: boolean;
   canDelete?: boolean;
   onEdit: (leadRequest: LeadRequestRecord) => void;
@@ -21,7 +20,6 @@ type LeadRequestsTableProps = {
 export function LeadRequestsTable({
   leadRequests,
   isLoading,
-  sellerNameById,
   canEdit = true,
   canDelete = true,
   onEdit,
@@ -44,19 +42,6 @@ export function LeadRequestsTable({
       header: 'Fecha de alta',
       cellClassName: 'min-w-[135px]',
       render: (leadRequest) => <span className="text-sm text-slate-700">{formatLeadRequestDate(leadRequest.fecha_alta)}</span>,
-    },
-    {
-      header: 'Vendedor',
-      cellClassName: 'min-w-[200px]',
-      render: (leadRequest) => (
-        <span className="text-sm text-slate-700">
-          {leadRequest.vendedor
-            ? `${leadRequest.vendedor.nombres ?? ''} ${leadRequest.vendedor.apellido_paterno ?? ''}`.trim() || 'Sin vendedor'
-            : leadRequest.vendedor_id
-              ? sellerNameById.get(leadRequest.vendedor_id) ?? 'Sin vendedor'
-              : 'Sin vendedor'}
-        </span>
-      ),
     },
     {
       header: 'Nombre',
@@ -181,7 +166,7 @@ export function LeadRequestsTable({
       isLoading={isLoading}
       emptyMessage="No se encontraron solicitudes de leads"
       wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
-      tableClassName="w-max min-w-[2860px] text-left"
+      tableClassName="w-max min-w-[2640px] text-left"
       actionsClassName="flex items-center gap-2"
       onEdit={canEdit ? onEdit : undefined}
       onDelete={canDelete ? onDelete : undefined}

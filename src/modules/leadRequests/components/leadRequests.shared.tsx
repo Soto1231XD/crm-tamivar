@@ -51,11 +51,10 @@ function getCurrentLocalDateValue() {
 export const INITIAL_LEAD_REQUEST_FORM = {
   estado: 'Activo',
   fecha_alta: getCurrentLocalDateValue(),
-  vendedor_id: '',
   nombre: '',
   telefono: '',
   solicitud: '',
-  tipo_inmueble: '',
+  tipo_inmueble: [] as string[],
   presupuesto: '',
   metodo_pago: [] as string[],
   ubicacion: '',
@@ -70,7 +69,6 @@ export const INITIAL_LEAD_REQUEST_FORM = {
 export const leadRequestSchema = z.object({
   estado: z.string().optional(),
   fecha_alta: z.string().trim().min(1, 'Fecha de alta es obligatoria.'),
-  vendedor_id: z.string().trim().min(1, 'Vendedor es obligatorio.'),
   nombre: z
     .string()
     .trim()
@@ -82,7 +80,7 @@ export const leadRequestSchema = z.object({
     .refine((value) => value.length === 0 || /^\d{10}$/.test(value), 'El teléfono debe tener exactamente 10 dígitos numéricos.')
     .optional(),
   solicitud: z.string().trim().min(1, 'Solicitud es obligatoria.').max(1000, 'Solicitud no puede exceder 1000 caracteres.'),
-  tipo_inmueble: z.string().max(120, 'Tipo de inmueble no puede exceder 120 caracteres.').optional(),
+  tipo_inmueble: z.array(z.string()).optional().default([]),
   presupuesto: z.string().optional(),
   metodo_pago: z.array(z.string()).optional().default([]),
   ubicacion: z.string().max(1000, 'Ubicación no puede exceder 1000 caracteres.').optional(),
@@ -143,6 +141,13 @@ export function parseLeadRequestPaymentMethods(value?: string | null): string[] 
     .filter(Boolean);
 }
 
+export function parseLeadRequestPropertyTypes(value?: string | null): string[] {
+  return (value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function toLeadRequestDefaultValues(request: LeadRequestRecord | null): LeadRequestFormInput {
   if (!request) {
     return INITIAL_LEAD_REQUEST_FORM;
@@ -151,11 +156,10 @@ export function toLeadRequestDefaultValues(request: LeadRequestRecord | null): L
   return {
     estado: request.estado ?? 'Activo',
     fecha_alta: request.fecha_alta ? request.fecha_alta.slice(0, 10) : getCurrentLocalDateValue(),
-    vendedor_id: request.vendedor_id != null ? String(request.vendedor_id) : '',
     nombre: request.nombre ?? '',
     telefono: request.telefono != null ? String(request.telefono) : '',
     solicitud: request.solicitud ?? '',
-    tipo_inmueble: request.tipo_inmueble ?? '',
+    tipo_inmueble: parseLeadRequestPropertyTypes(request.tipo_inmueble),
     presupuesto: request.presupuesto != null ? formatLeadRequestBudgetInput(String(request.presupuesto)) : '',
     metodo_pago: parseLeadRequestPaymentMethods(request.metodo_pago),
     ubicacion: request.ubicacion ?? '',
@@ -177,11 +181,10 @@ export function buildLeadRequestUpdatePayload(
   const fieldMappers: Partial<Record<keyof LeadRequestFormValues, (input: LeadRequestFormValues) => unknown>> = {
     estado: (input) => input.estado?.trim() || undefined,
     fecha_alta: (input) => input.fecha_alta,
-    vendedor_id: (input) => Number(input.vendedor_id),
     nombre: (input) => input.nombre.trim(),
     telefono: (input) => input.telefono?.trim() || undefined,
     solicitud: (input) => input.solicitud.trim(),
-    tipo_inmueble: (input) => input.tipo_inmueble?.trim() || undefined,
+    tipo_inmueble: (input) => (input.tipo_inmueble.length > 0 ? input.tipo_inmueble.join(', ') : undefined),
     metodo_pago: (input) => (input.metodo_pago.length > 0 ? input.metodo_pago.join(', ') : undefined),
     ubicacion: (input) => input.ubicacion?.trim() || undefined,
     numero_habitaciones: (input) => input.numero_habitaciones?.trim() || undefined,

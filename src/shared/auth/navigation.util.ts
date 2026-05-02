@@ -3,6 +3,7 @@ import type { ModuleKey } from "./interfaces/rbac.interface";
 export const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard: "Dashboard",
   propiedades: "Propiedades",
+  desarrollos: "Desarrollos",
   registros: "Registros visitas",
   registros_leads: "Registros leads",
   solicitudes_leads: "Solicitudes",
@@ -15,6 +16,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 export const MODULE_PATHS: Record<ModuleKey, string> = {
   dashboard: "/dashboard",
   propiedades: "/modulos/propiedades",
+  desarrollos: "/modulos/desarrollos",
   registros: "/modulos/registros-visitas",
   registros_leads: "/modulos/registros-leads",
   solicitudes_leads: "/modulos/solicitudes-leads",
@@ -26,6 +28,7 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
 
 const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
   "propiedades",
+  "desarrollos",
   "registros",
   "registros_leads",
   "solicitudes_leads",
@@ -53,6 +56,7 @@ export function getAvailableModules(permissions: string[]): ModuleKey[] {
   const allModules: ModuleKey[] = [
     "dashboard",
     "propiedades",
+    "desarrollos",
     "registros",
     "registros_leads",
     "solicitudes_leads",

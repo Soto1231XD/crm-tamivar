@@ -12,7 +12,6 @@ import { useLeadRequestsPageState } from '../hooks/useLeadRequestsPageState';
 
 export function LeadRequestsPage() {
   const user = useAuthStore((state) => state.user);
-  const accessToken = useAuthStore((state) => state.token);
   const { can, isSuperAdmin } = useHasPermission();
 
   const canCreate = can('solicitudes_leads', 'crear');
@@ -33,8 +32,6 @@ export function LeadRequestsPage() {
     filteredLeadRequests,
     paginatedLeadRequests,
     totalPages,
-    sellerNameById,
-    userChoices,
     setSearch,
     setStatusFilter,
     setLeadDateFromFilter,
@@ -49,7 +46,6 @@ export function LeadRequestsPage() {
     handleDownloadFilteredLeadRequests,
   } = useLeadRequestsPageState({
     userId: user?.id,
-    accessToken,
   });
 
   return (
@@ -92,7 +88,6 @@ export function LeadRequestsPage() {
         <LeadRequestsTable
           leadRequests={paginatedLeadRequests}
           isLoading={isLoading}
-          sellerNameById={sellerNameById}
           canEdit={canEdit}
           canDelete={canDelete}
           onEdit={setEditingLeadRequest}
@@ -114,7 +109,6 @@ export function LeadRequestsPage() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onCreate={handleCreateLeadRequest}
-          userOptions={userChoices}
         />
       ) : null}
 
@@ -124,7 +118,6 @@ export function LeadRequestsPage() {
           leadRequest={editingLeadRequest}
           onClose={() => setEditingLeadRequest(null)}
           onEdit={handleEditLeadRequest}
-          userOptions={userChoices}
         />
       ) : null}
 

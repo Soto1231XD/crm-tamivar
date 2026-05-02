@@ -10,22 +10,17 @@ export function formatLeadRequestPhone(telefono?: string | number): string {
 
 export function formatLeadRequestDate(value?: string | null): string {
   if (!value) return 'Sin fecha';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('es-MX', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
+  const normalized = value.slice(0, 10);
+  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
+  const [, year, month, day] = match;
+  return `${day}/${month}/${year}`;
 }
 
 export function getComparableLeadRequestDate(value?: string | null): string {
   if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  const offset = date.getTimezoneOffset();
-  const localDate = new Date(date.getTime() - offset * 60_000);
-  return localDate.toISOString().slice(0, 10);
+  const normalized = value.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : '';
 }
 
 export function getLeadRequestMediumStyles(value: string) {
@@ -45,11 +40,10 @@ export function getLeadRequestMediumStyles(value: string) {
   return palette[normalized] ?? { backgroundColor: '#E2E8F0', color: '#334155' };
 }
 
-export function downloadLeadRequestsAsExcel(leadRequests: LeadRequestRecord[], sellerNames: string[]) {
+export function downloadLeadRequestsAsExcel(leadRequests: LeadRequestRecord[]) {
   const headers = [
     'Estado',
     'Fecha de alta',
-    'Vendedor',
     'Nombre',
     'Telefono',
     'Solicitud',
@@ -65,10 +59,9 @@ export function downloadLeadRequestsAsExcel(leadRequests: LeadRequestRecord[], s
     'Comentario final',
   ];
 
-  const rows = leadRequests.map((request, index) => [
+  const rows = leadRequests.map((request) => [
     request.estado?.trim() || 'Sin estado',
     formatLeadRequestDate(request.fecha_alta),
-    sellerNames[index] ?? 'Sin vendedor',
     request.nombre?.trim() || 'Sin nombre',
     formatLeadRequestPhone(request.telefono),
     request.solicitud?.trim() || 'Sin solicitud',
