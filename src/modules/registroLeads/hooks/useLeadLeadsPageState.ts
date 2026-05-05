@@ -32,6 +32,7 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_STATES);
+  const [sellerFilter, setSellerFilter] = useState('');
   const [leadDateFromFilter, setLeadDateFromFilter] = useState('');
   const [leadDateToFilter, setLeadDateToFilter] = useState('');
   const [updatingLeadId, setUpdatingLeadId] = useState<number | null>(null);
@@ -90,12 +91,14 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
       const matchesSearch =
         query.length === 0 || fullName.includes(query) || phone.includes(query);
       const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;
+      const matchesSeller =
+        sellerFilter.length === 0 || String(lead.vendedor_asignado_id ?? '') === sellerFilter;
       const matchesLeadDateFrom = leadDateFromFilter.length === 0 || (leadDate.length > 0 && leadDate >= leadDateFromFilter);
       const matchesLeadDateTo = leadDateToFilter.length === 0 || (leadDate.length > 0 && leadDate <= leadDateToFilter);
 
-      return matchesSearch && matchesStatus && matchesLeadDateFrom && matchesLeadDateTo;
+      return matchesSearch && matchesStatus && matchesSeller && matchesLeadDateFrom && matchesLeadDateTo;
     });
-  }, [leadDateFromFilter, leadDateToFilter, leads, search, statusFilter]);
+  }, [leadDateFromFilter, leadDateToFilter, leads, search, sellerFilter, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 
@@ -129,7 +132,7 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [leadDateFromFilter, leadDateToFilter, search, statusFilter]);
+  }, [leadDateFromFilter, leadDateToFilter, search, sellerFilter, statusFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -279,6 +282,7 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
     isLoading,
     search,
     statusFilter,
+    sellerFilter,
     leadDateFromFilter,
     leadDateToFilter,
     updatingLeadId,
@@ -295,6 +299,7 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
     userChoices,
     setSearch,
     setStatusFilter,
+    setSellerFilter,
     setLeadDateFromFilter,
     setLeadDateToFilter,
     setIsCreateModalOpen,

@@ -2,6 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { DevelopmentForm } from "../components/DevelopmentForm";
+import { getFriendlyDevelopmentError } from "../utils/developmentErrors";
 import type {
   CreateDevelopmentPayload,
   NewDevelopmentImage,
@@ -40,11 +41,7 @@ export function CreateDevelopmentPage() {
       return null;
     } catch (error: any) {
       console.error("Error al registrar desarrollo:", error);
-      return error?.message &&
-        error.message !== "Internal server error" &&
-        error.message !== "Error en el servidor. Intentalo mas tarde."
-        ? error.message
-        : "No pudimos crear el desarrollo. Revisa los datos generales, las imagenes del desarrollo y cada modelo agregado.";
+      return getFriendlyDevelopmentError(error, "create");
     } finally {
       setIsSubmitting(false);
     }

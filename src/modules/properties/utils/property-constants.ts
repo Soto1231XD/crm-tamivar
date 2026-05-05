@@ -22,6 +22,12 @@ export const PROPERTY_OPERATION_FILTER_OPTIONS = [
   ...OPERATION_OPTIONS,
 ] as const;
 
+export const EXCLUSIVE_FILTER_OPTIONS = [
+  "Todas las exclusividades",
+  "Exclusivas",
+  "No exclusivas",
+] as const;
+
 export const PAYMENT_OPTIONS = [
   "Efectivo",
   "Infonavit",

@@ -81,6 +81,7 @@ export interface DevelopmentMeasures {
 export interface DevelopmentAddress {
   cp?: number;
   fraccionamiento: string;
+  zona?: string;
   smz?: number;
   mza?: number;
   lote?: number;
@@ -96,6 +97,8 @@ export interface DevelopmentFeatures {
   banos?: number;
   recamaras?: number;
   estacionamiento?: number;
+  cuota_mantenimiento_tipo?: "Fijo" | "Por metro cuadrado";
+  tipo_modelo?: "Casa" | "Departamento";
   sala?: boolean;
   comedor?: boolean;
   cocina?: boolean;

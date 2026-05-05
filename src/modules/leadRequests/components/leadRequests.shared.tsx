@@ -53,6 +53,7 @@ export const INITIAL_LEAD_REQUEST_FORM = {
   fecha_alta: getCurrentLocalDateValue(),
   nombre: '',
   telefono: '',
+  vendedor_id: '',
   solicitud: '',
   tipo_inmueble: [] as string[],
   presupuesto: '',
@@ -60,8 +61,6 @@ export const INITIAL_LEAD_REQUEST_FORM = {
   ubicacion: '',
   numero_habitaciones: '',
   caracteristicas: '',
-  seguimiento: '',
-  opciones_enviadas: '',
   medio: '',
   comentario_final: '',
 };
@@ -79,6 +78,7 @@ export const leadRequestSchema = z.object({
     .trim()
     .refine((value) => value.length === 0 || /^\d{10}$/.test(value), 'El teléfono debe tener exactamente 10 dígitos numéricos.')
     .optional(),
+  vendedor_id: z.string().trim().min(1, 'Vendedor es obligatorio.'),
   solicitud: z.string().trim().min(1, 'Solicitud es obligatoria.').max(1000, 'Solicitud no puede exceder 1000 caracteres.'),
   tipo_inmueble: z.array(z.string()).optional().default([]),
   presupuesto: z.string().optional(),
@@ -86,8 +86,6 @@ export const leadRequestSchema = z.object({
   ubicacion: z.string().max(1000, 'Ubicación no puede exceder 1000 caracteres.').optional(),
   numero_habitaciones: z.string().max(120, 'N. habitaciones no puede exceder 120 caracteres.').optional(),
   caracteristicas: z.string().max(1500, 'Características no puede exceder 1500 caracteres.').optional(),
-  seguimiento: z.string().max(1500, 'Seguimiento no puede exceder 1500 caracteres.').optional(),
-  opciones_enviadas: z.string().max(1500, 'Opciones enviadas no puede exceder 1500 caracteres.').optional(),
   medio: z.string().max(150, 'Medio no puede exceder 150 caracteres.').optional(),
   comentario_final: z.string().max(1500, 'Comentario final no puede exceder 1500 caracteres.').optional(),
 });
@@ -158,6 +156,7 @@ export function toLeadRequestDefaultValues(request: LeadRequestRecord | null): L
     fecha_alta: request.fecha_alta ? request.fecha_alta.slice(0, 10) : getCurrentLocalDateValue(),
     nombre: request.nombre ?? '',
     telefono: request.telefono != null ? String(request.telefono) : '',
+    vendedor_id: request.vendedor_id != null ? String(request.vendedor_id) : '',
     solicitud: request.solicitud ?? '',
     tipo_inmueble: parseLeadRequestPropertyTypes(request.tipo_inmueble),
     presupuesto: request.presupuesto != null ? formatLeadRequestBudgetInput(String(request.presupuesto)) : '',
@@ -165,8 +164,6 @@ export function toLeadRequestDefaultValues(request: LeadRequestRecord | null): L
     ubicacion: request.ubicacion ?? '',
     numero_habitaciones: request.numero_habitaciones ?? '',
     caracteristicas: request.caracteristicas ?? '',
-    seguimiento: request.seguimiento ?? '',
-    opciones_enviadas: request.opciones_enviadas ?? '',
     medio: request.medio ?? '',
     comentario_final: request.comentario_final ?? '',
   };
@@ -183,14 +180,13 @@ export function buildLeadRequestUpdatePayload(
     fecha_alta: (input) => input.fecha_alta,
     nombre: (input) => input.nombre.trim(),
     telefono: (input) => input.telefono?.trim() || undefined,
+    vendedor_id: (input) => Number(input.vendedor_id),
     solicitud: (input) => input.solicitud.trim(),
     tipo_inmueble: (input) => (input.tipo_inmueble.length > 0 ? input.tipo_inmueble.join(', ') : undefined),
     metodo_pago: (input) => (input.metodo_pago.length > 0 ? input.metodo_pago.join(', ') : undefined),
     ubicacion: (input) => input.ubicacion?.trim() || undefined,
     numero_habitaciones: (input) => input.numero_habitaciones?.trim() || undefined,
     caracteristicas: (input) => input.caracteristicas?.trim() || undefined,
-    seguimiento: (input) => input.seguimiento?.trim() || undefined,
-    opciones_enviadas: (input) => input.opciones_enviadas?.trim() || undefined,
     medio: (input) => input.medio?.trim() || undefined,
     comentario_final: (input) => input.comentario_final?.trim() || undefined,
   };

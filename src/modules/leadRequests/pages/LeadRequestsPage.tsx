@@ -28,6 +28,8 @@ export function LeadRequestsPage() {
     editingLeadRequest,
     deletingLeadRequest,
     currentPage,
+    sellerChoices,
+    updatingLeadRequestId,
     statusOptions,
     filteredLeadRequests,
     paginatedLeadRequests,
@@ -43,6 +45,7 @@ export function LeadRequestsPage() {
     handleCreateLeadRequest,
     handleEditLeadRequest,
     handleDeleteLeadRequest,
+    handleQuickUpdateLeadRequest,
     handleDownloadFilteredLeadRequests,
   } = useLeadRequestsPageState({
     userId: user?.id,
@@ -88,8 +91,11 @@ export function LeadRequestsPage() {
         <LeadRequestsTable
           leadRequests={paginatedLeadRequests}
           isLoading={isLoading}
+          updatingLeadRequestId={updatingLeadRequestId}
           canEdit={canEdit}
           canDelete={canDelete}
+          sellerChoices={sellerChoices}
+          onQuickUpdate={handleQuickUpdateLeadRequest}
           onEdit={setEditingLeadRequest}
           onDelete={setDeletingLeadRequest}
         />
@@ -108,6 +114,7 @@ export function LeadRequestsPage() {
         <CreateLeadRequestModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
+          sellerOptions={sellerChoices}
           onCreate={handleCreateLeadRequest}
         />
       ) : null}
@@ -116,6 +123,7 @@ export function LeadRequestsPage() {
         <EditLeadRequestModal
           isOpen={Boolean(editingLeadRequest)}
           leadRequest={editingLeadRequest}
+          sellerOptions={sellerChoices}
           onClose={() => setEditingLeadRequest(null)}
           onEdit={handleEditLeadRequest}
         />

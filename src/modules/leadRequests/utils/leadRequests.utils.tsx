@@ -44,6 +44,7 @@ export function downloadLeadRequestsAsExcel(leadRequests: LeadRequestRecord[]) {
   const headers = [
     'Estado',
     'Fecha de alta',
+    'Vendedor',
     'Nombre',
     'Telefono',
     'Solicitud',
@@ -53,8 +54,6 @@ export function downloadLeadRequestsAsExcel(leadRequests: LeadRequestRecord[]) {
     'Ubicacion',
     'N. habitaciones',
     'Caracteristicas',
-    'Seguimiento',
-    'Opciones enviadas',
     'Medio',
     'Comentario final',
   ];
@@ -62,6 +61,12 @@ export function downloadLeadRequestsAsExcel(leadRequests: LeadRequestRecord[]) {
   const rows = leadRequests.map((request) => [
     request.estado?.trim() || 'Sin estado',
     formatLeadRequestDate(request.fecha_alta),
+    request.vendedor
+      ? [request.vendedor.nombres, request.vendedor.apellido_paterno, request.vendedor.apellido_materno]
+          .filter(Boolean)
+          .join(' ')
+          .trim() || 'Sin vendedor'
+      : 'Sin vendedor',
     request.nombre?.trim() || 'Sin nombre',
     formatLeadRequestPhone(request.telefono),
     request.solicitud?.trim() || 'Sin solicitud',
@@ -71,8 +76,6 @@ export function downloadLeadRequestsAsExcel(leadRequests: LeadRequestRecord[]) {
     request.ubicacion?.trim() || 'Sin ubicacion',
     request.numero_habitaciones?.trim() || 'Sin dato',
     request.caracteristicas?.trim() || 'Sin caracteristicas',
-    request.seguimiento?.trim() || 'Sin seguimiento',
-    request.opciones_enviadas?.trim() || 'Sin opciones enviadas',
     request.medio?.trim() || 'Sin medio',
     request.comentario_final?.trim() || 'Sin comentario final',
   ]);

@@ -14,6 +14,7 @@ import {
 import { useDevelopmentsStore } from "../store/useDevelopmentsStore";
 import { DevelopmentsTable } from "../components/DevelopmentsTable";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import { getFriendlyDevelopmentError } from "../utils/developmentErrors";
 import agregarIcon from "@/assets/images/Agregar.png";
 
 const STATUS_OPTIONS = ["Todos los estados", "Disponible", "Apartado", "Vendido", "Baja"];
@@ -279,11 +280,7 @@ export function DevelopmentsPage() {
       await removeDevelopment(development.id);
       toast.success("El desarrollo se eliminó correctamente.");
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "No fue posible eliminar el desarrollo.",
-      );
+      toast.error(getFriendlyDevelopmentError(error, "delete"));
     }
   }
 }

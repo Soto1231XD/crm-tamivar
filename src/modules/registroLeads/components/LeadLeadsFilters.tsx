@@ -4,12 +4,15 @@ import { FilterCard, FilterDateInput, FilterSearchInput, FilterSelect } from '@/
 type LeadLeadsFiltersProps = {
   search: string;
   statusFilter: string;
+  sellerFilter: string;
   leadDateFromFilter: string;
   leadDateToFilter: string;
   statusOptions: string[];
+  sellerOptions: Array<{ id: number; label: string }>;
   hasResults: boolean;
   onSearchChange: (value: string) => void;
   onStatusChange: (value: string) => void;
+  onSellerChange: (value: string) => void;
   onLeadDateFromChange: (value: string) => void;
   onLeadDateToChange: (value: string) => void;
   onDownload: () => void;
@@ -18,19 +21,22 @@ type LeadLeadsFiltersProps = {
 export function LeadLeadsFilters({
   search,
   statusFilter,
+  sellerFilter,
   leadDateFromFilter,
   leadDateToFilter,
   statusOptions,
+  sellerOptions,
   hasResults,
   onSearchChange,
   onStatusChange,
+  onSellerChange,
   onLeadDateFromChange,
   onLeadDateToChange,
   onDownload,
 }: LeadLeadsFiltersProps) {
   return (
-    <FilterCard description="Busca por nombre o teléfono, filtra por estatus y define un rango de fecha del lead para ubicar oportunidades mas rápido.">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.9fr)_minmax(0,0.95fr)_minmax(0,0.95fr)_auto]">
+    <FilterCard description="Busca por nombre o teléfono, filtra por estatus o vendedor y usa el rango de fechas para ubicar oportunidades más rápido.">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]">
         <FilterSearchInput
           type="text"
           placeholder="Buscar por nombre o teléfono"
@@ -42,6 +48,15 @@ export function LeadLeadsFilters({
           {statusOptions.map((option) => (
             <option key={option} value={option}>
               {option}
+            </option>
+          ))}
+        </FilterSelect>
+
+        <FilterSelect value={sellerFilter} onChange={(event) => onSellerChange(event.target.value)}>
+          <option value="">Todos los vendedores</option>
+          {sellerOptions.map((option) => (
+            <option key={option.id} value={String(option.id)}>
+              {option.label}
             </option>
           ))}
         </FilterSelect>

@@ -9,6 +9,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import type { DevelopmentImage, DevelopmentRecord } from "@/interfaces/development.interface";
 import { getDevelopment } from "../services/developments.api";
+import { getFriendlyDevelopmentError } from "../utils/developmentErrors";
 import {
   calculateFinalPrice,
   formatCurrency,
@@ -91,11 +92,7 @@ export function DevelopmentDetailView() {
         if (isMounted) setDevelopment(data);
       } catch (err) {
         if (isMounted) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "No pudimos cargar el desarrollo.",
-          );
+          setError(getFriendlyDevelopmentError(err, "load_detail"));
         }
       } finally {
         if (isMounted) setIsLoading(false);

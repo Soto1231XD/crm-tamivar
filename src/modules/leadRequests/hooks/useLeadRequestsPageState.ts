@@ -6,6 +6,8 @@ import type {
 } from '@/interfaces/lead-request.interface';
 import toast from 'react-hot-toast';
 import { ALL_STATES, PAGE_SIZE } from '@/modules/leads/utils/leads.constants';
+import { getLeadRequestSellerOptions } from '@/modules/users/services/users.api';
+import type { UserRecord } from '@/interfaces/user.interface';
 import { useLeadRequestsStore } from '../store/useLeadRequestsStore';
 import {
   downloadLeadRequestsAsExcel,
@@ -27,10 +29,18 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
   const [editingLeadRequest, setEditingLeadRequest] = useState<LeadRequestRecord | null>(null);
   const [deletingLeadRequest, setDeletingLeadRequest] = useState<LeadRequestRecord | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sellerOptions, setSellerOptions] = useState<UserRecord[]>([]);
+  const [updatingLeadRequestId, setUpdatingLeadRequestId] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchLeadRequests();
   }, [fetchLeadRequests]);
+
+  useEffect(() => {
+    getLeadRequestSellerOptions()
+      .then(setSellerOptions)
+      .catch(() => setSellerOptions([]));
+  }, []);
 
   const statusOptions = useMemo(() => {
     const values = new Set<string>();
@@ -43,18 +53,30 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
 
   const filteredLeadRequests = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return leadRequests.filter((leadRequest) => {
-      const fullName = (leadRequest.nombre ?? '').trim().toLowerCase();
-      const phone = String(leadRequest.telefono ?? '').toLowerCase();
-      const leadDate = getComparableLeadRequestDate(leadRequest.fecha_alta);
+    return leadRequests
+      .filter((leadRequest) => {
+        const fullName = (leadRequest.nombre ?? '').trim().toLowerCase();
+        const phone = String(leadRequest.telefono ?? '').toLowerCase();
+        const leadDate = getComparableLeadRequestDate(leadRequest.fecha_alta);
 
-      const matchesSearch = query.length === 0 || fullName.includes(query) || phone.includes(query);
-      const matchesStatus = statusFilter === ALL_STATES || (leadRequest.estado ?? '').trim() === statusFilter;
-      const matchesLeadDateFrom = leadDateFromFilter.length === 0 || (leadDate.length > 0 && leadDate >= leadDateFromFilter);
-      const matchesLeadDateTo = leadDateToFilter.length === 0 || (leadDate.length > 0 && leadDate <= leadDateToFilter);
+        const matchesSearch = query.length === 0 || fullName.includes(query) || phone.includes(query);
+        const matchesStatus = statusFilter === ALL_STATES || (leadRequest.estado ?? '').trim() === statusFilter;
+        const matchesLeadDateFrom = leadDateFromFilter.length === 0 || (leadDate.length > 0 && leadDate >= leadDateFromFilter);
+        const matchesLeadDateTo = leadDateToFilter.length === 0 || (leadDate.length > 0 && leadDate <= leadDateToFilter);
 
-      return matchesSearch && matchesStatus && matchesLeadDateFrom && matchesLeadDateTo;
-    });
+        return matchesSearch && matchesStatus && matchesLeadDateFrom && matchesLeadDateTo;
+      })
+      .sort((left, right) => {
+        const leftBudget = left.presupuesto == null || Number.isNaN(Number(left.presupuesto)) ? Number.NEGATIVE_INFINITY : Number(left.presupuesto);
+        const rightBudget =
+          right.presupuesto == null || Number.isNaN(Number(right.presupuesto)) ? Number.NEGATIVE_INFINITY : Number(right.presupuesto);
+
+        if (rightBudget !== leftBudget) {
+          return rightBudget - leftBudget;
+        }
+
+        return getComparableLeadRequestDate(right.fecha_alta).localeCompare(getComparableLeadRequestDate(left.fecha_alta));
+      });
   }, [leadDateFromFilter, leadDateToFilter, leadRequests, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeadRequests.length / PAGE_SIZE));
@@ -120,6 +142,30 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
     downloadLeadRequestsAsExcel(filteredLeadRequests);
   }
 
+  const sellerChoices = useMemo(
+    () =>
+      sellerOptions.map((user) => ({
+        id: user.id,
+        label: [user.nombres, user.apellido_paterno, user.apellido_materno].filter(Boolean).join(' ').trim() || `Usuario ${user.id}`,
+      })),
+    [sellerOptions],
+  );
+
+  async function handleQuickUpdateLeadRequest(
+    leadRequestId: number,
+    payload: UpdateLeadRequestPayload,
+  ): Promise<void> {
+    try {
+      setUpdatingLeadRequestId(leadRequestId);
+      await editLeadRequest(leadRequestId, payload);
+      toast.success('La solicitud se actualizó con éxito.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No fue posible actualizar la solicitud.');
+    } finally {
+      setUpdatingLeadRequestId(null);
+    }
+  }
+
   return {
     isLoading,
     search,
@@ -130,6 +176,8 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
     editingLeadRequest,
     deletingLeadRequest,
     currentPage,
+    sellerChoices,
+    updatingLeadRequestId,
     statusOptions,
     filteredLeadRequests,
     paginatedLeadRequests,
@@ -145,6 +193,7 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
     handleCreateLeadRequest,
     handleEditLeadRequest,
     handleDeleteLeadRequest,
+    handleQuickUpdateLeadRequest,
     handleDownloadFilteredLeadRequests,
   };
 }

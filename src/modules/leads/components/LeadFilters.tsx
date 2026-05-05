@@ -40,11 +40,11 @@ export function LeadFilters({
   onDownload,
 }: LeadFiltersProps) {
   return (
-    <FilterCard description="Busca por cliente, responsable, estado, propiedad o rango de fecha de cita para ubicar registros mas rapido.">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_auto]">
+    <FilterCard description="Busca por cliente o responsable y combina estado, propiedad y fecha de cita sin saturar la vista.">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.95fr)]">
         <FilterSearchInput
           type="text"
-          placeholder="Buscar por nombre o telefono"
+          placeholder="Buscar por nombre o teléfono"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
         />
@@ -71,6 +71,9 @@ export function LeadFilters({
             </option>
           ))}
         </FilterSelect>
+      </div>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)_auto]">
 
         <FilterDateInput
           type="date"

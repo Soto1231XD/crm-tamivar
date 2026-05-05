@@ -47,6 +47,7 @@ type OperationOption = "Preventa" | "Entrega inmediata";
 type DevelopmentModelFormState = {
   id: string;
   nombre: string;
+  tipo_modelo: "Casa" | "Departamento";
   descripcion: string;
   operaciones: OperationOption[];
   precio_preventa: string;
@@ -91,6 +92,7 @@ type DevelopmentFormState = {
   calle: string;
   num_ext: string;
   num_int: string;
+  zona: string;
   fraccionamiento: string;
   estado: string;
   municipio: string;
@@ -109,6 +111,7 @@ type DevelopmentFormState = {
   estacionamiento: string;
   pisos_tiene: string;
   cuota_mantenimiento: string;
+  cuota_mantenimiento_tipo: "Fijo" | "Por metro cuadrado";
   servicios_instalaciones: string;
   amenidades: string;
   comentarios: string;
@@ -145,6 +148,7 @@ const OPERATION_BLOCKS: Array<{
 
 const UPPERCASE_ADDRESS_FIELD_NAMES = new Set([
   "calle",
+  "zona",
   "fraccionamiento",
   "estado",
   "municipio",
@@ -182,6 +186,7 @@ const INITIAL_FORM: DevelopmentFormState = {
   calle: "",
   num_ext: "",
   num_int: "",
+  zona: "",
   fraccionamiento: "",
   estado: "",
   municipio: "",
@@ -200,6 +205,7 @@ const INITIAL_FORM: DevelopmentFormState = {
   estacionamiento: "0",
   pisos_tiene: "0",
   cuota_mantenimiento: "",
+  cuota_mantenimiento_tipo: "Fijo",
   servicios_instalaciones: "",
   amenidades: "",
   comentarios: "",
@@ -211,6 +217,7 @@ function createEmptyModel(): DevelopmentModelFormState {
   return {
     id: crypto.randomUUID(),
     nombre: "",
+    tipo_modelo: "Casa",
     descripcion: "",
     operaciones: ["Preventa"],
     precio_preventa: "",
@@ -330,6 +337,15 @@ function buildCommercialSchemes(source: {
   });
 }
 
+function buildOperationOnlySchemes(
+  operations: OperationOption[],
+): CommercialScheme[] {
+  return operations.map((operation) => ({
+    tipo_operacion: operation,
+    precio: 0,
+  }));
+}
+
 function buildMeasures(source: {
   terreno_m2: string;
   construccion_m2: string;
@@ -348,6 +364,8 @@ function buildFeatures(source: {
   recamaras: string;
   banos: string;
   estacionamiento: string;
+  cuota_mantenimiento_tipo?: "Fijo" | "Por metro cuadrado";
+  tipo_modelo?: "Casa" | "Departamento";
   sala?: boolean;
   comedor?: boolean;
   cocina?: boolean;
@@ -365,6 +383,8 @@ function buildFeatures(source: {
     recamaras: parseFormattedNumber(source.recamaras),
     banos: parseFormattedNumber(source.banos),
     estacionamiento: parseFormattedNumber(source.estacionamiento),
+    cuota_mantenimiento_tipo: source.cuota_mantenimiento_tipo,
+    tipo_modelo: source.tipo_modelo,
     sala: Boolean(source.sala),
     comedor: Boolean(source.comedor),
     cocina: Boolean(source.cocina),
@@ -386,6 +406,7 @@ function getSelectedOperationBlocks(operations: OperationOption[]) {
 
 function isModelReady(model: DevelopmentModelFormState) {
   const hasName = model.nombre.trim().length > 0;
+  const hasType = model.tipo_modelo.trim().length > 0;
   const hasOperations = model.operaciones.length > 0;
   const hasImages = model.imagenes.length > 0;
   const hasPrices = model.operaciones.every((operation) => {
@@ -396,7 +417,7 @@ function isModelReady(model: DevelopmentModelFormState) {
     return (price ?? 0) > 0;
   });
 
-  return hasName && hasOperations && hasImages && hasPrices;
+  return hasName && hasType && hasOperations && hasImages && hasPrices;
 }
 
 export function DevelopmentForm({
@@ -712,7 +733,6 @@ export function DevelopmentForm({
     if (!form.municipio.trim()) {
       nextErrors.municipio = "El municipio es obligatorio.";
     }
-    if (!form.smz.trim()) nextErrors.smz = "La SMZ es obligatoria.";
     if (!form.entrega_inmediata && !form.fecha_entrega) {
       nextErrors.fecha_entrega = "Indica la fecha de entrega del desarrollo.";
     }
@@ -723,21 +743,13 @@ export function DevelopmentForm({
       nextErrors.modelos = "Agrega al menos un modelo al desarrollo.";
     }
 
-    const hasDevelopmentPrices = form.operaciones.every((operation) => {
-      const price =
-        operation === "Entrega inmediata"
-          ? parseFormattedNumber(form.precio_entrega_inmediata)
-          : parseFormattedNumber(form.precio_preventa);
-      return (price ?? 0) > 0;
-    });
-
-    if (!hasDevelopmentPrices) {
-      nextErrors.precios = "Completa el precio de cada operación del desarrollo.";
-    }
-
     form.modelos.forEach((model) => {
       if (!model.nombre.trim()) {
         nextErrors[`modelo_${model.id}_nombre`] = "El nombre del modelo es obligatorio.";
+      }
+      if (!model.tipo_modelo) {
+        nextErrors[`modelo_${model.id}_tipo_modelo`] =
+          "Selecciona si el modelo es casa o departamento.";
       }
       if (model.operaciones.length === 0) {
         nextErrors[`modelo_${model.id}_operaciones`] =
@@ -799,7 +811,7 @@ export function DevelopmentForm({
     const payload: CreateDevelopmentPayload = {
       titulo: form.titulo.trim(),
       tipo_inmueble: "Desarrollo",
-      esquema_comercial: buildCommercialSchemes(form),
+      esquema_comercial: buildOperationOnlySchemes(form.operaciones),
       descripcion: form.descripcion.trim() || undefined,
       tipos_pago: form.tipos_pago,
       estatus: form.estatus.trim(),
@@ -810,28 +822,26 @@ export function DevelopmentForm({
       exclusiva: false,
       tiene_gravamen: false,
       entrega_inmediata: form.entrega_inmediata,
-      fecha_entrega: form.entrega_inmediata || !form.fecha_entrega ? undefined : form.fecha_entrega,
+      fecha_entrega:
+        form.entrega_inmediata || !form.fecha_entrega
+          ? undefined
+          : `${form.fecha_entrega}-01`,
       cuota_mantenimiento: parseFormattedNumber(form.cuota_mantenimiento),
       comentarios: form.comentarios.trim() || undefined,
-      pisos_tiene: parseFormattedNumber(form.pisos_tiene),
+      pisos_tiene: undefined,
       servicios_instalaciones: form.servicios_instalaciones.trim() || undefined,
       amenidades: form.amenidades.trim() || undefined,
       enlace_direccion: form.enlace_direccion.trim() || undefined,
-      medidas: buildMeasures(form),
+      medidas: {},
       direccion: {
-        cp: parseFormattedNumber(form.cp),
         fraccionamiento: form.fraccionamiento.trim(),
-        smz: parseFormattedNumber(form.smz),
-        mza: parseFormattedNumber(form.mza),
-        lote: parseFormattedNumber(form.lote),
-        calle: form.calle.trim() || undefined,
-        num_ext: parseFormattedNumber(form.num_ext),
-        num_int: parseFormattedNumber(form.num_int),
+        zona: form.zona.trim() || undefined,
         municipio: form.municipio.trim(),
         estado: form.estado.trim(),
-        referencias: form.referencias.trim() || undefined,
       },
-      caracteristicas: {},
+      caracteristicas: {
+        cuota_mantenimiento_tipo: form.cuota_mantenimiento_tipo,
+      },
       imagenes_nuevas_metadata: ensureSinglePrimary(
         form.imagenes.map(
           (image): DevelopmentImageMetadata => ({
@@ -851,8 +861,6 @@ export function DevelopmentForm({
     const result = await onSubmit({ payload, files });
     if (result) setSubmitError(result);
   }
-
-  const selectedOperationBlocks = getSelectedOperationBlocks(form.operaciones);
 
   return (
     <div className="space-y-5">
@@ -885,7 +893,7 @@ export function DevelopmentForm({
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
           Captura la ficha general del desarrollo y debajo agrega sus modelos con
-          precios, medidas, características e imágenes.
+          su información comercial, características e imágenes.
         </p>
       </header>
 
@@ -946,11 +954,11 @@ export function DevelopmentForm({
                 />
                 {!form.entrega_inmediata ? (
                   <FieldInput
-                    label="Fecha de entrega"
+                    label="Mes y año de entrega"
                     name="fecha_entrega"
                     value={form.fecha_entrega}
                     onChange={handleInputChange}
-                    type="date"
+                    type="month"
                     error={errors.fecha_entrega}
                   />
                 ) : (
@@ -979,49 +987,10 @@ export function DevelopmentForm({
 
         <SectionCard
           step="2"
-          title="Precio y condiciones"
-          description="Define los esquemas comerciales base del desarrollo."
+          title="Condiciones comerciales"
+          description="Selecciona los tipos de pago aceptados para el desarrollo."
         >
           <div className="space-y-4">
-            {selectedOperationBlocks.map((operation) => (
-              <div
-                key={operation.key}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-              >
-                <div className="mb-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Operación
-                  </p>
-                  <h4 className="mt-1 text-base font-semibold text-slate-900">
-                    {operation.title}
-                  </h4>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FieldInput
-                    label={`Precio de ${operation.title.toLowerCase()} (MXN)`}
-                    name={operation.priceName}
-                    value={form[operation.priceName]}
-                    onChange={handleInputChange}
-                    type="text"
-                    inputMode="decimal"
-                  />
-                  <FieldInput
-                    label="Descuento ($)"
-                    name={operation.discountName}
-                    value={form[operation.discountName]}
-                    onChange={handleInputChange}
-                    type="text"
-                    inputMode="decimal"
-                  />
-                </div>
-              </div>
-            ))}
-
-            {errors.precios ? (
-              <p className="text-sm font-medium text-red-600">{errors.precios}</p>
-            ) : null}
-
             <PaymentMultiSelect
               label="Tipos de pago"
               selectedValues={form.tipos_pago}
@@ -1037,27 +1006,12 @@ export function DevelopmentForm({
           title="Dirección"
           description="Ubica el desarrollo con datos claros y referencias fáciles de consultar."
         >
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <FieldInput
-              label="Calle"
-              name="calle"
-              value={form.calle}
+              label="Zona"
+              name="zona"
+              value={form.zona}
               onChange={handleInputChange}
-              className="md:col-span-2"
-            />
-            <FieldInput
-              label="Numero exterior"
-              name="num_ext"
-              value={form.num_ext}
-              onChange={handleInputChange}
-              type="number"
-            />
-            <FieldInput
-              label="Numero interior"
-              name="num_int"
-              value={form.num_int}
-              onChange={handleInputChange}
-              type="number"
             />
             <FieldInput
               label="Fraccionamiento"
@@ -1066,7 +1020,6 @@ export function DevelopmentForm({
               onChange={handleInputChange}
               required
               error={errors.fraccionamiento}
-              className="md:col-span-2"
             />
             <FieldInput
               label="Estado"
@@ -1085,48 +1038,11 @@ export function DevelopmentForm({
               error={errors.municipio}
             />
             <FieldInput
-              label="Region (SMZ)"
-              name="smz"
-              value={form.smz}
-              onChange={handleInputChange}
-              required
-              error={errors.smz}
-              type="number"
-            />
-            <FieldInput
-              label="Manzana (MZ)"
-              name="mza"
-              value={form.mza}
-              onChange={handleInputChange}
-              type="number"
-            />
-            <FieldInput
-              label="Lote"
-              name="lote"
-              value={form.lote}
-              onChange={handleInputChange}
-              type="number"
-            />
-            <FieldInput
-              label="Código postal"
-              name="cp"
-              value={form.cp}
-              onChange={handleInputChange}
-              type="number"
-            />
-            <FieldInput
               label="Enlace de Google Maps"
               name="enlace_direccion"
               value={form.enlace_direccion}
               onChange={handleInputChange}
-              className="md:col-span-4"
-            />
-            <FieldTextarea
-              label="Referencias"
-              name="referencias"
-              value={form.referencias}
-              onChange={handleInputChange}
-              className="md:col-span-4"
+              className="md:col-span-2"
             />
           </div>
         </SectionCard>
@@ -1134,19 +1050,8 @@ export function DevelopmentForm({
         <SectionCard
           step="4"
           title="Medidas y distribución"
-          description="Registra medidas generales y las amenidades principales del desarrollo."
+          description="Define la identidad general del desarrollo."
         >
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <FieldInput label="Terreno (m2)" name="terreno_m2" value={form.terreno_m2} onChange={handleInputChange} type="number" />
-            <FieldInput label="Construcción (m2)" name="construccion_m2" value={form.construccion_m2} onChange={handleInputChange} type="number" />
-            <FieldInput label="Frente" name="frente" value={form.frente} onChange={handleInputChange} type="number" />
-            <FieldInput label="Fondo" name="fondo" value={form.fondo} onChange={handleInputChange} type="number" />
-            <FieldInput label="Recamaras" name="recamaras" value={form.recamaras} onChange={handleInputChange} type="number" />
-            <FieldInput label="Baños" name="banos" value={form.banos} onChange={handleInputChange} type="number" />
-            <FieldInput label="Estacionamiento" name="estacionamiento" value={form.estacionamiento} onChange={handleInputChange} type="number" />
-            <FieldInput label="Pisos" name="pisos_tiene" value={form.pisos_tiene} onChange={handleInputChange} type="number" />
-          </div>
-
           <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -1179,7 +1084,13 @@ export function DevelopmentForm({
               onChange={handleInputChange}
               type="text"
               inputMode="decimal"
-              className="md:col-span-2"
+            />
+            <FieldSelect
+              label="Tipo de cuota"
+              name="cuota_mantenimiento_tipo"
+              value={form.cuota_mantenimiento_tipo}
+              onChange={handleInputChange}
+              options={["Fijo", "Por metro cuadrado"]}
             />
             <FieldTextarea
               label="Servicios e instalaciones"
@@ -1210,7 +1121,7 @@ export function DevelopmentForm({
         <SectionCard
           step="6"
           title="Modelos del desarrollo"
-          description="Agrega hasta 6 modelos con sus propios precios, características e imágenes."
+          description="Agrega hasta 6 modelos con su tipo, información comercial, características e imágenes."
         >
           <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1267,11 +1178,21 @@ export function DevelopmentForm({
                       required
                       error={errors[`modelo_${model.id}_nombre`]}
                     />
+                    <FieldSelect
+                      label="Tipo de modelo"
+                      name="tipo_modelo"
+                      value={model.tipo_modelo}
+                      onChange={(event) => handleModelInputChange(model.id, event)}
+                      options={["Casa", "Departamento"]}
+                      required
+                      error={errors[`modelo_${model.id}_tipo_modelo`]}
+                    />
                     <FieldTextarea
                       label="Descripción"
                       name="descripcion"
                       value={model.descripcion}
                       onChange={(event) => handleModelInputChange(model.id, event)}
+                      className="md:col-span-2"
                     />
 
                     <OperationMultiSelect

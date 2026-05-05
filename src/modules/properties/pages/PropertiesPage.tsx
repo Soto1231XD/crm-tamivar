@@ -6,6 +6,7 @@ import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmM
 import agregarIcon from "@/assets/images/Agregar.png";
 import desArcIcon from "@/assets/images/DesArc.png";
 import {
+  EXCLUSIVE_FILTER_OPTIONS,
   PROPERTY_OPERATION_FILTER_OPTIONS,
   STATUS_OPTIONS,
   TYPE_OPTIONS,
@@ -28,6 +29,7 @@ export function PropertiesPage() {
   const { can } = useHasPermission();
 
   const {
+    properties,
     filteredProperties,
     filters,
     setFilters,
@@ -56,10 +58,21 @@ export function PropertiesPage() {
     return filteredProperties.filter(
       (property) =>
         property.titulo.toLowerCase().includes(query) ||
-        (property.direccion?.calle ?? "").toLowerCase().includes(query) ||
-        (property.creador?.nombres ?? "").toLowerCase().includes(query),
+        (property.direccion?.calle ?? "").toLowerCase().includes(query),
     );
   }, [filteredProperties, search]);
+
+  const addressStateOptions = useMemo(() => {
+    const uniqueStates = Array.from(
+      new Set(
+        properties
+          .map((property) => property.direccion?.estado?.trim())
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ).sort((left, right) => left.localeCompare(right, "es"));
+
+    return ["Todos los estados de ubicación", ...uniqueStates];
+  }, [properties]);
 
   function openDeleteModal(property: PropertyRecord) {
     setDeletingProperty(property);
@@ -151,8 +164,8 @@ export function PropertiesPage() {
         </div>
       </header>
 
-      <FilterCard description="Busca propiedades por titulo y combina los filtros para ubicar resultados más rápido.">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 items-start">
+      <FilterCard description="Busca propiedades por título y combina solo los filtros clave para ubicar resultados sin cansar la vista.">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 items-start">
           <FilterSelect
             value={filters.estatus || "Todos los estados"}
             onChange={(e) => setFilters({ estatus: e.target.value })}
@@ -169,6 +182,28 @@ export function PropertiesPage() {
             onChange={(e) => setFilters({ tipo_inmueble: e.target.value })}
           >
             {TYPE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </FilterSelect>
+
+          <FilterSelect
+            value={filters.direccionEstado || "Todos los estados de ubicación"}
+            onChange={(e) => setFilters({ direccionEstado: e.target.value })}
+          >
+            {addressStateOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </FilterSelect>
+
+          <FilterSelect
+            value={filters.exclusiva || "Todas las exclusividades"}
+            onChange={(e) => setFilters({ exclusiva: e.target.value })}
+          >
+            {EXCLUSIVE_FILTER_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -198,17 +233,16 @@ export function PropertiesPage() {
             onChange={(val) => setFilters({ maxPrecio: val })}
           />
 
-          {/* Fila 2: Buscador y Botón */}
-          <div className="sm:col-span-2 md:col-span-2 lg:col-span-2">
+          <div className="sm:col-span-2 xl:col-span-3">
             <FilterSearchInput
               type="text"
-              placeholder="Buscar por título, calle o asesor"
+              placeholder="Buscar por título o calle"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
 
-          <div className="sm:col-span-2 md:col-span-1 lg:col-span-1">
+          <div className="sm:col-span-2 md:col-span-1 xl:col-span-1">
             <button
               type="button"
               onClick={handleDownloadProperties}

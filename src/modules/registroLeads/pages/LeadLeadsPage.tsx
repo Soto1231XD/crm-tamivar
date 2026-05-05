@@ -34,6 +34,7 @@ export function LeadLeadsPage() {
     isLoading,
     search,
     statusFilter,
+    sellerFilter,
     leadDateFromFilter,
     leadDateToFilter,
     updatingLeadId,
@@ -50,6 +51,7 @@ export function LeadLeadsPage() {
     userChoices,
     setSearch,
     setStatusFilter,
+    setSellerFilter,
     setLeadDateFromFilter,
     setLeadDateToFilter,
     setIsCreateModalOpen,
@@ -91,12 +93,15 @@ export function LeadLeadsPage() {
       <LeadLeadsFilters
         search={search}
         statusFilter={statusFilter}
+        sellerFilter={sellerFilter}
         leadDateFromFilter={leadDateFromFilter}
         leadDateToFilter={leadDateToFilter}
         statusOptions={statusOptions}
+        sellerOptions={userChoices}
         hasResults={filteredLeads.length > 0}
         onSearchChange={setSearch}
         onStatusChange={setStatusFilter}
+        onSellerChange={setSellerFilter}
         onLeadDateFromChange={setLeadDateFromFilter}
         onLeadDateToChange={setLeadDateToFilter}
         onDownload={handleDownloadFilteredLeads}

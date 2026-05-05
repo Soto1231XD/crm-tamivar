@@ -24,6 +24,7 @@ import {
 type EditLeadRequestModalProps = {
   isOpen: boolean;
   leadRequest: LeadRequestRecord | null;
+  sellerOptions: Array<{ id: number; label: string }>;
   onClose: () => void;
   onEdit: (leadRequestId: number, payload: UpdateLeadRequestPayload) => Promise<string | null>;
 };
@@ -31,6 +32,7 @@ type EditLeadRequestModalProps = {
 export function EditLeadRequestModal({
   isOpen,
   leadRequest,
+  sellerOptions,
   onClose,
   onEdit,
 }: EditLeadRequestModalProps) {
@@ -104,7 +106,7 @@ export function EditLeadRequestModal({
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Datos de la solicitud</p>
-            <p className="mt-1 text-sm text-slate-600">Revisa el estado y la necesidad principal del cliente.</p>
+            <p className="mt-1 text-sm text-slate-600">Revisa el estado, el vendedor asignado y la necesidad principal del cliente.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -153,6 +155,19 @@ export function EditLeadRequestModal({
                 maxLength={14}
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <LeadRequestFieldLabel required>Vendedor</LeadRequestFieldLabel>
+              <select {...register('vendedor_id')} className={leadRequestFieldClassName}>
+                <option value="">Selecciona un vendedor</option>
+                {sellerOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {errors.vendedor_id ? <span className="text-xs text-red-600">{errors.vendedor_id.message}</span> : null}
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -241,7 +256,7 @@ export function EditLeadRequestModal({
         <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Seguimiento comercial</p>
-            <p className="mt-1 text-sm text-slate-600">Actualiza el avance del lead, las opciones enviadas y el cierre comercial.</p>
+            <p className="mt-1 text-sm text-slate-600">Actualiza características y concentra el historial comercial en comentarios finales.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -252,20 +267,8 @@ export function EditLeadRequestModal({
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">
-              <LeadRequestFieldLabel>Seguimiento</LeadRequestFieldLabel>
-              <textarea {...register('seguimiento')} rows={3} className={`${leadRequestFieldClassName} resize-none`} />
-              {errors.seguimiento ? <span className="text-xs text-red-600">{errors.seguimiento.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5 md:col-span-2">
-              <LeadRequestFieldLabel>Opciones enviadas</LeadRequestFieldLabel>
-              <textarea {...register('opciones_enviadas')} rows={3} className={`${leadRequestFieldClassName} resize-none`} />
-              {errors.opciones_enviadas ? <span className="text-xs text-red-600">{errors.opciones_enviadas.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5 md:col-span-2">
               <LeadRequestFieldLabel>Comentario final</LeadRequestFieldLabel>
-              <textarea {...register('comentario_final')} rows={3} className={`${leadRequestFieldClassName} resize-none`} />
+              <textarea {...register('comentario_final')} rows={4} className={`${leadRequestFieldClassName} resize-none`} />
               {errors.comentario_final ? <span className="text-xs text-red-600">{errors.comentario_final.message}</span> : null}
             </label>
           </div>

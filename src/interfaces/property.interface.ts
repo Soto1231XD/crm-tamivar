@@ -112,6 +112,8 @@ export interface PropertyFilters {
   tipo_operacion?: string;
   tipo_inmueble?: string;
   estatus?: string;
+  direccionEstado?: string;
+  exclusiva?: string;
   minPrecio?: number;
   maxPrecio?: number;
 }

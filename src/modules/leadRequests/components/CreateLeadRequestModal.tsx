@@ -23,12 +23,14 @@ import {
 type CreateLeadRequestModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  sellerOptions: Array<{ id: number; label: string }>;
   onCreate: (payload: Omit<CreateLeadRequestPayload, 'creado_por_id'>) => Promise<string | null>;
 };
 
 export function CreateLeadRequestModal({
   isOpen,
   onClose,
+  sellerOptions,
   onCreate,
 }: CreateLeadRequestModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,6 +67,7 @@ export function CreateLeadRequestModal({
       fecha_alta: values.fecha_alta,
       nombre: values.nombre.trim(),
       telefono: values.telefono?.trim() || undefined,
+      vendedor_id: Number(values.vendedor_id),
       solicitud: values.solicitud.trim(),
       tipo_inmueble: values.tipo_inmueble.length > 0 ? values.tipo_inmueble.join(', ') : undefined,
       presupuesto: presupuestoValue ? Number(presupuestoValue) : undefined,
@@ -72,8 +75,6 @@ export function CreateLeadRequestModal({
       ubicacion: values.ubicacion?.trim() || undefined,
       numero_habitaciones: values.numero_habitaciones?.trim() || undefined,
       caracteristicas: values.caracteristicas?.trim() || undefined,
-      seguimiento: values.seguimiento?.trim() || undefined,
-      opciones_enviadas: values.opciones_enviadas?.trim() || undefined,
       medio: values.medio?.trim() || undefined,
       comentario_final: values.comentario_final?.trim() || undefined,
     };
@@ -160,12 +161,25 @@ export function CreateLeadRequestModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
+              <LeadRequestFieldLabel required>Vendedor</LeadRequestFieldLabel>
+              <select {...register('vendedor_id')} className={leadRequestFieldClassName}>
+                <option value="">Selecciona un vendedor</option>
+                {sellerOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {errors.vendedor_id ? <span className="text-xs text-red-600">{errors.vendedor_id.message}</span> : null}
+            </label>
+
+            <label className="flex flex-col gap-1.5">
               <LeadRequestFieldLabel required>Solicitud</LeadRequestFieldLabel>
               <input
                 type="text"
                 {...register('solicitud')}
                 className={leadRequestFieldClassName}
-                placeholder="Compra, renta, casa vacacional, inversion..."
+                placeholder="Compra, renta, casa vacacional, inversión..."
               />
               {errors.solicitud ? <span className="text-xs text-red-600">{errors.solicitud.message}</span> : null}
             </label>
@@ -261,7 +275,7 @@ export function CreateLeadRequestModal({
         <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Seguimiento comercial</p>
-            <p className="mt-1 text-sm text-slate-600">Registra las características, el seguimiento operativo y el cierre de esta solicitud.</p>
+            <p className="mt-1 text-sm text-slate-600">Registra las características clave y concentra el avance comercial en comentarios finales.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -272,20 +286,8 @@ export function CreateLeadRequestModal({
             </label>
 
             <label className="flex flex-col gap-1.5 md:col-span-2">
-              <LeadRequestFieldLabel>Seguimiento</LeadRequestFieldLabel>
-              <textarea {...register('seguimiento')} rows={3} className={`${leadRequestFieldClassName} resize-none`} />
-              {errors.seguimiento ? <span className="text-xs text-red-600">{errors.seguimiento.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5 md:col-span-2">
-              <LeadRequestFieldLabel>Opciones enviadas</LeadRequestFieldLabel>
-              <textarea {...register('opciones_enviadas')} rows={3} className={`${leadRequestFieldClassName} resize-none`} />
-              {errors.opciones_enviadas ? <span className="text-xs text-red-600">{errors.opciones_enviadas.message}</span> : null}
-            </label>
-
-            <label className="flex flex-col gap-1.5 md:col-span-2">
               <LeadRequestFieldLabel>Comentario final</LeadRequestFieldLabel>
-              <textarea {...register('comentario_final')} rows={3} className={`${leadRequestFieldClassName} resize-none`} />
+              <textarea {...register('comentario_final')} rows={4} className={`${leadRequestFieldClassName} resize-none`} />
               {errors.comentario_final ? <span className="text-xs text-red-600">{errors.comentario_final.message}</span> : null}
             </label>
           </div>

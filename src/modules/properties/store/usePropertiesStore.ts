@@ -65,6 +65,24 @@ const applyFilters = (
       return false;
     }
 
+    if (
+      filters.direccionEstado &&
+      filters.direccionEstado !== "Todos los estados de ubicación" &&
+      (prop.direccion?.estado ?? "").trim() !== filters.direccionEstado
+    ) {
+      return false;
+    }
+
+    if (filters.exclusiva && filters.exclusiva !== "Todas las exclusividades") {
+      const isExclusive = Boolean(prop.exclusiva);
+      if (filters.exclusiva === "Exclusivas" && !isExclusive) {
+        return false;
+      }
+      if (filters.exclusiva === "No exclusivas" && isExclusive) {
+        return false;
+      }
+    }
+
     // Filtros de Esquema Comercial (Operación y Precios)
     const schemes = Array.isArray(prop.esquema_comercial)
       ? prop.esquema_comercial

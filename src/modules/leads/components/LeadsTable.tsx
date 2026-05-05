@@ -184,7 +184,7 @@ export function LeadsTable({
       emptyMessage="No se encontraron registros"
       wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
       tableClassName="min-w-full text-left"
-      actionsClassName="flex items-center gap-2"
+      actionsClassName="flex min-w-[132px] items-center justify-center gap-2"
       onEdit={onEdit}
       onDelete={onDelete}
       canEditItem={canEditItem}

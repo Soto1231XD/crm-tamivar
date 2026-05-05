@@ -4,6 +4,16 @@ export interface LeadRequestRecord {
   fecha_alta?: string | null;
   nombre: string;
   telefono: string | number;
+  vendedor_id?: number | null;
+  vendedor?:
+    | {
+        id: number;
+        nombres?: string | null;
+        apellido_paterno?: string | null;
+        apellido_materno?: string | null;
+        correo_electronico?: string | null;
+      }
+    | null;
   solicitud?: string | null;
   tipo_inmueble?: string | null;
   presupuesto?: string | number | null;
@@ -11,8 +21,6 @@ export interface LeadRequestRecord {
   ubicacion?: string | null;
   numero_habitaciones?: string | null;
   caracteristicas?: string | null;
-  seguimiento?: string | null;
-  opciones_enviadas?: string | null;
   medio?: string | null;
   comentario_final?: string | null;
   creado_por_id?: number | null;
@@ -25,6 +33,7 @@ export interface CreateLeadRequestPayload {
   fecha_alta: string;
   nombre: string;
   telefono?: string;
+  vendedor_id: number;
   solicitud: string;
   tipo_inmueble?: string;
   presupuesto?: number;
@@ -32,8 +41,6 @@ export interface CreateLeadRequestPayload {
   ubicacion?: string;
   numero_habitaciones?: string;
   caracteristicas?: string;
-  seguimiento?: string;
-  opciones_enviadas?: string;
   medio?: string;
   comentario_final?: string;
   creado_por_id: number;

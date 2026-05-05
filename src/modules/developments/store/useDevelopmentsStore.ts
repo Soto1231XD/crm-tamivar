@@ -4,6 +4,7 @@ import {
   deleteDevelopment,
   getDevelopments,
 } from "../services/developments.api";
+import { getFriendlyDevelopmentError } from "../utils/developmentErrors";
 
 interface DevelopmentsState {
   developments: DevelopmentRecord[];
@@ -28,10 +29,7 @@ export const useDevelopmentsStore = create<DevelopmentsState>((set) => ({
       set({
         developments: [],
         isLoading: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "No fue posible cargar los desarrollos.",
+        error: getFriendlyDevelopmentError(error, "load_list"),
       });
     }
   },
@@ -50,10 +48,7 @@ export const useDevelopmentsStore = create<DevelopmentsState>((set) => ({
     } catch (error) {
       set({
         isLoading: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "No fue posible eliminar el desarrollo.",
+        error: getFriendlyDevelopmentError(error, "delete"),
       });
       throw error;
     }

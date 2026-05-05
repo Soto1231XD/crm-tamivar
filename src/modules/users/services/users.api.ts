@@ -19,6 +19,12 @@ export async function getSalesUserOptions(accessToken?: string | null): Promise<
   return Array.isArray(data) ? data : [];
 }
 
+export async function getLeadRequestSellerOptions(accessToken?: string | null): Promise<UserRecord[]> {
+  void accessToken;
+  const data = await apiRequest<UserRecord[]>('/users/lead-request-options');
+  return Array.isArray(data) ? data : [];
+}
+
 export async function getRoles(accessToken?: string | null): Promise<RoleOptionRecord[]> {
   void accessToken;
   const data = await apiRequest<RoleOptionRecord[]>('/roles');
