@@ -62,16 +62,16 @@ export function PropertiesPage() {
     );
   }, [filteredProperties, search]);
 
-  const addressStateOptions = useMemo(() => {
-    const uniqueStates = Array.from(
+  const municipalityOptions = useMemo(() => {
+    const uniqueMunicipalities = Array.from(
       new Set(
         properties
-          .map((property) => property.direccion?.estado?.trim())
+          .map((property) => property.direccion?.municipio?.trim())
           .filter((value): value is string => Boolean(value)),
       ),
     ).sort((left, right) => left.localeCompare(right, "es"));
 
-    return ["Todos los estados de ubicación", ...uniqueStates];
+    return ["Todos los municipios", ...uniqueMunicipalities];
   }, [properties]);
 
   function openDeleteModal(property: PropertyRecord) {
@@ -189,10 +189,10 @@ export function PropertiesPage() {
           </FilterSelect>
 
           <FilterSelect
-            value={filters.direccionEstado || "Todos los estados de ubicación"}
-            onChange={(e) => setFilters({ direccionEstado: e.target.value })}
+            value={filters.direccionMunicipio || "Todos los municipios"}
+            onChange={(e) => setFilters({ direccionMunicipio: e.target.value })}
           >
-            {addressStateOptions.map((option) => (
+            {municipalityOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>

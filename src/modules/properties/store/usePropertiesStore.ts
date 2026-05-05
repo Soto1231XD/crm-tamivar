@@ -66,9 +66,9 @@ const applyFilters = (
     }
 
     if (
-      filters.direccionEstado &&
-      filters.direccionEstado !== "Todos los estados de ubicación" &&
-      (prop.direccion?.estado ?? "").trim() !== filters.direccionEstado
+      filters.direccionMunicipio &&
+      filters.direccionMunicipio !== "Todos los municipios" &&
+      (prop.direccion?.municipio ?? "").trim() !== filters.direccionMunicipio
     ) {
       return false;
     }
