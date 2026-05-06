@@ -77,6 +77,7 @@ export function DevelopmentsPage() {
   const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
   const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const canCreate = can("desarrollos", "crear");
+  const canEdit = can("desarrollos", "actualizar");
   const canDelete = can("desarrollos", "eliminar");
 
   useEffect(() => {
@@ -263,7 +264,11 @@ export function DevelopmentsPage() {
       <DevelopmentsTable
         data={filteredDevelopments}
         isLoading={isLoading}
+        canEdit={canEdit}
         canDelete={canDelete}
+        onEdit={(development) =>
+          navigate(`/modulos/desarrollos/${development.id}/editar`)
+        }
         onDelete={handleDeleteDevelopment}
       />
     </div>

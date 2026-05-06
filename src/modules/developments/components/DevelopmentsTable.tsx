@@ -9,12 +9,15 @@ import type {
 import { formatCurrency } from "@/modules/properties/utils/formatters";
 import verIcon from "@/assets/images/Ver.png";
 import descInfIcon from "@/assets/images/DescInf.png";
+import editarIcon from "@/assets/images/Editar.png";
 import { DownloadDevelopmentPdfButton } from "../utils/DownloadDevelopmentPdfButton";
 
 interface DevelopmentsTableProps {
   data: DevelopmentRecord[];
   isLoading: boolean;
+  canEdit: boolean;
   canDelete: boolean;
+  onEdit: (development: DevelopmentRecord) => void;
   onDelete: (development: DevelopmentRecord) => void;
 }
 
@@ -95,7 +98,9 @@ function getDeliveryLabel(development: DevelopmentRecord): string {
 export function DevelopmentsTable({
   data,
   isLoading,
+  canEdit,
   canDelete,
+  onEdit,
   onDelete,
 }: DevelopmentsTableProps) {
   const navigate = useNavigate();
@@ -223,6 +228,18 @@ export function DevelopmentsTable({
       onDelete={onDelete}
       customActions={(development) => (
         <>
+          {canEdit ? (
+            <button
+              type="button"
+              aria-label="Editar desarrollo"
+              title="Editar desarrollo"
+              className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-100"
+              onClick={() => onEdit(development)}
+            >
+              <img src={editarIcon} alt="" className="h-5 w-5" aria-hidden="true" />
+            </button>
+          ) : null}
+
           <button
             type="button"
             aria-label="Ver detalles"

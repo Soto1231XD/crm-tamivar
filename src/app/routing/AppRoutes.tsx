@@ -11,6 +11,7 @@ import { LeadLeadsPage } from "@/modules/registroLeads/pages/LeadLeadsPage";
 import { LeadRequestsPage } from "@/modules/leadRequests/pages/LeadRequestsPage";
 import { DevelopmentsPage } from "@/modules/developments/pages/DevelopmentsPage";
 import { CreateDevelopmentPage } from "@/modules/developments/pages/CreateDevelopmentPage";
+import { EditDevelopmentPage } from "@/modules/developments/pages/EditDevelopmentPage";
 import { DevelopmentDetailView } from "@/modules/developments/components/DevelopmentDetailView";
 import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
@@ -48,6 +49,10 @@ export function AppRoutes() {
             <Route
               path="modulos/desarrollos/nuevo"
               element={<CreateDevelopmentPage />}
+            />
+            <Route
+              path="modulos/desarrollos/:id/editar"
+              element={<EditDevelopmentPage />}
             />
             <Route
               path="modulos/desarrollos/:id"

@@ -1,13 +1,22 @@
-import { useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import type {
   CommercialScheme,
   CreateDevelopmentModelPayload,
   CreateDevelopmentPayload,
   DevelopmentFeatures,
+  DevelopmentImage,
   DevelopmentImageMetadata,
   DevelopmentMeasures,
+  DevelopmentRecord,
   NewDevelopmentImage,
+  UpdateDevelopmentPayload,
 } from "@/interfaces/development.interface";
 import {
   FieldInput,
@@ -25,12 +34,13 @@ import {
 import { validatePropertyImageSelection } from "../utils/propertyValidations";
 
 type DevelopmentFormProps = {
+  development?: DevelopmentRecord | null;
   title: string;
   submitLabel: string;
   isSubmitting?: boolean;
   onCancel: () => void;
   onSubmit: (data: {
-    payload: CreateDevelopmentPayload;
+    payload: CreateDevelopmentPayload | UpdateDevelopmentPayload;
     files: NewDevelopmentImage[];
   }) => Promise<string | null>;
 };
@@ -46,6 +56,7 @@ type OperationOption = "Preventa" | "Entrega inmediata";
 
 type DevelopmentModelFormState = {
   id: string;
+  existingId?: number;
   nombre: string;
   tipo_modelo: "Casa" | "Departamento";
   descripcion: string;
@@ -73,6 +84,7 @@ type DevelopmentModelFormState = {
   bodega: boolean;
   aire_acondicionado: boolean;
   boiler: boolean;
+  imagenes_existentes: DevelopmentImage[];
   imagenes: NewDevelopmentImage[];
 };
 
@@ -115,6 +127,7 @@ type DevelopmentFormState = {
   servicios_instalaciones: string;
   amenidades: string;
   comentarios: string;
+  imagenes_existentes: DevelopmentImage[];
   imagenes: NewDevelopmentImage[];
   modelos: DevelopmentModelFormState[];
 };
@@ -209,6 +222,7 @@ const INITIAL_FORM: DevelopmentFormState = {
   servicios_instalaciones: "",
   amenidades: "",
   comentarios: "",
+  imagenes_existentes: [],
   imagenes: [],
   modelos: [],
 };
@@ -243,7 +257,172 @@ function createEmptyModel(): DevelopmentModelFormState {
     bodega: false,
     aire_acondicionado: false,
     boiler: false,
+    imagenes_existentes: [],
     imagenes: [],
+  };
+}
+
+function formatNumberForInput(value?: number | null): string {
+  if (value == null || Number.isNaN(value)) return "";
+  return String(value);
+}
+
+function formatDateMonthForInput(value?: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === "string" ? value.slice(0, 7) : "";
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function formatCurrencyForInput(value?: number | null): string {
+  if (value == null || Number.isNaN(value)) return "";
+  return value.toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+  });
+}
+
+function getPriceByOperation(
+  schemes: CommercialScheme[] | undefined,
+  operation: OperationOption,
+): string {
+  const scheme = (schemes ?? []).find(
+    (current) => current.tipo_operacion === operation,
+  );
+  return formatCurrencyForInput(scheme?.precio);
+}
+
+function getDiscountByOperation(
+  schemes: CommercialScheme[] | undefined,
+  operation: OperationOption,
+): string {
+  const scheme = (schemes ?? []).find(
+    (current) => current.tipo_operacion === operation,
+  );
+  return formatCurrencyForInput(scheme?.descuento_cantidad);
+}
+
+function mapDevelopmentToForm(
+  development?: DevelopmentRecord | null,
+): DevelopmentFormState {
+  if (!development) return INITIAL_FORM;
+
+  return {
+    titulo: development.titulo ?? "",
+    descripcion: development.descripcion ?? "",
+    operaciones: (development.esquema_comercial ?? [])
+      .map((scheme) => scheme.tipo_operacion)
+      .filter(
+        (value): value is OperationOption =>
+          value === "Preventa" || value === "Entrega inmediata",
+      ),
+    entrega_inmediata: development.entrega_inmediata ?? true,
+    fecha_entrega: formatDateMonthForInput(development.fecha_entrega),
+    precio_preventa: getPriceByOperation(
+      development.esquema_comercial,
+      "Preventa",
+    ),
+    descuento_preventa: getDiscountByOperation(
+      development.esquema_comercial,
+      "Preventa",
+    ),
+    precio_entrega_inmediata: getPriceByOperation(
+      development.esquema_comercial,
+      "Entrega inmediata",
+    ),
+    descuento_entrega_inmediata: getDiscountByOperation(
+      development.esquema_comercial,
+      "Entrega inmediata",
+    ),
+    tipos_pago: development.tipos_pago ?? [],
+    estatus: development.estatus ?? "Disponible",
+    etiquetas: (development.etiquetas ?? []).join(", "),
+    calle: development.direccion?.calle ?? "",
+    num_ext: formatNumberForInput(development.direccion?.num_ext),
+    num_int: formatNumberForInput(development.direccion?.num_int),
+    zona: development.direccion?.zona ?? "",
+    fraccionamiento: development.direccion?.fraccionamiento ?? "",
+    estado: development.direccion?.estado ?? "",
+    municipio: development.direccion?.municipio ?? "",
+    smz: formatNumberForInput(development.direccion?.smz),
+    mza: formatNumberForInput(development.direccion?.mza),
+    lote: formatNumberForInput(development.direccion?.lote),
+    cp: formatNumberForInput(development.direccion?.cp),
+    enlace_direccion: development.enlace_direccion ?? "",
+    referencias: development.direccion?.referencias ?? "",
+    terreno_m2: formatNumberForInput(development.medidas?.terreno_m2) || "0",
+    construccion_m2:
+      formatNumberForInput(development.medidas?.construccion_m2) || "0",
+    frente: formatNumberForInput(development.medidas?.frente) || "0",
+    fondo: formatNumberForInput(development.medidas?.fondo) || "0",
+    recamaras:
+      formatNumberForInput(development.caracteristicas?.recamaras) || "0",
+    banos: formatNumberForInput(development.caracteristicas?.banos) || "0",
+    estacionamiento:
+      formatNumberForInput(development.caracteristicas?.estacionamiento) || "0",
+    pisos_tiene: formatNumberForInput(development.pisos_tiene) || "0",
+    cuota_mantenimiento:
+      formatCurrencyForInput(development.cuota_mantenimiento) ?? "",
+    cuota_mantenimiento_tipo:
+      development.caracteristicas?.cuota_mantenimiento_tipo ?? "Fijo",
+    servicios_instalaciones: development.servicios_instalaciones ?? "",
+    amenidades: development.amenidades ?? "",
+    comentarios: development.comentarios ?? "",
+    imagenes_existentes: development.imagenes ?? [],
+    imagenes: [],
+    modelos: (development.modelos ?? []).map((model) => ({
+      id: crypto.randomUUID(),
+      existingId: model.id,
+      nombre: model.nombre ?? "",
+      tipo_modelo: model.caracteristicas?.tipo_modelo ?? "Casa",
+      descripcion: model.descripcion ?? "",
+      operaciones: (model.esquema_comercial ?? [])
+        .map((scheme) => scheme.tipo_operacion)
+        .filter(
+          (value): value is OperationOption =>
+            value === "Preventa" || value === "Entrega inmediata",
+        ),
+      precio_preventa: getPriceByOperation(model.esquema_comercial, "Preventa"),
+      descuento_preventa: getDiscountByOperation(
+        model.esquema_comercial,
+        "Preventa",
+      ),
+      precio_entrega_inmediata: getPriceByOperation(
+        model.esquema_comercial,
+        "Entrega inmediata",
+      ),
+      descuento_entrega_inmediata: getDiscountByOperation(
+        model.esquema_comercial,
+        "Entrega inmediata",
+      ),
+      tipos_pago: model.tipos_pago ?? [],
+      terreno_m2: formatNumberForInput(model.medidas?.terreno_m2) || "0",
+      construccion_m2:
+        formatNumberForInput(model.medidas?.construccion_m2) || "0",
+      recamaras:
+        formatNumberForInput(model.caracteristicas?.recamaras) || "0",
+      banos: formatNumberForInput(model.caracteristicas?.banos) || "0",
+      estacionamiento:
+        formatNumberForInput(model.caracteristicas?.estacionamiento) || "0",
+      comentarios: model.comentarios ?? "",
+      sala: Boolean(model.caracteristicas?.sala),
+      comedor: Boolean(model.caracteristicas?.comedor),
+      cocina: Boolean(model.caracteristicas?.cocina),
+      area_servicio: Boolean(model.caracteristicas?.area_servicio),
+      patio: Boolean(model.caracteristicas?.patio),
+      jardin: Boolean(model.caracteristicas?.jardin),
+      alberca: Boolean(model.caracteristicas?.alberca),
+      terraza: Boolean(model.caracteristicas?.terraza),
+      amueblado: Boolean(model.caracteristicas?.amueblado),
+      bodega: Boolean(model.caracteristicas?.bodega),
+      aire_acondicionado: Boolean(model.caracteristicas?.aire_acondicionado),
+      boiler: Boolean(model.caracteristicas?.boiler),
+      imagenes_existentes: model.imagenes ?? [],
+      imagenes: [],
+    })),
   };
 }
 
@@ -408,7 +587,8 @@ function isModelReady(model: DevelopmentModelFormState) {
   const hasName = model.nombre.trim().length > 0;
   const hasType = model.tipo_modelo.trim().length > 0;
   const hasOperations = model.operaciones.length > 0;
-  const hasImages = model.imagenes.length > 0;
+  const hasImages =
+    model.imagenes.length > 0 || model.imagenes_existentes.length > 0;
   const hasPrices = model.operaciones.every((operation) => {
     const price =
       operation === "Entrega inmediata"
@@ -421,6 +601,7 @@ function isModelReady(model: DevelopmentModelFormState) {
 }
 
 export function DevelopmentForm({
+  development,
   title,
   submitLabel,
   isSubmitting = false,
@@ -428,9 +609,17 @@ export function DevelopmentForm({
   onSubmit,
 }: DevelopmentFormProps) {
   const navigate = useNavigate();
-  const [form, setForm] = useState<DevelopmentFormState>(INITIAL_FORM);
+  const [form, setForm] = useState<DevelopmentFormState>(() =>
+    mapDevelopmentToForm(development),
+  );
   const [submitError, setSubmitError] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
+
+  useEffect(() => {
+    setForm(mapDevelopmentToForm(development));
+    setErrors({});
+    setSubmitError("");
+  }, [development]);
 
   function handleInputChange(
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -515,6 +704,17 @@ export function DevelopmentForm({
     }));
   }
 
+  function handleRemoveExistingImage(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      imagenes_existentes: ensureSinglePrimary(
+        prev.imagenes_existentes.filter(
+          (_, currentIndex) => currentIndex !== index,
+        ),
+      ),
+    }));
+  }
+
   function handleImageTitleChange(index: number, titulo: string) {
     setForm((prev) => ({
       ...prev,
@@ -524,16 +724,45 @@ export function DevelopmentForm({
     }));
   }
 
-  function handleSetPrimaryImage(type: "new" | "existing", index: number) {
-    if (type !== "new") return;
-
+  function handleExistingImageTitleChange(index: number, titulo: string) {
     setForm((prev) => ({
       ...prev,
-      imagenes: prev.imagenes.map((image, currentIndex) => ({
-        ...image,
-        principal: currentIndex === index,
-      })),
+      imagenes_existentes: prev.imagenes_existentes.map((image, currentIndex) =>
+        currentIndex === index ? { ...image, titulo } : image,
+      ),
     }));
+  }
+
+  function handleSetPrimaryImage(type: "new" | "existing", index: number) {
+    setForm((prev) => {
+      if (type === "existing") {
+        return {
+          ...prev,
+          imagenes_existentes: prev.imagenes_existentes.map(
+            (image, currentIndex) => ({
+              ...image,
+              principal: currentIndex === index,
+            }),
+          ),
+          imagenes: prev.imagenes.map((image) => ({
+            ...image,
+            principal: false,
+          })),
+        };
+      }
+
+      return {
+        ...prev,
+        imagenes_existentes: prev.imagenes_existentes.map((image) => ({
+          ...image,
+          principal: false,
+        })),
+        imagenes: prev.imagenes.map((image, currentIndex) => ({
+          ...image,
+          principal: currentIndex === index,
+        })),
+      };
+    });
   }
 
   function handleModelInputChange(
@@ -682,6 +911,24 @@ export function DevelopmentForm({
     }));
   }
 
+  function handleRemoveExistingModelImage(modelId: string, index: number) {
+    setForm((prev) => ({
+      ...prev,
+      modelos: prev.modelos.map((model) =>
+        model.id === modelId
+          ? {
+              ...model,
+              imagenes_existentes: ensureSinglePrimary(
+                model.imagenes_existentes.filter(
+                  (_, currentIndex) => currentIndex !== index,
+                ),
+              ),
+            }
+          : model,
+      ),
+    }));
+  }
+
   function handleModelImageTitleChange(
     modelId: string,
     index: number,
@@ -702,6 +949,27 @@ export function DevelopmentForm({
     }));
   }
 
+  function handleExistingModelImageTitleChange(
+    modelId: string,
+    index: number,
+    titulo: string,
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      modelos: prev.modelos.map((model) =>
+        model.id === modelId
+          ? {
+              ...model,
+              imagenes_existentes: model.imagenes_existentes.map(
+                (image, currentIndex) =>
+                  currentIndex === index ? { ...image, titulo } : image,
+              ),
+            }
+          : model,
+      ),
+    }));
+  }
+
   function handleSetPrimaryModelImage(modelId: string, index: number) {
     setForm((prev) => ({
       ...prev,
@@ -709,9 +977,36 @@ export function DevelopmentForm({
         model.id === modelId
           ? {
               ...model,
+              imagenes_existentes: model.imagenes_existentes.map((image) => ({
+                ...image,
+                principal: false,
+              })),
               imagenes: model.imagenes.map((image, currentIndex) => ({
                 ...image,
                 principal: currentIndex === index,
+              })),
+            }
+          : model,
+      ),
+    }));
+  }
+
+  function handleSetPrimaryExistingModelImage(modelId: string, index: number) {
+    setForm((prev) => ({
+      ...prev,
+      modelos: prev.modelos.map((model) =>
+        model.id === modelId
+          ? {
+              ...model,
+              imagenes_existentes: model.imagenes_existentes.map(
+                (image, currentIndex) => ({
+                  ...image,
+                  principal: currentIndex === index,
+                }),
+              ),
+              imagenes: model.imagenes.map((image) => ({
+                ...image,
+                principal: false,
               })),
             }
           : model,
@@ -736,7 +1031,7 @@ export function DevelopmentForm({
     if (!form.entrega_inmediata && !form.fecha_entrega) {
       nextErrors.fecha_entrega = "Indica la fecha de entrega del desarrollo.";
     }
-    if (form.imagenes.length === 0) {
+    if (form.imagenes.length === 0 && form.imagenes_existentes.length === 0) {
       nextErrors.imagenes = "Agrega al menos una imagen del desarrollo.";
     }
     if (form.modelos.length === 0) {
@@ -768,7 +1063,7 @@ export function DevelopmentForm({
         nextErrors[`modelo_${model.id}_precios`] =
           "Completa el precio de cada operación del modelo.";
       }
-      if (model.imagenes.length === 0) {
+      if (model.imagenes.length === 0 && model.imagenes_existentes.length === 0) {
         nextErrors[`modelo_${model.id}_imagenes`] =
           "Agrega al menos una imagen del modelo.";
       }
@@ -791,6 +1086,7 @@ export function DevelopmentForm({
     if (!validate()) return;
 
     const modelos: CreateDevelopmentModelPayload[] = form.modelos.map((model) => ({
+      id: model.existingId,
       nombre: model.nombre.trim(),
       descripcion: model.descripcion.trim() || undefined,
       esquema_comercial: buildCommercialSchemes(model),
@@ -798,6 +1094,13 @@ export function DevelopmentForm({
       medidas: buildMeasures(model),
       caracteristicas: buildFeatures(model),
       comentarios: model.comentarios.trim() || undefined,
+      imagenes: ensureSinglePrimary(
+        model.imagenes_existentes.map((image) => ({
+          url: image.url,
+          titulo: image.titulo.trim(),
+          principal: Boolean(image.principal),
+        })),
+      ),
       imagenes_nuevas_metadata: ensureSinglePrimary(
         model.imagenes.map(
           (image): DevelopmentImageMetadata => ({
@@ -842,6 +1145,13 @@ export function DevelopmentForm({
       caracteristicas: {
         cuota_mantenimiento_tipo: form.cuota_mantenimiento_tipo,
       },
+      imagenes: ensureSinglePrimary(
+        form.imagenes_existentes.map((image) => ({
+          url: image.url,
+          titulo: image.titulo.trim(),
+          principal: Boolean(image.principal),
+        })),
+      ),
       imagenes_nuevas_metadata: ensureSinglePrimary(
         form.imagenes.map(
           (image): DevelopmentImageMetadata => ({
@@ -1108,9 +1418,12 @@ export function DevelopmentForm({
             />
             <ImageGridUploader
               images={form.imagenes}
+              existingImages={form.imagenes_existentes}
+              onRemoveExistingImage={handleRemoveExistingImage}
               onAddImages={handleAddImages}
               onRemoveImage={handleRemoveImage}
               onUpdateImageTitle={handleImageTitleChange}
+              onUpdateExistingImageTitle={handleExistingImageTitleChange}
               onSetPrimaryImage={handleSetPrimaryImage}
               error={errors.imagenes}
               label="Imágenes del desarrollo"
@@ -1299,14 +1612,23 @@ export function DevelopmentForm({
 
                     <ImageGridUploader
                       images={model.imagenes}
+                      existingImages={model.imagenes_existentes}
+                      onRemoveExistingImage={(imageIndex) =>
+                        handleRemoveExistingModelImage(model.id, imageIndex)
+                      }
                       onAddImages={(event) => handleAddModelImages(model.id, event)}
                       onRemoveImage={(imageIndex) => handleRemoveModelImage(model.id, imageIndex)}
                       onUpdateImageTitle={(imageIndex, titulo) =>
                         handleModelImageTitleChange(model.id, imageIndex, titulo)
                       }
+                      onUpdateExistingImageTitle={(imageIndex, titulo) =>
+                        handleExistingModelImageTitleChange(model.id, imageIndex, titulo)
+                      }
                       onSetPrimaryImage={(type, imageIndex) => {
                         if (type === "new") {
                           handleSetPrimaryModelImage(model.id, imageIndex);
+                        } else {
+                          handleSetPrimaryExistingModelImage(model.id, imageIndex);
                         }
                       }}
                       error={errors[`modelo_${model.id}_imagenes`]}

@@ -6,6 +6,7 @@ import { getFriendlyDevelopmentError } from "../utils/developmentErrors";
 import type {
   CreateDevelopmentPayload,
   NewDevelopmentImage,
+  UpdateDevelopmentPayload,
 } from "@/interfaces/development.interface";
 import { createDevelopment } from "../services/developments.api";
 import { processImageToWebP } from "@/shared/utils/imageProcessor";
@@ -22,11 +23,13 @@ export function CreateDevelopmentPage() {
     payload,
     files,
   }: {
-    payload: CreateDevelopmentPayload;
+    payload: CreateDevelopmentPayload | UpdateDevelopmentPayload;
     files: NewDevelopmentImage[];
   }): Promise<string | null> {
     try {
       setIsSubmitting(true);
+
+      const developmentPayload = payload as CreateDevelopmentPayload;
 
       const optimizedFiles: NewDevelopmentImage[] = await Promise.all(
         files.map(async (image) => ({
@@ -35,7 +38,7 @@ export function CreateDevelopmentPage() {
         })),
       );
 
-      await createDevelopment(payload, optimizedFiles);
+      await createDevelopment(developmentPayload, optimizedFiles);
       toast.success("El desarrollo se creó con éxito.");
       navigate("/modulos/desarrollos");
       return null;

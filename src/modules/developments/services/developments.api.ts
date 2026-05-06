@@ -3,6 +3,7 @@ import type {
   CreateDevelopmentPayload,
   DevelopmentRecord,
   NewDevelopmentImage,
+  UpdateDevelopmentPayload,
 } from "@/interfaces/development.interface";
 
 const PATH = "/developments";
@@ -27,6 +28,22 @@ export async function createDevelopment(
 
   return apiRequest<DevelopmentRecord>(PATH, {
     method: "POST",
+    data: formData,
+  });
+}
+
+export async function updateDevelopment(
+  id: number,
+  payload: UpdateDevelopmentPayload,
+  files: NewDevelopmentImage[],
+): Promise<DevelopmentRecord> {
+  const formData = new FormData();
+
+  files.forEach((image) => formData.append("files", image.file));
+  formData.append("datos", JSON.stringify(payload));
+
+  return apiRequest<DevelopmentRecord>(`${PATH}/${id}`, {
+    method: "PATCH",
     data: formData,
   });
 }

@@ -2,6 +2,7 @@ type DevelopmentErrorContext =
   | "load_list"
   | "load_detail"
   | "create"
+  | "update"
   | "delete";
 
 function getErrorMessage(error: unknown) {
@@ -81,6 +82,8 @@ function getFallbackMessage(context: DevelopmentErrorContext) {
       return "No pudimos cargar el detalle del desarrollo en este momento.";
     case "create":
       return "No pudimos crear el desarrollo. Revisa la información general, la entrega, las imágenes y cada modelo agregado.";
+    case "update":
+      return "No pudimos actualizar el desarrollo. Revisa la información general, la entrega, las imágenes y cada modelo agregado.";
     case "delete":
       return "No fue posible eliminar el desarrollo en este momento.";
     default:
