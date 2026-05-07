@@ -7,6 +7,7 @@ import {
   getLeadsByProperty,
   updateLead,
 } from '../services/leads.api';
+import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
 
 export interface LeadsState {
   leads: LeadRecord[];
@@ -37,7 +38,10 @@ export const useLeadsStore = create<LeadsState>((set) => ({
       set({ leads: data, isLoading: false });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al cargar los registros',
+        error: getReadableErrorMessage(
+          error,
+          'No pudimos cargar los registros en este momento.',
+        ),
         isLoading: false,
       });
     }
@@ -50,7 +54,10 @@ export const useLeadsStore = create<LeadsState>((set) => ({
       set({ propertyLeads: data, isLoading: false });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al cargar los registros de la propiedad',
+        error: getReadableErrorMessage(
+          error,
+          'No pudimos cargar los registros de la propiedad en este momento.',
+        ),
         isLoading: false,
       });
     }
@@ -67,7 +74,10 @@ export const useLeadsStore = create<LeadsState>((set) => ({
       return newLead;
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al crear el registro',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible crear el registro.',
+        ),
         isLoading: false,
       });
       throw error;
@@ -85,7 +95,10 @@ export const useLeadsStore = create<LeadsState>((set) => ({
       return updatedLead;
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al actualizar el registro',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible actualizar el registro.',
+        ),
         isLoading: false,
       });
       throw error;
@@ -102,7 +115,10 @@ export const useLeadsStore = create<LeadsState>((set) => ({
       }));
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al eliminar el registro',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible eliminar el registro.',
+        ),
         isLoading: false,
       });
       throw error;

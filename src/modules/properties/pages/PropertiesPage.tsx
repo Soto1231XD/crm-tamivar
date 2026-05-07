@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 import { useNavigate } from "react-router-dom";
 import type { PropertyRecord } from "@/interfaces/property.interface";
 import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmModal";
@@ -89,7 +90,12 @@ export function PropertiesPage() {
       toast.success("La propiedad se elimino con éxito.");
       return null;
     } catch (error) {
-      toast.error("No fue posible eliminar la propiedad.");
+      toast.error(
+        getReadableErrorMessage(
+          error,
+          "No fue posible eliminar la propiedad.",
+        ),
+      );
       return error instanceof Error
         ? error.message
         : "No fue posible eliminar la propiedad.";

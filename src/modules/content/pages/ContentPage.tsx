@@ -6,6 +6,7 @@ import type {
   UpdateBlogPayload,
 } from "@/interfaces/blog.interface";
 import toast from "react-hot-toast";
+import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 import {
   FilterCard,
   FilterSearchInput,
@@ -307,8 +308,13 @@ export function ContentPage() {
         [],
       );
       toast.success(`El artículo "${blog.titulo}" se publicó con éxito.`);
-    } catch {
-      toast.error("No fue posible publicar el artículo.");
+    } catch (error) {
+      toast.error(
+        getReadableErrorMessage(
+          error,
+          "No fue posible publicar el artículo.",
+        ),
+      );
     }
   }
 
@@ -322,9 +328,13 @@ export function ContentPage() {
         `El articulo "${targetBlog?.titulo ?? "seleccionado"}" se elimino con éxito.`,
       );
       return null;
-    } catch {
-      toast.error("No fue posible eliminar el articulo.");
-      return "No fue posible eliminar el articulo.";
+    } catch (error) {
+      const message = getReadableErrorMessage(
+        error,
+        "No fue posible eliminar el articulo.",
+      );
+      toast.error(message);
+      return message;
     }
   }
 }

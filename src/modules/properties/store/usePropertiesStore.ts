@@ -13,6 +13,7 @@ import type {
   NuevaImagen,
   PropertyFilters,
 } from "@/interfaces/property.interface";
+import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 
 export interface PropertiesState {
   // Estado
@@ -141,10 +142,10 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Error al cargar las propiedades",
+        error: getReadableErrorMessage(
+          error,
+          "No pudimos cargar las propiedades en este momento.",
+        ),
         isLoading: false,
       });
     }
@@ -176,10 +177,10 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
       set({ currentProperty: data, isLoading: false });
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Error al cargar la propiedad",
+        error: getReadableErrorMessage(
+          error,
+          "No pudimos cargar la propiedad solicitada.",
+        ),
         isLoading: false,
       });
     }
@@ -201,10 +202,10 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Error al crear la propiedad",
+        error: getReadableErrorMessage(
+          error,
+          "No fue posible crear la propiedad.",
+        ),
         isLoading: false,
       });
       throw error; // Lanzamos el error para que el componente UI (tu página) pueda mostrar una alerta si quiere
@@ -237,10 +238,10 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Error al actualizar la propiedad",
+        error: getReadableErrorMessage(
+          error,
+          "No fue posible actualizar la propiedad.",
+        ),
         isLoading: false,
       });
       throw error;
@@ -265,10 +266,10 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Error al eliminar la propiedad",
+        error: getReadableErrorMessage(
+          error,
+          "No fue posible eliminar la propiedad.",
+        ),
         isLoading: false,
       });
       throw error;

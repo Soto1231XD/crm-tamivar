@@ -26,6 +26,7 @@ import { getFullImageUrl } from "@/shared/utils/imageUrl";
 import { UserModal } from "../components/UserModal";
 import { useUsersStore } from "../store/useUsersStore";
 import { processImageToWebP } from "@/shared/utils/imageProcessor";
+import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 
 const ALL_USER_STATES = "Todos los estados";
 
@@ -382,8 +383,13 @@ export function UsersPage() {
           ? `Se dio de baja a ${getUserFullName(targetUser)}.`
           : `Se reactivó a ${getUserFullName(targetUser)}.`,
       );
-    } catch {
-      toast.error("No fue posible actualizar el estado del usuario.");
+    } catch (error) {
+      toast.error(
+        getReadableErrorMessage(
+          error,
+          "No fue posible actualizar el estado del usuario.",
+        ),
+      );
     }
   }
 }

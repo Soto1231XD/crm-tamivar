@@ -6,6 +6,7 @@ import { usePropertiesStore } from "../store/usePropertiesStore";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 import { processImageToWebP } from "@/shared/utils/imageProcessor";
 import type { NuevaImagen } from "@/interfaces/property.interface";
+import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 
 export function EditPropertyPage() {
   const navigate = useNavigate();
@@ -70,12 +71,11 @@ export function EditPropertyPage() {
       toast.success("La propiedad se actualizó con éxito.");
       navigate("/modulos/propiedades");
       return null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error al actualizar:", error);
-      return (
-        error?.response?.data?.message ||
-        error.message ||
-        "No fue posible actualizar la propiedad."
+      return getReadableErrorMessage(
+        error,
+        "No fue posible actualizar la propiedad. Revisa la información general, la operación, la dirección y las imágenes.",
       );
     } finally {
       setIsSubmitting(false);

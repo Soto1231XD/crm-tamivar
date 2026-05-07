@@ -53,6 +53,32 @@ export function getFriendlyDevelopmentError(
     return "Ya existe un desarrollo con información duplicada. Revisa el título o la carpeta de imágenes.";
   }
 
+  if (
+    message.includes("falta un dato obligatorio en el desarrollo") ||
+    message.includes("viola la restricción") ||
+    message.includes("null constraint")
+  ) {
+    return "Falta un dato obligatorio en el desarrollo o en alguno de sus modelos. Revisa título, dirección, operaciones, modelos e imágenes.";
+  }
+
+  if (
+    message.includes("estructura local de la base de datos para desarrollos no esta alineada") ||
+    message.includes("does not exist in the current database") ||
+    message.includes("column does not exist")
+  ) {
+    return "La base local de desarrollos está desactualizada. Hay que alinear la tabla antes de volver a guardar.";
+  }
+
+  if (
+    message.includes("no fue posible procesar las imagenes del desarrollo") ||
+    message.includes("no pudo procesarse correctamente") ||
+    message.includes("no pudimos optimizar la imagen") ||
+    message.includes("no pudimos leer la imagen") ||
+    message.includes("no pudo abrirse correctamente")
+  ) {
+    return rawMessage;
+  }
+
   if (message.includes("datos del desarrollo no tienen el formato esperado")) {
     return "Algunos datos del desarrollo no tienen el formato correcto. Revisa dirección, entrega, modelos e imágenes.";
   }

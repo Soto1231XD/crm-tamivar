@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { useAuthStore } from "./auth/useAuthStore";
 import { isTokenExpired } from "./auth/token.utils";
+import { normalizeErrorMessage } from "./utils/errorMessages";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -59,11 +60,12 @@ export async function apiRequest<T>(
 
     return response.data;
   } catch (error) {
-    const err = error as AxiosError<{ message?: string | string[] }>;
-    const serverMessage = err.response?.data?.message;
-    const finalMessage = Array.isArray(serverMessage)
-      ? serverMessage[0]
-      : serverMessage;
+    const err = error as AxiosError<{
+      message?: string | string[] | Record<string, unknown>;
+      error?: string;
+      details?: string | string[];
+    }>;
+    const finalMessage = extractServerMessage(err);
     const token = useAuthStore.getState().token;
 
     console.error(`[API Error] ${method} ${endpoint}:`, {
@@ -90,7 +92,12 @@ export async function apiRequest<T>(
     }
 
     if (err.response?.status === 400) {
-      throw new Error(finalMessage || "Datos de solicitud inválidos.");
+      throw new Error(
+        normalizeErrorMessage(
+          finalMessage,
+          "Los datos enviados no son válidos. Revisa la información capturada.",
+        ),
+      );
     }
 
     if (err.response?.status === 413) {
@@ -100,15 +107,74 @@ export async function apiRequest<T>(
     }
 
     if (err.response?.status === 404) {
-      throw new Error("El recurso solicitado no existe.");
+      throw new Error(
+        normalizeErrorMessage(
+          finalMessage,
+          "El recurso solicitado no existe o ya no está disponible.",
+        ),
+      );
     }
 
     if (err.response?.status && err.response.status >= 500) {
-      throw new Error(finalMessage || "Error en el servidor. Inténtalo más tarde.");
+      throw new Error(
+        normalizeErrorMessage(
+          finalMessage,
+          "El servidor no pudo completar la solicitud. Intenta nuevamente en unos minutos.",
+        ),
+      );
     }
 
-    throw new Error(finalMessage || "Error de conexión con el servidor.");
+    throw new Error(
+      normalizeErrorMessage(
+        finalMessage || err.message,
+        "No pudimos comunicarnos con el servidor. Verifica tu conexión e inténtalo nuevamente.",
+      ),
+    );
   }
 }
 
 export default api;
+
+function extractServerMessage(
+  error: AxiosError<{
+    message?: string | string[] | Record<string, unknown>;
+    error?: string;
+    details?: string | string[];
+  }>,
+) {
+  const payload = error.response?.data;
+  const candidates = [payload?.message, payload?.details, payload?.error];
+
+  for (const candidate of candidates) {
+    const extracted = stringifyServerMessage(candidate);
+    if (extracted) {
+      return extracted;
+    }
+  }
+
+  return "";
+}
+
+function stringifyServerMessage(value: unknown): string {
+  if (!value) return "";
+
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stringifyServerMessage(item))
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>)
+      .map((item) => stringifyServerMessage(item))
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  return "";
+}

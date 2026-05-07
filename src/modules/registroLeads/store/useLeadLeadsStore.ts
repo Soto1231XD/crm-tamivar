@@ -6,6 +6,7 @@ import {
   getLeadLeads,
   updateLeadLead,
 } from '../services/leadLeads.api';
+import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
 
 export interface LeadLeadsState {
   leads: LeadRecord[];
@@ -29,7 +30,10 @@ export const useLeadLeadsStore = create<LeadLeadsState>((set) => ({
       set({ leads: data, isLoading: false });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al cargar los registros leads',
+        error: getReadableErrorMessage(
+          error,
+          'No pudimos cargar los registros leads en este momento.',
+        ),
         isLoading: false,
       });
     }
@@ -46,7 +50,10 @@ export const useLeadLeadsStore = create<LeadLeadsState>((set) => ({
       return newLead;
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al crear el registro lead',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible crear el registro lead.',
+        ),
         isLoading: false,
       });
       throw error;
@@ -64,7 +71,10 @@ export const useLeadLeadsStore = create<LeadLeadsState>((set) => ({
       return updatedLead;
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al actualizar el registro lead',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible actualizar el registro lead.',
+        ),
         isLoading: false,
       });
       throw error;
@@ -81,7 +91,10 @@ export const useLeadLeadsStore = create<LeadLeadsState>((set) => ({
       }));
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al eliminar el registro lead',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible eliminar el registro lead.',
+        ),
         isLoading: false,
       });
       throw error;

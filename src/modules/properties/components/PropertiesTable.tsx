@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 import type { PropertyRecord } from "@/interfaces/property.interface";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
 import { BadgeSelect } from "@/components/ui/BadgeSelect";
@@ -41,8 +42,13 @@ export function PropertiesTable({
     try {
       await editProperty(id, { estatus: nextStatus });
       toast.success(`El estado de la propiedad cambió a ${nextStatus}.`);
-    } catch {
-      toast.error("No fue posible actualizar el estado de la propiedad.");
+    } catch (error) {
+      toast.error(
+        getReadableErrorMessage(
+          error,
+          "No fue posible actualizar el estado de la propiedad.",
+        ),
+      );
     } finally {
       setUpdatingStatusId(null);
     }

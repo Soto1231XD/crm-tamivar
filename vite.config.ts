@@ -5,6 +5,11 @@ import path from "path";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  define: {
+    __APP_BUILD__: JSON.stringify(
+      `${process.env.npm_package_version ?? "0.0.0"}-${Date.now()}`,
+    ),
+  },
   plugins: [
     react(),
     tailwindcss(),

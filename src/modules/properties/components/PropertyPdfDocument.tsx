@@ -208,6 +208,11 @@ export const PropertyPdfDocument = ({
 }) => {
   // Obtener estilos dinámicos del estatus
   const statusStyle = getPropertyStatusStyles(property.estatus);
+  const showLegalStatus = Array.isArray(property.esquema_comercial)
+    ? property.esquema_comercial.some((esquema) =>
+        ["Venta", "Preventa"].includes(esquema.tipo_operacion),
+      )
+    : false;
 
   return (
     <Document>
@@ -270,7 +275,7 @@ export const PropertyPdfDocument = ({
             </View>
 
             {/* Fila Única: Operación, Tipo y Estado Legal */}
-            <View style={styles.col4}>
+            <View style={showLegalStatus ? styles.col4 : styles.col6}>
               <Text style={styles.label}>Operación</Text>
               <Text style={[styles.value, { textTransform: "capitalize" }]}>
                 {property.esquema_comercial
@@ -278,23 +283,27 @@ export const PropertyPdfDocument = ({
                   .join(" / ")}
               </Text>
             </View>
-            <View style={styles.col4}>
+            <View style={showLegalStatus ? styles.col4 : styles.col6}>
               <Text style={styles.label}>Tipo de Inmueble</Text>
               <Text style={[styles.value, { textTransform: "capitalize" }]}>
                 {property.tipo_inmueble}
               </Text>
             </View>
-            <View style={styles.col4}>
-              <Text style={styles.label}>Estado Legal</Text>
-              <Text
-                style={[
-                  styles.valueBold,
-                  { color: property.tiene_gravamen ? "#ef4444" : "#10b981" },
-                ]}
-              >
-                {property.tiene_gravamen ? "Con Gravamen" : "Libre de Gravamen"}
-              </Text>
-            </View>
+            {showLegalStatus ? (
+              <View style={styles.col4}>
+                <Text style={styles.label}>Estado Legal</Text>
+                <Text
+                  style={[
+                    styles.valueBold,
+                    { color: property.tiene_gravamen ? "#ef4444" : "#10b981" },
+                  ]}
+                >
+                  {property.tiene_gravamen
+                    ? "Con Gravamen"
+                    : "Libre de Gravamen"}
+                </Text>
+              </View>
+            ) : null}
 
             <View style={styles.col12}>
               <Text style={styles.label}>Tipos de Pago Aceptados</Text>

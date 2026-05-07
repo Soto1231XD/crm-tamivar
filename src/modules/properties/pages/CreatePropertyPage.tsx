@@ -10,6 +10,7 @@ import type { CreatePropertyPayload, NuevaImagen } from "@/interfaces/property.i
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 import { processImageToWebP } from "@/shared/utils/imageProcessor";
 import { validatePropertyImageSelection } from "../utils/propertyValidations";
+import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 
 export function CreatePropertyPage() {
   const navigate = useNavigate();
@@ -65,12 +66,11 @@ export function CreatePropertyPage() {
       // Si la petición es exitosa, navegamos a la lista
       navigate("/modulos/propiedades");
       return null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error al registrar propiedad:", error);
-      return (
-        error?.response?.data?.message ||
-        error.message ||
-        "No fue posible crear la propiedad."
+      return getReadableErrorMessage(
+        error,
+        "No fue posible crear la propiedad. Revisa la información general, la operación, la dirección y las imágenes.",
       );
     } finally {
       setIsSubmitting(false);

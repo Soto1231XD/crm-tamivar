@@ -10,6 +10,7 @@ import {
   getLeadRequests,
   updateLeadRequest,
 } from '../services/leadRequests.api';
+import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
 
 export interface LeadRequestsState {
   leadRequests: LeadRequestRecord[];
@@ -33,7 +34,10 @@ export const useLeadRequestsStore = create<LeadRequestsState>((set) => ({
       set({ leadRequests: data, isLoading: false });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al cargar las solicitudes de leads',
+        error: getReadableErrorMessage(
+          error,
+          'No pudimos cargar las solicitudes de leads en este momento.',
+        ),
         isLoading: false,
       });
     }
@@ -50,7 +54,10 @@ export const useLeadRequestsStore = create<LeadRequestsState>((set) => ({
       return newLeadRequest;
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al crear la solicitud de lead',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible crear la solicitud de lead.',
+        ),
         isLoading: false,
       });
       throw error;
@@ -68,7 +75,10 @@ export const useLeadRequestsStore = create<LeadRequestsState>((set) => ({
       return updatedLeadRequest;
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al actualizar la solicitud de lead',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible actualizar la solicitud de lead.',
+        ),
         isLoading: false,
       });
       throw error;
@@ -85,7 +95,10 @@ export const useLeadRequestsStore = create<LeadRequestsState>((set) => ({
       }));
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Error al eliminar la solicitud de lead',
+        error: getReadableErrorMessage(
+          error,
+          'No fue posible eliminar la solicitud de lead.',
+        ),
         isLoading: false,
       });
       throw error;

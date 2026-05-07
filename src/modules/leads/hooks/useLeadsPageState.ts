@@ -3,6 +3,7 @@ import type { CreateLeadPayload, LeadRecord, UpdateLeadPayload } from '@/interfa
 import type { PropertyRecord } from '@/interfaces/property.interface';
 import type { UserRecord } from '@/interfaces/user.interface';
 import toast from 'react-hot-toast';
+import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
 import { getProperties } from '../../properties/services/properties.api';
 import { getUsers } from '../../users/services/users.api';
 import { formatDireccion } from '../../properties/utils/formatters';
@@ -189,7 +190,10 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
       toast.success('El registro se creo con exito.');
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible crear el registro.';
+      return getReadableErrorMessage(
+        error,
+        'No fue posible crear el registro. Revisa cliente, propiedad, estado y fecha de cita.',
+      );
     }
   }
 
@@ -199,7 +203,10 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
       toast.success('El registro se actualizo con exito.');
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible actualizar el registro.';
+      return getReadableErrorMessage(
+        error,
+        'No fue posible actualizar el registro. Revisa la información modificada.',
+      );
     }
   }
 
@@ -209,7 +216,10 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
       toast.success('El registro se elimino con exito.');
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible eliminar el registro.';
+      return getReadableErrorMessage(
+        error,
+        'No fue posible eliminar el registro.',
+      );
     }
   }
 
@@ -236,11 +246,16 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     try {
       await editLead(leadId, { [field]: value });
       toast.success('El estado del registro se actualizo.');
-    } catch {
+    } catch (error) {
       useLeadsStore.setState({
         leads: previousLeads.map((lead) => (lead.id === leadId ? { ...lead, [field]: previousValue } : lead)),
       });
-      toast.error('No fue posible actualizar el registro.');
+      toast.error(
+        getReadableErrorMessage(
+          error,
+          'No fue posible actualizar el registro.',
+        ),
+      );
     } finally {
       setUpdatingLeadId(null);
     }

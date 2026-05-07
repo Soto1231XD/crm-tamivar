@@ -5,6 +5,7 @@ import type {
   UpdateLeadRequestPayload,
 } from '@/interfaces/lead-request.interface';
 import toast from 'react-hot-toast';
+import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
 import { ALL_STATES, PAGE_SIZE } from '@/modules/leads/utils/leads.constants';
 import { getLeadRequestSellerOptions } from '@/modules/users/services/users.api';
 import type { UserRecord } from '@/interfaces/user.interface';
@@ -111,7 +112,10 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
       toast.success('La solicitud de lead se creo con éxito.');
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible crear la solicitud de lead.';
+      return getReadableErrorMessage(
+        error,
+        'No fue posible crear la solicitud de lead. Revisa los campos obligatorios y vuelve a intentarlo.',
+      );
     }
   }
 
@@ -124,7 +128,10 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
       toast.success('La solicitud de lead se actualizo con éxito.');
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible actualizar la solicitud de lead.';
+      return getReadableErrorMessage(
+        error,
+        'No fue posible actualizar la solicitud de lead. Revisa la información modificada y vuelve a intentarlo.',
+      );
     }
   }
 
@@ -134,7 +141,10 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
       toast.success('La solicitud de lead se elimino con éxito.');
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : 'No fue posible eliminar la solicitud de lead.';
+      return getReadableErrorMessage(
+        error,
+        'No fue posible eliminar la solicitud de lead.',
+      );
     }
   }
 
@@ -160,7 +170,12 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
       await editLeadRequest(leadRequestId, payload);
       toast.success('La solicitud se actualizó con éxito.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No fue posible actualizar la solicitud.');
+      toast.error(
+        getReadableErrorMessage(
+          error,
+          'No fue posible actualizar la solicitud.',
+        ),
+      );
     } finally {
       setUpdatingLeadRequestId(null);
     }
