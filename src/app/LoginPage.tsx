@@ -48,6 +48,25 @@ export function LoginPage() {
   }, []);
 
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyOverflowY = document.body.style.overflowY;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousHtmlOverflowY = document.documentElement.style.overflowY;
+
+    document.body.style.overflow = "auto";
+    document.body.style.overflowY = "auto";
+    document.documentElement.style.overflow = "auto";
+    document.documentElement.style.overflowY = "auto";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.overflowY = previousBodyOverflowY;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.documentElement.style.overflowY = previousHtmlOverflowY;
+    };
+  }, []);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
 
     const syncPwaMode = () => {
@@ -85,7 +104,7 @@ export function LoginPage() {
 
       if (result.status === "requires_2fa") {
         setChallengeId(result.challengeId ?? null);
-        setInfo(result.message || "Código de verificación enviado.");
+        setInfo(result.message || "Codigo de verificacion enviado.");
         return;
       }
 
@@ -97,7 +116,7 @@ export function LoginPage() {
       setError(
         currentError instanceof Error
           ? currentError.message
-          : "No pudimos iniciar sesión. Verifica tus credenciales e inténtalo nuevamente.",
+          : "No pudimos iniciar sesion. Verifica tus credenciales e intentalo nuevamente.",
       );
     }
   };
@@ -121,7 +140,7 @@ export function LoginPage() {
       setError(
         currentError instanceof Error
           ? currentError.message
-          : "Código invalido o expirado.",
+          : "Codigo invalido o expirado.",
       );
     }
   };
@@ -140,7 +159,7 @@ export function LoginPage() {
     } catch {
       setInfo("");
       setError(
-        "No pudimos restablecer la app automáticamente. Cierra y vuelve a abrir la aplicación o intenta desde el navegador.",
+        "No pudimos restablecer la app automaticamente. Cierra y vuelve a abrir la aplicacion o intenta desde el navegador.",
       );
       setIsResettingApp(false);
     }
@@ -154,20 +173,20 @@ export function LoginPage() {
       ].join(" ")}
     >
       {isPwaMode && showPwaNotice ? (
-        <div className="fixed inset-x-4 top-4 z-50 mx-auto w-full max-w-sm rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-3 text-left shadow-lg backdrop-blur">
+        <div className="fixed left-1/2 top-4 z-50 w-[calc(100vw-2rem)] max-w-[22rem] -translate-x-1/2 rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-3 text-left shadow-lg backdrop-blur">
           <p className="text-sm font-semibold text-amber-900">
             Esta app requiere internet
           </p>
-          <p className="mt-1 pr-10 text-sm leading-6 text-amber-800">
-            La PWA necesita conexión para iniciar sesión, guardar cambios y sincronizar la información del CRM.
+          <p className="mt-1 pr-8 text-sm leading-6 text-amber-800">
+            La PWA necesita conexion para iniciar sesion, guardar cambios y sincronizar la informacion del CRM.
           </p>
           <button
             type="button"
             onClick={() => setShowPwaNotice(false)}
-            className="absolute right-3 top-3 text-xs font-semibold uppercase tracking-wide text-amber-700 transition hover:text-amber-900"
+            className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold leading-none text-amber-700 transition hover:bg-amber-100 hover:text-amber-900"
             aria-label="Cerrar aviso"
           >
-            Cerrar
+            ×
           </button>
         </div>
       ) : null}
@@ -193,7 +212,7 @@ export function LoginPage() {
             Plataforma central para operar equipos y ventas.
           </h2>
           <p className="mx-auto mt-2 max-w-md text-xs text-slate-200/90 sm:text-sm lg:mx-0">
-            Accede con tus credenciales y continua con tu flujo de trabajo según tu rol.
+            Accede con tus credenciales y continua con tu flujo de trabajo segun tu rol.
           </p>
         </div>
       </aside>
@@ -201,7 +220,7 @@ export function LoginPage() {
       <section
         className={[
           "relative flex min-h-[70vh] items-start justify-center bg-white px-5 py-5 sm:px-7 sm:py-6 lg:h-screen lg:items-center lg:py-0",
-          isPwaMode ? "overflow-visible pb-8" : "overflow-hidden",
+          isPwaMode ? "overflow-visible pb-12" : "overflow-hidden",
         ].join(" ")}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(25,75,141,0.10),transparent_55%)]" />
@@ -217,7 +236,7 @@ export function LoginPage() {
 
         <div className="relative mt-16 w-full max-w-sm text-center sm:mt-18 lg:mt-0 lg:pt-12 lg:text-left">
           <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">
-            Iniciar sesión
+            Iniciar sesion
           </h1>
           <p className="mt-1.5 text-sm text-slate-600">
             Ingresa para acceder al CRM TAMIVAR.
@@ -227,7 +246,7 @@ export function LoginPage() {
             <form className="mt-6 space-y-4" onSubmit={handleLogin}>
               <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Correo electrónico
+                  Correo electronico
                 </span>
                 <input
                   type="email"
@@ -240,7 +259,7 @@ export function LoginPage() {
 
               <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Contraseña
+                  Contrasena
                 </span>
                 <input
                   type="password"
@@ -263,7 +282,7 @@ export function LoginPage() {
             <form className="mt-6 space-y-4" onSubmit={handleVerifyTwoFa}>
               <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Código 2FA
+                  Codigo 2FA
                 </span>
                 <input
                   type="text"
@@ -283,7 +302,7 @@ export function LoginPage() {
                 disabled={isLoading || isResettingApp}
                 className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isLoading ? "Validando..." : "Validar código"}
+                {isLoading ? "Validando..." : "Validar codigo"}
               </button>
             </form>
           )}
@@ -291,10 +310,10 @@ export function LoginPage() {
           {isPwaMode ? (
             <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
               <p className="text-sm font-semibold text-slate-800">
-                Si la aplicación se queda trabada
+                Si la aplicacion se queda trabada
               </p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Si el acceso no responde o el botón se queda cargando, puedes restablecer la cache local de la app sin borrar tus datos del servidor.
+                Si el acceso no responde o el boton se queda cargando, puedes restablecer la cache local de la app sin borrar tus datos del servidor.
               </p>
               <button
                 type="button"
