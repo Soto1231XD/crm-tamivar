@@ -4,16 +4,14 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from './app/App';
 import { AppProviders } from './app/providers/AppProviders';
 import { registerSW } from 'virtual:pwa-register';
+import { clearApplicationCaches } from './shared/pwa/pwaRecovery';
 import './styles/globals.css';
 
 const BUILD_STORAGE_KEY = 'crm-tamivar-build';
 const BUILD_RESET_PREFIX = 'crm-tamivar-build-reset';
 
 async function clearPwaCaches() {
-  if (!('caches' in window)) return;
-
-  const cacheKeys = await caches.keys();
-  await Promise.all(cacheKeys.map((cacheKey) => caches.delete(cacheKey)));
+  await clearApplicationCaches();
 }
 
 async function synchronizeBuildCache() {

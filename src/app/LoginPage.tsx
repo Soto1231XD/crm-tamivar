@@ -8,6 +8,7 @@ import fondoLogin2 from "@/assets/images/Fondo_login2.jpg";
 import fondoLogin3 from "@/assets/images/Fondo_login3.jpg";
 import logoCompleto from "@/assets/images/LOGO_COMPLETO.png";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { resetPwaApplication } from "@/shared/pwa/pwaRecovery";
 
 const loginBackgrounds = [fondoLogin, fondoLogin1, fondoLogin2, fondoLogin3];
 
@@ -22,6 +23,7 @@ export function LoginPage() {
   const [info, setInfo] = useState("");
   const [error, setError] = useState("");
   const [backgroundIndex, setBackgroundIndex] = useState(0);
+  const [isResettingApp, setIsResettingApp] = useState(false);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -43,17 +45,20 @@ export function LoginPage() {
       });
 
       if (result.status === "requires_2fa") {
-        setChallengeId(result.challengeId!);
-        setInfo(result.message || "Código de verificación enviado.");
-      } else if (result.status === "authenticated") {
-        const user = useAuthStore.getState().user;
-        navigate(getDefaultDashboardPath(user!.permisos), { replace: true });
+        setChallengeId(result.challengeId ?? null);
+        setInfo(result.message || "Codigo de verificacion enviado.");
+        return;
+      }
+
+      const user = useAuthStore.getState().user;
+      if (user?.permisos) {
+        navigate(getDefaultDashboardPath(user.permisos), { replace: true });
       }
     } catch (currentError) {
       setError(
         currentError instanceof Error
           ? currentError.message
-          : "Credenciales inválidas.",
+          : "No pudimos iniciar sesión. Verifica tus credenciales e inténtalo nuevamente.",
       );
     }
   };
@@ -63,23 +68,42 @@ export function LoginPage() {
     if (!challengeId) return;
 
     setError("");
+    setInfo("");
+
     try {
       const user = await confirmTwoFa(challengeId, codigo.replace(/\D/g, ""));
-
-      if (user && user.permisos) {
-        const destino = getDefaultDashboardPath(user.permisos);
-        navigate(destino, { replace: true });
-      } else {
-        throw new Error("El usuario no se cargó correctamente o no tiene roles.");
+      if (user?.permisos) {
+        navigate(getDefaultDashboardPath(user.permisos), { replace: true });
+        return;
       }
-    } catch (currentError) {
-      console.error("Error en 2FA:", currentError);
 
+      throw new Error("No pudimos completar el acceso. Intenta nuevamente.");
+    } catch (currentError) {
       setError(
         currentError instanceof Error
           ? currentError.message
-          : "Código inválido o expirado.",
+          : "Código invalido o expirado.",
       );
+    }
+  };
+
+  const handleResetApplication = async () => {
+    setIsResettingApp(true);
+    setError("");
+    setInfo(
+      "Estamos restableciendo la app para limpiar la cache local. Esto tarda solo unos segundos.",
+    );
+
+    try {
+      useAuthStore.getState().logout();
+      await resetPwaApplication();
+      window.location.reload();
+    } catch {
+      setInfo("");
+      setError(
+        "No pudimos restablecer la app automáticamente. Cierra y vuelve a abrir la aplicación o intenta desde el navegador.",
+      );
+      setIsResettingApp(false);
     }
   };
 
@@ -102,12 +126,11 @@ export function LoginPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-brand-100/90">
             CRM TAMIVAR
           </p>
-          <h2 className="mt-2 mx-auto max-w-md text-xl font-black leading-tight text-white sm:text-2xl lg:mx-0 lg:text-3xl">
+          <h2 className="mx-auto mt-2 max-w-md text-xl font-black leading-tight text-white sm:text-2xl lg:mx-0 lg:text-3xl">
             Plataforma central para operar equipos y ventas.
           </h2>
-          <p className="mt-2 mx-auto max-w-md text-xs text-slate-200/90 sm:text-sm lg:mx-0">
-            Accede con tus credenciales y continúa con tu flujo de trabajo según
-            tu rol.
+          <p className="mx-auto mt-2 max-w-md text-xs text-slate-200/90 sm:text-sm lg:mx-0">
+            Accede con tus credenciales y continua con tu flujo de trabajo según tu rol.
           </p>
         </div>
       </aside>
@@ -131,6 +154,15 @@ export function LoginPage() {
           <p className="mt-1.5 text-sm text-slate-600">
             Ingresa para acceder al CRM TAMIVAR.
           </p>
+
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left">
+            <p className="text-sm font-semibold text-amber-900">
+              Esta app requiere internet
+            </p>
+            <p className="mt-1 text-sm leading-6 text-amber-800">
+              La aplicación necesita conexión para iniciar sesión, guardar cambios y sincronizar la información del CRM.
+            </p>
+          </div>
 
           {!challengeId ? (
             <form className="mt-6 space-y-4" onSubmit={handleLogin}>
@@ -162,8 +194,8 @@ export function LoginPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-60"
+                disabled={isLoading || isResettingApp}
+                className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoading ? "Ingresando..." : "Ingresar"}
               </button>
@@ -189,13 +221,32 @@ export function LoginPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-60"
+                disabled={isLoading || isResettingApp}
+                className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoading ? "Validando..." : "Validar código"}
               </button>
             </form>
           )}
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+            <p className="text-sm font-semibold text-slate-800">
+              Si la aplicación se queda trabada
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Si el acceso no responde o el botón se queda cargando, puedes restablecer la cache local de la app sin borrar tus datos del servidor.
+            </p>
+            <button
+              type="button"
+              onClick={handleResetApplication}
+              disabled={isLoading || isResettingApp}
+              className="mt-3 inline-flex items-center rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isResettingApp
+                ? "Restableciendo app..."
+                : "Restablecer cache de la app"}
+            </button>
+          </div>
 
           {info ? (
             <p className="mt-4 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">

@@ -35,15 +35,11 @@ export const useAuthStore = create<AuthState>()(
               user: result.user,
               token: result.accessToken,
               isAuthenticated: true,
-              isLoading: false,
             });
           }
-
-          set({ isLoading: false });
           return result;
-        } catch (error) {
+        } finally {
           set({ isLoading: false });
-          throw error;
         }
       },
 
@@ -55,14 +51,11 @@ export const useAuthStore = create<AuthState>()(
             user,
             token: accessToken,
             isAuthenticated: true,
-            isLoading: false,
           });
 
           return user;
-          
-        } catch (error) {
+        } finally {
           set({ isLoading: false });
-          throw error;
         }
       },
 

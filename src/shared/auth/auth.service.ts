@@ -15,6 +15,7 @@ export async function loginApi(
     {
       method: "POST",
       data: credentials,
+      timeout: 15_000,
     },
   );
 
@@ -43,6 +44,7 @@ export async function verifyTwoFaApi(
       challenge_id: challengeId.trim(),
       codigo: codigo.trim(),
     },
+    timeout: 15_000,
   });
 
   return {

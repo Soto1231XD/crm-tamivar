@@ -42,11 +42,13 @@ export async function apiRequest<T>(
     data,
     headers,
     params,
+    timeout,
   }: {
     method?: HttpMethod;
     data?: unknown;
     headers?: Record<string, string>;
     params?: Record<string, unknown>;
+    timeout?: number;
   } = {},
 ): Promise<T> {
   try {
@@ -56,6 +58,7 @@ export async function apiRequest<T>(
       data,
       headers,
       params,
+      timeout,
     });
 
     return response.data;
@@ -121,6 +124,12 @@ export async function apiRequest<T>(
           finalMessage,
           "El servidor no pudo completar la solicitud. Intenta nuevamente en unos minutos.",
         ),
+      );
+    }
+
+    if (err.code === "ECONNABORTED") {
+      throw new Error(
+        "La solicitud tardó demasiado en responder. Verifica tu conexión e inténtalo nuevamente.",
       );
     }
 
