@@ -76,10 +76,10 @@ define(['./workbox-5a5d9309'], (function (workbox) { 'use strict';
    * The precacheAndRoute() method efficiently caches and responds to
    * requests for URLs in the manifest.
    * See https://goo.gl/S9QRab
-   */z
+   */
   workbox.precacheAndRoute([{
     "url": "/index.html",
-    "revision": "0.i72kvkkkre"
+    "revision": "0.dr5ot3v34bo"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {

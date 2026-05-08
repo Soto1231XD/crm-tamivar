@@ -12,6 +12,18 @@ import { resetPwaApplication } from "@/shared/pwa/pwaRecovery";
 
 const loginBackgrounds = [fondoLogin, fondoLogin1, fondoLogin2, fondoLogin3];
 
+function detectStandaloneMode() {
+  if (typeof window === "undefined") return false;
+
+  const mediaStandalone = window.matchMedia("(display-mode: standalone)").matches;
+  const iosStandalone =
+    typeof navigator !== "undefined" &&
+    "standalone" in navigator &&
+    Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+
+  return mediaStandalone || iosStandalone;
+}
+
 export function LoginPage() {
   const { login, confirmTwoFa, isLoading } = useAuthStore();
   const navigate = useNavigate();
@@ -24,6 +36,8 @@ export function LoginPage() {
   const [error, setError] = useState("");
   const [backgroundIndex, setBackgroundIndex] = useState(0);
   const [isResettingApp, setIsResettingApp] = useState(false);
+  const [isPwaMode, setIsPwaMode] = useState(false);
+  const [showPwaNotice, setShowPwaNotice] = useState(false);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -32,6 +46,31 @@ export function LoginPage() {
 
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+
+    const syncPwaMode = () => {
+      const standaloneMode = detectStandaloneMode();
+      setIsPwaMode(standaloneMode);
+      setShowPwaNotice(standaloneMode);
+    };
+
+    syncPwaMode();
+    mediaQuery.addEventListener("change", syncPwaMode);
+
+    return () => mediaQuery.removeEventListener("change", syncPwaMode);
+  }, []);
+
+  useEffect(() => {
+    if (!isPwaMode || !showPwaNotice) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setShowPwaNotice(false);
+    }, 6500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isPwaMode, showPwaNotice]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -46,7 +85,7 @@ export function LoginPage() {
 
       if (result.status === "requires_2fa") {
         setChallengeId(result.challengeId ?? null);
-        setInfo(result.message || "Codigo de verificacion enviado.");
+        setInfo(result.message || "Código de verificación enviado.");
         return;
       }
 
@@ -108,7 +147,31 @@ export function LoginPage() {
   };
 
   return (
-    <div className="grid min-h-screen w-full bg-white lg:h-screen lg:grid-cols-2 lg:overflow-hidden">
+    <div
+      className={[
+        "grid min-h-screen w-full bg-white lg:h-screen lg:grid-cols-2",
+        isPwaMode ? "overflow-y-auto" : "lg:overflow-hidden",
+      ].join(" ")}
+    >
+      {isPwaMode && showPwaNotice ? (
+        <div className="fixed inset-x-4 top-4 z-50 mx-auto w-full max-w-sm rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-3 text-left shadow-lg backdrop-blur">
+          <p className="text-sm font-semibold text-amber-900">
+            Esta app requiere internet
+          </p>
+          <p className="mt-1 pr-10 text-sm leading-6 text-amber-800">
+            La PWA necesita conexión para iniciar sesión, guardar cambios y sincronizar la información del CRM.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowPwaNotice(false)}
+            className="absolute right-3 top-3 text-xs font-semibold uppercase tracking-wide text-amber-700 transition hover:text-amber-900"
+            aria-label="Cerrar aviso"
+          >
+            Cerrar
+          </button>
+        </div>
+      ) : null}
+
       <aside className="relative min-h-[30vh] sm:min-h-[34vh] lg:h-screen">
         {loginBackgrounds.map((imageSrc, index) => (
           <img
@@ -135,7 +198,12 @@ export function LoginPage() {
         </div>
       </aside>
 
-      <section className="relative flex min-h-[70vh] items-start justify-center overflow-hidden bg-white px-5 py-5 sm:px-7 sm:py-6 lg:h-screen lg:items-center lg:py-0">
+      <section
+        className={[
+          "relative flex min-h-[70vh] items-start justify-center bg-white px-5 py-5 sm:px-7 sm:py-6 lg:h-screen lg:items-center lg:py-0",
+          isPwaMode ? "overflow-visible pb-8" : "overflow-hidden",
+        ].join(" ")}
+      >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(25,75,141,0.10),transparent_55%)]" />
         <div className="absolute inset-x-0 top-3 z-10 flex justify-center px-5 sm:top-4 sm:px-7 lg:top-8">
           <div className="flex w-full max-w-sm justify-center">
@@ -154,15 +222,6 @@ export function LoginPage() {
           <p className="mt-1.5 text-sm text-slate-600">
             Ingresa para acceder al CRM TAMIVAR.
           </p>
-
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left">
-            <p className="text-sm font-semibold text-amber-900">
-              Esta app requiere internet
-            </p>
-            <p className="mt-1 text-sm leading-6 text-amber-800">
-              La aplicación necesita conexión para iniciar sesión, guardar cambios y sincronizar la información del CRM.
-            </p>
-          </div>
 
           {!challengeId ? (
             <form className="mt-6 space-y-4" onSubmit={handleLogin}>
@@ -229,24 +288,26 @@ export function LoginPage() {
             </form>
           )}
 
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
-            <p className="text-sm font-semibold text-slate-800">
-              Si la aplicación se queda trabada
-            </p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              Si el acceso no responde o el botón se queda cargando, puedes restablecer la cache local de la app sin borrar tus datos del servidor.
-            </p>
-            <button
-              type="button"
-              onClick={handleResetApplication}
-              disabled={isLoading || isResettingApp}
-              className="mt-3 inline-flex items-center rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isResettingApp
-                ? "Restableciendo app..."
-                : "Restablecer cache de la app"}
-            </button>
-          </div>
+          {isPwaMode ? (
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+              <p className="text-sm font-semibold text-slate-800">
+                Si la aplicación se queda trabada
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Si el acceso no responde o el botón se queda cargando, puedes restablecer la cache local de la app sin borrar tus datos del servidor.
+              </p>
+              <button
+                type="button"
+                onClick={handleResetApplication}
+                disabled={isLoading || isResettingApp}
+                className="mt-3 inline-flex items-center rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isResettingApp
+                  ? "Restableciendo app..."
+                  : "Restablecer cache de la app"}
+              </button>
+            </div>
+          ) : null}
 
           {info ? (
             <p className="mt-4 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
