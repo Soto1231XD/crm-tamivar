@@ -10,12 +10,14 @@ import "swiper/css/pagination";
 import type { DevelopmentImage, DevelopmentRecord } from "@/interfaces/development.interface";
 import { getDevelopment } from "../services/developments.api";
 import { getFriendlyDevelopmentError } from "../utils/developmentErrors";
+import { DevelopmentVisitsList } from "./DevelopmentVisitsList";
 import {
   calculateFinalPrice,
   formatCurrency,
   formatDate,
   formatFullDireccion,
   getFullImageUrl,
+  getMeaningfulCommercialSchemes,
   getPropertyStatusStyles,
 } from "../utils/formatters";
 import { getFeatureIcon } from "../utils/featureIcons";
@@ -74,6 +76,7 @@ export function DevelopmentDetailView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDownloadingImages, setIsDownloadingImages] = useState(false);
+  const [activeTab, setActiveTab] = useState<"info" | "visitas">("info");
 
   useEffect(() => {
     let isMounted = true;
@@ -186,6 +189,7 @@ export function DevelopmentDetailView() {
   if (!development) return null;
 
   const statusStyle = getPropertyStatusStyles(development.estatus);
+  const developmentSchemes = getMeaningfulCommercialSchemes(development);
 
   return (
     <div className="mx-auto min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
@@ -246,6 +250,39 @@ export function DevelopmentDetailView() {
         </DownloadDevelopmentPdfButton>
       </div>
 
+      <div className="mb-6 flex space-x-8 border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab("info")}
+          className={`relative pb-4 text-sm font-bold transition-colors ${
+            activeTab === "info"
+              ? "text-indigo-600"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Informacion del desarrollo
+          {activeTab === "info" ? (
+            <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-indigo-600" />
+          ) : null}
+        </button>
+        <button
+          onClick={() => setActiveTab("visitas")}
+          className={`relative pb-4 text-sm font-bold transition-colors ${
+            activeTab === "visitas"
+              ? "text-indigo-600"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Historial de visitas
+          {activeTab === "visitas" ? (
+            <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-indigo-600" />
+          ) : null}
+        </button>
+      </div>
+
+      {activeTab === "visitas" ? (
+        <DevelopmentVisitsList developmentId={development.id} />
+      ) : (
+      <>
       <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 bg-slate-50 px-6 py-6 sm:px-8">
           <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -265,8 +302,9 @@ export function DevelopmentDetailView() {
             </span>
           </div>
 
+          {developmentSchemes.length > 0 ? (
           <div className="mt-4 flex flex-col gap-3">
-            {development.esquema_comercial.map((esquema, idx) => {
+            {developmentSchemes.map((esquema, idx) => {
               const { finalPrice, originalPrice, hasDiscount, discountPercentage } =
                 calculateFinalPrice(esquema.precio, esquema.descuento_cantidad);
 
@@ -297,6 +335,7 @@ export function DevelopmentDetailView() {
               );
             })}
           </div>
+          ) : null}
         </div>
 
         <div className="space-y-8 p-6 sm:p-8">
@@ -773,6 +812,8 @@ export function DevelopmentDetailView() {
           </section>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

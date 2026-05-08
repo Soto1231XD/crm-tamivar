@@ -4,6 +4,7 @@ import {
   createLead,
   deleteLead,
   getLeads,
+  getLeadsByDevelopment,
   getLeadsByProperty,
   updateLead,
 } from '../services/leads.api';
@@ -12,23 +13,30 @@ import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
 export interface LeadsState {
   leads: LeadRecord[];
   propertyLeads: LeadRecord[];
+  developmentLeads: LeadRecord[];
   isLoading: boolean;
   error: string | null;
   fetchLeads: () => Promise<void>;
   fetchLeadsByProperty: (propertyId: number) => Promise<void>;
+  fetchLeadsByDevelopment: (developmentId: number) => Promise<void>;
   addLead: (payload: CreateLeadPayload) => Promise<LeadRecord>;
   editLead: (id: number, payload: UpdateLeadPayload) => Promise<LeadRecord>;
   removeLead: (id: number) => Promise<void>;
   clearPropertyLeads: () => void;
+  clearDevelopmentLeads: () => void;
 }
 
 export const useLeadsStore = create<LeadsState>((set) => ({
   leads: [],
   propertyLeads: [],
+  developmentLeads: [],
   isLoading: false,
   error: null,
   clearPropertyLeads: () => {
     set({ propertyLeads: [], error: null });
+  },
+  clearDevelopmentLeads: () => {
+    set({ developmentLeads: [], error: null });
   },
 
   fetchLeads: async () => {
@@ -57,6 +65,22 @@ export const useLeadsStore = create<LeadsState>((set) => ({
         error: getReadableErrorMessage(
           error,
           'No pudimos cargar los registros de la propiedad en este momento.',
+        ),
+        isLoading: false,
+      });
+    }
+  },
+
+  fetchLeadsByDevelopment: async (developmentId: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await getLeadsByDevelopment(developmentId);
+      set({ developmentLeads: data, isLoading: false });
+    } catch (error) {
+      set({
+        error: getReadableErrorMessage(
+          error,
+          'No pudimos cargar los registros del desarrollo en este momento.',
         ),
         isLoading: false,
       });

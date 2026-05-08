@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CreateLeadPayload, LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
+import type { DevelopmentRecord } from '@/interfaces/development.interface';
 import type { PropertyRecord } from '@/interfaces/property.interface';
 import type { UserRecord } from '@/interfaces/user.interface';
 import toast from 'react-hot-toast';
 import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
+import { getDevelopments } from '../../developments/services/developments.api';
 import { getProperties } from '../../properties/services/properties.api';
 import { getUsers } from '../../users/services/users.api';
 import { formatDireccion } from '../../properties/utils/formatters';
@@ -19,6 +21,7 @@ type UseLeadsPageStateParams = {
 export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStateParams) {
   const { leads, isLoading, fetchLeads, addLead, editLead, removeLead } = useLeadsStore();
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
+  const [developments, setDevelopments] = useState<DevelopmentRecord[]>([]);
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [search, setSearch] = useState('');
   const [responsibleSearch, setResponsibleSearch] = useState('');
@@ -39,12 +42,17 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([getProperties(), accessToken ? getUsers(accessToken) : Promise.resolve([])]).then((results) => {
+    Promise.allSettled([
+      getProperties(),
+      getDevelopments(),
+      accessToken ? getUsers(accessToken) : Promise.resolve([]),
+    ]).then((results) => {
       if (!active) return;
 
-      const [propertiesResult, usersResult] = results;
+      const [propertiesResult, developmentsResult, usersResult] = results;
 
       setProperties(propertiesResult.status === 'fulfilled' ? propertiesResult.value : []);
+      setDevelopments(developmentsResult.status === 'fulfilled' ? developmentsResult.value : []);
       setUsers(usersResult.status === 'fulfilled' ? usersResult.value : []);
     });
 
@@ -78,9 +86,45 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     [properties],
   );
 
+  const developmentTitleById = useMemo(
+    () =>
+      new Map(
+        developments.map((development) => [development.id, development.titulo?.trim() || 'Sin titulo'] as const),
+      ),
+    [developments],
+  );
+
+  const targetTitleByLeadId = useMemo(() => {
+    const titleMap = new Map<number, string>();
+
+    leads.forEach((lead) => {
+      if (lead.propiedad_id != null) {
+        titleMap.set(lead.id, propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo');
+        return;
+      }
+
+      if (lead.desarrollo_id != null) {
+        titleMap.set(lead.id, developmentTitleById.get(lead.desarrollo_id) ?? 'Sin titulo');
+        return;
+      }
+
+      titleMap.set(lead.id, 'Sin referencia');
+    });
+
+    return titleMap;
+  }, [developmentTitleById, leads, propertyTitleById]);
+
   const propertyFilterOptions = useMemo(
-    () => [ALL_PROPERTIES, ...Array.from(new Set(properties.map((property) => property.titulo?.trim() || 'Sin titulo')))],
-    [properties],
+    () => [
+      ALL_PROPERTIES,
+      ...Array.from(
+        new Set([
+          ...properties.map((property) => property.titulo?.trim() || 'Sin titulo'),
+          ...developments.map((development) => development.titulo?.trim() || 'Sin titulo'),
+        ]),
+      ),
+    ],
+    [developments, properties],
   );
 
   const filteredLeads = useMemo(() => {
@@ -91,8 +135,7 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
       const fullName = `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim().toLowerCase();
       const phone = formatPhone(lead.lada, lead.telefono).toLowerCase();
       const responsibleName = `${lead.creador?.nombres ?? ''} ${lead.creador?.apellido_paterno ?? ''}`.trim().toLowerCase();
-      const propertyTitle =
-        lead.propiedad_id != null ? propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo' : 'Sin propiedad';
+      const targetTitle = targetTitleByLeadId.get(lead.id) ?? 'Sin referencia';
       const appointmentDate = getComparableDate(lead.fecha_cita);
 
       const matchesSearch =
@@ -100,7 +143,7 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
       const matchesResponsible =
         responsibleQuery.length === 0 || responsibleName.includes(responsibleQuery);
       const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;
-      const matchesProperty = propertyFilter === ALL_PROPERTIES || propertyTitle === propertyFilter;
+      const matchesProperty = propertyFilter === ALL_PROPERTIES || targetTitle === propertyFilter;
       const matchesAppointmentDateFrom =
         appointmentDateFromFilter.length === 0 ||
         (appointmentDate.length > 0 && appointmentDate >= appointmentDateFromFilter);
@@ -122,7 +165,7 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     appointmentDateToFilter,
     leads,
     propertyFilter,
-    propertyTitleById,
+    targetTitleByLeadId,
     responsibleSearch,
     search,
     statusFilter,
@@ -142,6 +185,15 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
         label: property.titulo?.trim() || 'Sin titulo',
       })),
     [properties],
+  );
+
+  const developmentChoices = useMemo(
+    () =>
+      developments.map((development) => ({
+        id: development.id,
+        label: development.titulo?.trim() || 'Sin titulo',
+      })),
+    [developments],
   );
 
   const userNameById = useMemo(
@@ -192,7 +244,7 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     } catch (error) {
       return getReadableErrorMessage(
         error,
-        'No fue posible crear el registro. Revisa cliente, propiedad, estado y fecha de cita.',
+        'No fue posible crear el registro. Revisa cliente, propiedad o desarrollo, estado y fecha de cita.',
       );
     }
   }
@@ -226,9 +278,7 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
   function handleDownloadFilteredLeads() {
     downloadLeadsAsExcel(
       filteredLeads,
-      filteredLeads.map((lead) =>
-        lead.propiedad_id != null ? propertyTitleById.get(lead.propiedad_id) ?? 'Sin titulo' : 'Sin propiedad',
-      ),
+      filteredLeads.map((lead) => targetTitleByLeadId.get(lead.id) ?? 'Sin referencia'),
     );
   }
 
@@ -277,12 +327,14 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     currentPage,
     statusOptions,
     propertyTitleById,
+    targetTitleByLeadId,
     propertyAddressById,
     propertyFilterOptions,
     filteredLeads,
     paginatedLeads,
     totalPages,
     propertyChoices,
+    developmentChoices,
     userNameById,
     userChoices,
     setSearch,

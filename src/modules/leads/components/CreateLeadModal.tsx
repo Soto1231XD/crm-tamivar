@@ -21,11 +21,17 @@ type PropertyOption = {
   label: string;
 };
 
+type DevelopmentOption = {
+  id: number;
+  label: string;
+};
+
 type CreateLeadModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (payload: Omit<CreateLeadPayload, 'creado_por_id'>) => Promise<string | null>;
   propertyOptions: PropertyOption[];
+  developmentOptions: DevelopmentOption[];
 };
 
 export function CreateLeadModal({
@@ -33,6 +39,7 @@ export function CreateLeadModal({
   onClose,
   onCreate,
   propertyOptions,
+  developmentOptions,
 }: CreateLeadModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -56,6 +63,7 @@ export function CreateLeadModal({
   }
 
   const asesorExterno = watch('asesor_externo');
+  const tipoObjetivo = watch('tipo_objetivo');
 
   async function onSubmit(values: VisitLeadFormValues) {
     setSubmitError('');
@@ -64,7 +72,10 @@ export function CreateLeadModal({
       nombres: values.nombres.trim(),
       apellidos: values.apellidos.trim(),
       telefono: values.telefono,
-      propiedad_id: values.propiedad_id,
+      propiedad_id:
+        values.tipo_objetivo === 'propiedad' ? Number(values.propiedad_id) : undefined,
+      desarrollo_id:
+        values.tipo_objetivo === 'desarrollo' ? Number(values.desarrollo_id) : undefined,
       lada: values.lada?.trim() || undefined,
       comentarios: values.comentarios?.trim() || undefined,
       estado: values.estado?.trim() || undefined,
@@ -176,16 +187,41 @@ export function CreateLeadModal({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <VisitFieldLabel required>Propiedad</VisitFieldLabel>
-              <select {...register('propiedad_id')} className={visitLeadFieldClassName}>
-                <option value="">Selecciona una propiedad</option>
-                {propertyOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
+              <VisitFieldLabel required>Propiedad o desarrollo</VisitFieldLabel>
+              <select {...register('tipo_objetivo')} className={visitLeadFieldClassName}>
+                <option value="propiedad">Propiedad</option>
+                <option value="desarrollo">Desarrollo</option>
               </select>
-              {errors.propiedad_id ? <span className="text-xs text-red-600">{errors.propiedad_id.message}</span> : null}
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <VisitFieldLabel required>
+                {tipoObjetivo === 'desarrollo' ? 'Seleccionar desarrollo' : 'Seleccionar propiedad'}
+              </VisitFieldLabel>
+              {tipoObjetivo === 'desarrollo' ? (
+                <select {...register('desarrollo_id')} className={visitLeadFieldClassName}>
+                  <option value="">Selecciona un desarrollo</option>
+                  {developmentOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select {...register('propiedad_id')} className={visitLeadFieldClassName}>
+                  <option value="">Selecciona una propiedad</option>
+                  {propertyOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {tipoObjetivo === 'desarrollo' ? (
+                errors.desarrollo_id ? <span className="text-xs text-red-600">{errors.desarrollo_id.message}</span> : null
+              ) : (
+                errors.propiedad_id ? <span className="text-xs text-red-600">{errors.propiedad_id.message}</span> : null
+              )}
             </label>
 
             <label className="flex flex-col gap-1.5">

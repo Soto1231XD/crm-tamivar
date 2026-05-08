@@ -40,7 +40,7 @@ export function LeadFilters({
   onDownload,
 }: LeadFiltersProps) {
   return (
-    <FilterCard description="Busca por cliente o responsable y combina estado, propiedad y fecha de cita sin saturar la vista.">
+    <FilterCard description="Busca por cliente o responsable y combina estado, propiedad o desarrollo y fecha de cita sin saturar la vista.">
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.95fr)]">
         <FilterSearchInput
           type="text"

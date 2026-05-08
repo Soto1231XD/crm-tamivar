@@ -11,7 +11,9 @@ export const INITIAL_VISIT_FORM = {
   nombres: '',
   apellidos: '',
   telefono: '',
+  tipo_objetivo: 'propiedad' as const,
   propiedad_id: '',
+  desarrollo_id: '',
   lada: '+52',
   comentarios: '',
   estado: 'Agendado',
@@ -35,8 +37,10 @@ export const visitLeadSchema = z
     telefono: z
       .string()
       .trim()
-      .regex(/^\d{4}$/, 'El teléfono debe tener exactamente 4 dígitos numéricos.'),
-    propiedad_id: z.coerce.number().int().positive('Propiedad es obligatoria.'),
+      .regex(/^\d{4}$/, 'El telefono debe tener exactamente 4 digitos numericos.'),
+    tipo_objetivo: z.enum(['propiedad', 'desarrollo']),
+    propiedad_id: z.union([z.coerce.number().int().positive(), z.literal('')]).optional(),
+    desarrollo_id: z.union([z.coerce.number().int().positive(), z.literal('')]).optional(),
     lada: z
       .string()
       .trim()
@@ -53,6 +57,22 @@ export const visitLeadSchema = z
     asesor_externo_nombre: z.string().optional(),
   })
   .superRefine((values, ctx) => {
+    if (values.tipo_objetivo === 'propiedad' && !values.propiedad_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['propiedad_id'],
+        message: 'Propiedad es obligatoria.',
+      });
+    }
+
+    if (values.tipo_objetivo === 'desarrollo' && !values.desarrollo_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['desarrollo_id'],
+        message: 'Desarrollo es obligatorio.',
+      });
+    }
+
     if (values.asesor_externo === 'si' && !values.asesor_externo_nombre?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -65,7 +85,13 @@ export const visitLeadSchema = z
 export type VisitLeadFormInput = z.input<typeof visitLeadSchema>;
 export type VisitLeadFormValues = z.output<typeof visitLeadSchema>;
 
-export function VisitFieldLabel({ children, required = false }: { children: string; required?: boolean }) {
+export function VisitFieldLabel({
+  children,
+  required = false,
+}: {
+  children: string;
+  required?: boolean;
+}) {
   return (
     <span className="text-sm font-medium text-slate-700">
       {children}
@@ -116,7 +142,9 @@ export function toVisitDefaultValues(lead: LeadRecord | null): VisitLeadFormInpu
     nombres: lead.nombres ?? '',
     apellidos: lead.apellidos ?? '',
     telefono: lead.telefono != null ? String(lead.telefono) : '',
+    tipo_objetivo: lead.desarrollo_id != null ? 'desarrollo' : 'propiedad',
     propiedad_id: lead.propiedad_id != null ? String(lead.propiedad_id) : '',
+    desarrollo_id: lead.desarrollo_id != null ? String(lead.desarrollo_id) : '',
     lada: lead.lada ?? '+52',
     comentarios: lead.comentarios ?? '',
     estado: lead.estado ?? 'Agendado',
@@ -138,7 +166,6 @@ export function buildVisitUpdatePayload(
     nombres: (input) => input.nombres.trim(),
     apellidos: (input) => input.apellidos.trim(),
     telefono: (input) => input.telefono,
-    propiedad_id: (input) => input.propiedad_id,
     lada: (input) => input.lada?.trim() || undefined,
     comentarios: (input) => input.comentarios?.trim() || undefined,
     estado: (input) => input.estado?.trim() || undefined,
@@ -150,6 +177,13 @@ export function buildVisitUpdatePayload(
   >) {
     if (!dirtyFields[field]) continue;
     payload[field as keyof UpdateLeadPayload] = mapper(values) as never;
+  }
+
+  if (dirtyFields.tipo_objetivo || dirtyFields.propiedad_id || dirtyFields.desarrollo_id) {
+    payload.propiedad_id =
+      values.tipo_objetivo === 'propiedad' ? Number(values.propiedad_id) : null;
+    payload.desarrollo_id =
+      values.tipo_objetivo === 'desarrollo' ? Number(values.desarrollo_id) : null;
   }
 
   if (dirtyFields.asesor_externo || dirtyFields.asesor_externo_nombre) {

@@ -1,6 +1,6 @@
 export const ALL_STATES = 'Todos los estados';
 export const ALL_PRIORITIES = 'Todas las prioridades';
-export const ALL_PROPERTIES = 'Todas las propiedades';
+export const ALL_PROPERTIES = 'Todas las referencias';
 
 export const VISIT_STATUS_OPTIONS = ['Agendado', 'Cancelado', 'Cita cerrada', 'Cerrado'] as const;
 

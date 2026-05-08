@@ -104,7 +104,7 @@ export function LoginPage() {
 
       if (result.status === "requires_2fa") {
         setChallengeId(result.challengeId ?? null);
-        setInfo(result.message || "Codigo de verificacion enviado.");
+        setInfo(result.message || "Código de verificación enviado.");
         return;
       }
 
@@ -116,7 +116,7 @@ export function LoginPage() {
       setError(
         currentError instanceof Error
           ? currentError.message
-          : "No pudimos iniciar sesion. Verifica tus credenciales e intentalo nuevamente.",
+          : "No pudimos iniciar sesión. Verifica tus credenciales e inténtalo nuevamente.",
       );
     }
   };
@@ -140,7 +140,7 @@ export function LoginPage() {
       setError(
         currentError instanceof Error
           ? currentError.message
-          : "Codigo invalido o expirado.",
+          : "Código invalido o expirado.",
       );
     }
   };
@@ -159,7 +159,7 @@ export function LoginPage() {
     } catch {
       setInfo("");
       setError(
-        "No pudimos restablecer la app automaticamente. Cierra y vuelve a abrir la aplicacion o intenta desde el navegador.",
+        "No pudimos restablecer la app automáticamente. Cierra y vuelve a abrir la aplicación o intenta desde el navegador.",
       );
       setIsResettingApp(false);
     }
@@ -178,7 +178,7 @@ export function LoginPage() {
             Esta app requiere internet
           </p>
           <p className="mt-1 pr-8 text-sm leading-6 text-amber-800">
-            La PWA necesita conexion para iniciar sesion, guardar cambios y sincronizar la informacion del CRM.
+            La PWA necesita conexión para iniciar sesión, guardar cambios y sincronizar la información del CRM.
           </p>
           <button
             type="button"
@@ -212,7 +212,7 @@ export function LoginPage() {
             Plataforma central para operar equipos y ventas.
           </h2>
           <p className="mx-auto mt-2 max-w-md text-xs text-slate-200/90 sm:text-sm lg:mx-0">
-            Accede con tus credenciales y continua con tu flujo de trabajo segun tu rol.
+            Accede con tus credenciales y continua con tu flujo de trabajo según tu rol.
           </p>
         </div>
       </aside>
@@ -236,7 +236,7 @@ export function LoginPage() {
 
         <div className="relative mt-16 w-full max-w-sm text-center sm:mt-18 lg:mt-0 lg:pt-12 lg:text-left">
           <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">
-            Iniciar sesion
+            Iniciar sesión
           </h1>
           <p className="mt-1.5 text-sm text-slate-600">
             Ingresa para acceder al CRM TAMIVAR.
@@ -246,7 +246,7 @@ export function LoginPage() {
             <form className="mt-6 space-y-4" onSubmit={handleLogin}>
               <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Correo electronico
+                  Correo electrónico
                 </span>
                 <input
                   type="email"
@@ -259,7 +259,7 @@ export function LoginPage() {
 
               <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Contrasena
+                  Contraseña
                 </span>
                 <input
                   type="password"
@@ -282,7 +282,7 @@ export function LoginPage() {
             <form className="mt-6 space-y-4" onSubmit={handleVerifyTwoFa}>
               <label className="block text-left">
                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Codigo 2FA
+                  Código 2FA
                 </span>
                 <input
                   type="text"
@@ -310,10 +310,10 @@ export function LoginPage() {
           {isPwaMode ? (
             <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
               <p className="text-sm font-semibold text-slate-800">
-                Si la aplicacion se queda trabada
+                Si la aplicación se queda trabada
               </p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Si el acceso no responde o el boton se queda cargando, puedes restablecer la cache local de la app sin borrar tus datos del servidor.
+                Si el acceso no responde o el botón se queda cargando, puedes restablecer la cache local de la app sin borrar tus datos del servidor.
               </p>
               <button
                 type="button"

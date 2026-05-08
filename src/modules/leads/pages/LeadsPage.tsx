@@ -45,12 +45,13 @@ export function LeadsPage() {
     deletingLead,
     currentPage,
     statusOptions,
-    propertyTitleById,
+    targetTitleByLeadId,
     propertyFilterOptions,
     filteredLeads,
     paginatedLeads,
     totalPages,
     propertyChoices,
+    developmentChoices,
     setSearch,
     setResponsibleSearch,
     setStatusFilter,
@@ -129,7 +130,7 @@ export function LeadsPage() {
           leads={paginatedLeads}
           isLoading={isLoading}
           updatingLeadId={updatingLeadId}
-          propertyTitleById={propertyTitleById}
+          targetTitleByLeadId={targetTitleByLeadId}
           currentUserId={user?.id ?? null}
           hideResponsibleColumn={isSalesAdvisor}
           showFolioColumn={isSuperAdmin}
@@ -158,6 +159,7 @@ export function LeadsPage() {
           onClose={() => setIsCreateModalOpen(false)}
           onCreate={handleCreateLead}
           propertyOptions={propertyChoices}
+          developmentOptions={developmentChoices}
         />
       ) : null}
 
@@ -168,6 +170,7 @@ export function LeadsPage() {
           onClose={() => setEditingLead(null)}
           onEdit={handleEditLead}
           propertyOptions={propertyChoices}
+          developmentOptions={developmentChoices}
         />
       ) : null}
 

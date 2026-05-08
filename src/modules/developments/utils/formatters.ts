@@ -207,17 +207,26 @@ export function getCommercialSchemes(
   return development.esquema_comercial;
 }
 
+export function getMeaningfulCommercialSchemes(
+  development?: Pick<DevelopmentRecord, "esquema_comercial"> | null,
+): CommercialScheme[] {
+  return getCommercialSchemes(development).filter((scheme) => {
+    const price = Number(scheme.precio);
+    return Number.isFinite(price) && price > 0;
+  });
+}
+
 export function getPrimaryCommercialScheme(
   development?: Pick<DevelopmentRecord, "esquema_comercial"> | null,
 ): CommercialScheme | null {
-  const schemes = getCommercialSchemes(development);
+  const schemes = getMeaningfulCommercialSchemes(development);
   return schemes[0] ?? null;
 }
 
 export function getPropertyOperationLabel(
   development?: Pick<DevelopmentRecord, "esquema_comercial"> | null,
 ): string {
-  const schemes = getCommercialSchemes(development);
+  const schemes = getMeaningfulCommercialSchemes(development);
   if (schemes.length === 0) return "Sin operación";
   return schemes.map((scheme) => scheme.tipo_operacion).join(" / ");
 }

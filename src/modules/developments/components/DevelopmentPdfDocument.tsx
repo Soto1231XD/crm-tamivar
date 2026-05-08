@@ -12,6 +12,7 @@ import {
   calculateFinalPrice,
   formatCurrency,
   formatPublicDireccion,
+  getMeaningfulCommercialSchemes,
   getPropertyStatusStyles,
   stripEmojis,
 } from "../utils/formatters";
@@ -193,6 +194,7 @@ export const DevelopmentPdfDocument = ({
   development: DevelopmentRecord;
 }) => {
   const statusStyle = getPropertyStatusStyles(development.estatus);
+  const developmentSchemes = getMeaningfulCommercialSchemes(development);
 
   return (
     <Document>
@@ -204,10 +206,9 @@ export const DevelopmentPdfDocument = ({
         <View style={styles.header}>
           <View style={styles.titleGroup}>
             <Text style={styles.title}>{development.titulo}</Text>
-            {renderSchemeSummary(
-              development.esquema_comercial,
-              "#4f46e5",
-            )}
+            {developmentSchemes.length > 0
+              ? renderSchemeSummary(developmentSchemes, "#4f46e5")
+              : null}
           </View>
 
           <View

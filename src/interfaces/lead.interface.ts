@@ -8,11 +8,19 @@ export interface LeadCreatorRecord {
 }
 
 export interface LeadPropertyRecord {
+  id?: number;
+  titulo?: string | null;
   direccion?: {
     calle?: string;
     municipio?: string;
     fraccionamiento?: string;
   };
+}
+
+export interface LeadDevelopmentRecord {
+  id?: number;
+  titulo?: string | null;
+  tipo_inmueble?: string | null;
 }
 
 export interface LeadRecord {
@@ -38,6 +46,7 @@ export interface LeadRecord {
   dias_vigencia_restantes?: number | null;
   creado_por_id?: number | null;
   propiedad_id?: number | null;
+  desarrollo_id?: number | null;
   vendedor_asignado_id?: number | null;
   operacion?: string | null;
   canal?: string | null;
@@ -50,6 +59,7 @@ export interface LeadRecord {
   creador?: LeadCreatorRecord | null;
   vendedor_asignado?: LeadCreatorRecord | null;
   propiedad?: LeadPropertyRecord | null;
+  desarrollo?: LeadDevelopmentRecord | null;
 }
 
 export interface CreateLeadPayload {
@@ -57,6 +67,7 @@ export interface CreateLeadPayload {
   apellidos: string;
   telefono: string;
   propiedad_id?: number;
+  desarrollo_id?: number;
   creado_por_id: number;
   lada?: string;
   correo_electronico?: string;
@@ -81,7 +92,8 @@ export interface UpdateLeadPayload {
   nombres?: string;
   apellidos?: string;
   telefono?: string;
-  propiedad_id?: number;
+  propiedad_id?: number | null;
+  desarrollo_id?: number | null;
   lada?: string;
   correo_electronico?: string;
   comentarios?: string;

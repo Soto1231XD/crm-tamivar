@@ -11,6 +11,11 @@ export async function getLeadsByProperty(propertyId: number): Promise<LeadRecord
   return Array.isArray(data) ? data : [];
 }
 
+export async function getLeadsByDevelopment(developmentId: number): Promise<LeadRecord[]> {
+  const data = await apiRequest<LeadRecord[]>(`/registros/development/${developmentId}`);
+  return Array.isArray(data) ? data : [];
+}
+
 export async function createLead(payload: CreateLeadPayload, accessToken?: string | null): Promise<LeadRecord> {
   void accessToken;
   return apiRequest<LeadRecord>('/registros', {

@@ -17,7 +17,7 @@ type LeadsTableProps = {
   leads: LeadRecord[];
   isLoading: boolean;
   updatingLeadId: number | null;
-  propertyTitleById: Map<number, string>;
+  targetTitleByLeadId: Map<number, string>;
   currentUserId?: number | null;
   hideResponsibleColumn?: boolean;
   showFolioColumn?: boolean;
@@ -34,7 +34,7 @@ export function LeadsTable({
   leads,
   isLoading,
   updatingLeadId,
-  propertyTitleById,
+  targetTitleByLeadId,
   currentUserId,
   hideResponsibleColumn = false,
   showFolioColumn = false,
@@ -79,14 +79,16 @@ export function LeadsTable({
       ),
     },
     {
-      header: "Propiedad",
+      header: "Propiedad / desarrollo",
       headerClassName: "min-w-[170px] md:min-w-[220px]",
       cellClassName: "min-w-[170px] md:min-w-[220px] whitespace-normal",
       render: (lead) => (
         <div className="max-w-[170px] break-words text-sm leading-6 text-slate-700 md:max-w-[220px]">
           {lead.propiedad_id != null
-            ? (propertyTitleById.get(lead.propiedad_id) ?? "Sin titulo")
-            : "Sin propiedad"}
+            ? (targetTitleByLeadId.get(lead.id) ?? "Sin referencia")
+            : lead.desarrollo_id != null
+              ? (targetTitleByLeadId.get(lead.id) ?? "Sin referencia")
+              : "Sin referencia"}
         </div>
       ),
     },
@@ -192,11 +194,7 @@ export function LeadsTable({
       customActions={(lead) => (
         <DownloadLeadPdfButton
           lead={lead}
-          propertyTitle={
-            lead.propiedad_id != null
-              ? (propertyTitleById.get(lead.propiedad_id) ?? "Sin titulo")
-              : "Sin propiedad"
-          }
+          propertyTitle={targetTitleByLeadId.get(lead.id) ?? "Sin referencia"}
           className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-50"
         >
           {(loading) =>

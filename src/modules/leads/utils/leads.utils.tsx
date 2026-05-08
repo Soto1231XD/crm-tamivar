@@ -85,11 +85,11 @@ export function formatAsesorExterno(
   return nombre || 'Sin nombre';
 }
 
-export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string[]) {
+export function downloadLeadsAsExcel(leads: LeadRecord[], targetTitles: string[]) {
   const headers = [
     'Cliente',
     'Telefono',
-    'Propiedad',
+    'Propiedad / desarrollo',
     'Estado',
     'Responsable',
     'Fecha de creacion',
@@ -101,7 +101,7 @@ export function downloadLeadsAsExcel(leads: LeadRecord[], propertyTitles: string
   const rows = leads.map((lead, index) => [
       `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre',
       formatPhone(lead.lada, lead.telefono),
-      propertyTitles[index] ?? 'Sin titulo',
+      targetTitles[index] ?? 'Sin referencia',
       lead.estado?.trim() || 'Sin estado',
       formatCreatorName(lead.creador),
       formatDate(lead.creado_en),
