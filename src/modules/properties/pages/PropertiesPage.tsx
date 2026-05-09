@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 import { useNavigate } from "react-router-dom";
@@ -22,24 +22,34 @@ import {
   FilterPriceInput,
 } from "@/components/ui/AppFilters";
 import { PropertiesTable } from "../components/PropertiesTable";
+import {
+  getPaginatedProperties,
+  getPropertyFilterOptions,
+} from "../services/properties.api";
 
 const COMMISSION_CALCULATOR_URL = "https://tamivar-tabulador.netlify.app/";
+const PAGE_SIZE = 10;
 
 export function PropertiesPage() {
   const navigate = useNavigate();
   const { can } = useHasPermission();
 
   const {
-    properties,
     filteredProperties,
     filters,
     setFilters,
+    totalPages,
+    totalItems,
     isLoading,
     fetchProperties,
     removeProperty,
   } = usePropertiesStore();
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(filters.search ?? "");
+  const [currentPage, setCurrentPage] = useState(filters.page ?? 1);
+  const [municipalityOptions, setMunicipalityOptions] = useState<string[]>([
+    "Todos los municipios",
+  ]);
   const [deletingProperty, setDeletingProperty] =
     useState<PropertyRecord | null>(null);
 
@@ -48,32 +58,48 @@ export function PropertiesPage() {
   const canDelete = can("propiedades", "eliminar");
 
   useEffect(() => {
-    fetchProperties();
-  }, [fetchProperties]);
+    let isMounted = true;
 
-  // La búsqueda por texto la hacemos localmente sobre los resultados ya filtrados por el Store
-  const finalDisplayProperties = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return filteredProperties;
+    getPropertyFilterOptions()
+      .then((response) => {
+        if (!isMounted) return;
+        setMunicipalityOptions([
+          "Todos los municipios",
+          ...response.municipios,
+        ]);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setMunicipalityOptions(["Todos los municipios"]);
+      });
 
-    return filteredProperties.filter(
-      (property) =>
-        property.titulo.toLowerCase().includes(query) ||
-        (property.direccion?.calle ?? "").toLowerCase().includes(query),
-    );
-  }, [filteredProperties, search]);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-  const municipalityOptions = useMemo(() => {
-    const uniqueMunicipalities = Array.from(
-      new Set(
-        properties
-          .map((property) => property.direccion?.municipio?.trim())
-          .filter((value): value is string => Boolean(value)),
-      ),
-    ).sort((left, right) => left.localeCompare(right, "es"));
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    search,
+    filters.estatus,
+    filters.tipo_inmueble,
+    filters.direccionMunicipio,
+    filters.exclusiva,
+    filters.tipo_operacion,
+    filters.minPrecio,
+    filters.maxPrecio,
+  ]);
 
-    return ["Todos los municipios", ...uniqueMunicipalities];
-  }, [properties]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void fetchProperties({ page: currentPage, limit: PAGE_SIZE });
+    }, 200);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [fetchProperties, currentPage, filters, search]);
 
   function openDeleteModal(property: PropertyRecord) {
     setDeletingProperty(property);
@@ -85,8 +111,20 @@ export function PropertiesPage() {
 
   async function handleDelete(propertyId: number): Promise<string | null> {
     try {
+      const nextPage =
+        filteredProperties.length === 1 && currentPage > 1
+          ? currentPage - 1
+          : currentPage;
+
       await removeProperty(propertyId);
       setDeletingProperty(null);
+
+      if (nextPage !== currentPage) {
+        setCurrentPage(nextPage);
+      } else {
+        await fetchProperties({ page: nextPage, limit: PAGE_SIZE });
+      }
+
       toast.success("La propiedad se elimino con éxito.");
       return null;
     } catch (error) {
@@ -102,8 +140,23 @@ export function PropertiesPage() {
     }
   }
 
-  function handleDownloadProperties() {
-    downloadPropertiesAsExcel(filteredProperties);
+  async function handleDownloadProperties() {
+    try {
+      const response = await getPaginatedProperties({
+        ...filters,
+        search: search.trim() || undefined,
+        page: 1,
+        limit: Math.max(totalItems, PAGE_SIZE),
+      });
+      downloadPropertiesAsExcel(response.data);
+    } catch (error) {
+      toast.error(
+        getReadableErrorMessage(
+          error,
+          "No fue posible descargar las propiedades.",
+        ),
+      );
+    }
   }
 
   return (
@@ -123,7 +176,6 @@ export function PropertiesPage() {
         </div>
 
         <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-          {/* Botón Tabulador */}
           <button
             type="button"
             onClick={() =>
@@ -152,7 +204,6 @@ export function PropertiesPage() {
             <span className="whitespace-nowrap">Tabulador de comisiones</span>
           </button>
 
-          {/* Botón Nueva Propiedad */}
           <button
             type="button"
             disabled={!canCreate}
@@ -171,10 +222,10 @@ export function PropertiesPage() {
       </header>
 
       <FilterCard description="Busca propiedades por título y combina solo los filtros clave para ubicar resultados sin cansar la vista.">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 items-start">
+        <div className="grid grid-cols-1 gap-3 items-start sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           <FilterSelect
             value={filters.estatus || "Todos los estados"}
-            onChange={(e) => setFilters({ estatus: e.target.value })}
+            onChange={(e) => setFilters({ estatus: e.target.value, page: 1 })}
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -185,7 +236,9 @@ export function PropertiesPage() {
 
           <FilterSelect
             value={filters.tipo_inmueble || "Todos los tipos"}
-            onChange={(e) => setFilters({ tipo_inmueble: e.target.value })}
+            onChange={(e) =>
+              setFilters({ tipo_inmueble: e.target.value, page: 1 })
+            }
           >
             {TYPE_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -196,7 +249,9 @@ export function PropertiesPage() {
 
           <FilterSelect
             value={filters.direccionMunicipio || "Todos los municipios"}
-            onChange={(e) => setFilters({ direccionMunicipio: e.target.value })}
+            onChange={(e) =>
+              setFilters({ direccionMunicipio: e.target.value, page: 1 })
+            }
           >
             {municipalityOptions.map((option) => (
               <option key={option} value={option}>
@@ -207,7 +262,7 @@ export function PropertiesPage() {
 
           <FilterSelect
             value={filters.exclusiva || "Todas las exclusividades"}
-            onChange={(e) => setFilters({ exclusiva: e.target.value })}
+            onChange={(e) => setFilters({ exclusiva: e.target.value, page: 1 })}
           >
             {EXCLUSIVE_FILTER_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -218,7 +273,9 @@ export function PropertiesPage() {
 
           <FilterSelect
             value={filters.tipo_operacion || "Todas las operaciones"}
-            onChange={(e) => setFilters({ tipo_operacion: e.target.value })}
+            onChange={(e) =>
+              setFilters({ tipo_operacion: e.target.value, page: 1 })
+            }
           >
             {PROPERTY_OPERATION_FILTER_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -230,13 +287,13 @@ export function PropertiesPage() {
           <FilterPriceInput
             placeholder="Precio mínimo"
             value={filters.minPrecio}
-            onChange={(val) => setFilters({ minPrecio: val })}
+            onChange={(val) => setFilters({ minPrecio: val, page: 1 })}
           />
 
           <FilterPriceInput
             placeholder="Precio máximo"
             value={filters.maxPrecio}
-            onChange={(val) => setFilters({ maxPrecio: val })}
+            onChange={(val) => setFilters({ maxPrecio: val, page: 1 })}
           />
 
           <div className="sm:col-span-2 xl:col-span-3">
@@ -244,7 +301,11 @@ export function PropertiesPage() {
               type="text"
               placeholder="Buscar por título o calle"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value;
+                setSearch(value);
+                setFilters({ search: value, page: 1 });
+              }}
             />
           </div>
 
@@ -266,13 +327,15 @@ export function PropertiesPage() {
         </div>
       </FilterCard>
 
-      {/* Tabla */}
       <PropertiesTable
-        data={finalDisplayProperties}
+        data={filteredProperties}
         isLoading={isLoading}
         canEdit={canEdit}
         canDelete={canDelete}
         onDelete={openDeleteModal}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
       />
 
       {deletingProperty && (

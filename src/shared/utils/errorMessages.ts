@@ -1,6 +1,6 @@
 export function getReadableErrorMessage(
   error: unknown,
-  fallback = "Ocurrio un problema al procesar la solicitud.",
+  fallback = "Ocurrió un problema al procesar la solicitud.",
 ): string {
   if (error instanceof Error) {
     return normalizeErrorMessage(error.message, fallback);
@@ -15,7 +15,7 @@ export function getReadableErrorMessage(
 
 export function normalizeErrorMessage(
   message: string | undefined | null,
-  fallback = "Ocurrio un problema al procesar la solicitud.",
+  fallback = "Ocurrió un problema al procesar la solicitud.",
 ): string {
   const trimmed = String(message ?? "").trim();
 
@@ -27,8 +27,8 @@ export function normalizeErrorMessage(
 
   if (
     lowered === "internal server error" ||
-    lowered === "error en el servidor. intentalo mas tarde." ||
-    lowered === "error en el servidor. intentalo mas tarde."
+    lowered === "error en el servidor. inténtalo mas tarde." ||
+    lowered === "error en el servidor. inténtalo mas tarde."
   ) {
     return fallback;
   }
@@ -36,31 +36,31 @@ export function normalizeErrorMessage(
   if (
     lowered.includes("network error") ||
     lowered.includes("failed to fetch") ||
-    lowered.includes("error de conexion con el servidor") ||
+    lowered.includes("error de conexión con el servidor") ||
     lowered.includes("timeout") ||
     lowered.includes("timed out") ||
     lowered.includes("tardo demasiado")
   ) {
-    return "No pudimos comunicarnos con el servidor. Verifica tu conexion e intentalo nuevamente.";
+    return "No pudimos comunicarnos con el servidor. Verifica tu conexión e inténtalo nuevamente.";
   }
 
-  if (lowered.includes("sesion expirada")) {
-    return "Tu sesion ya expiro. Vuelve a iniciar sesion para continuar.";
+  if (lowered.includes("sesión expirada")) {
+    return "Tu sesión ya expiro. Vuelve a iniciar sesión para continuar.";
   }
 
   if (lowered.includes("no autorizado")) {
-    return "Tu sesion no es valida o no tienes autorizacion para realizar esta accion.";
+    return "Tu sesión no es valida o no tienes autorización para realizar esta acción.";
   }
 
   if (lowered.includes("no tienes permisos")) {
-    return "No cuentas con permisos para realizar esta accion.";
+    return "No cuentas con permisos para realizar esta acción.";
   }
 
   if (
-    lowered.includes("datos de solicitud invalidos") ||
-    lowered.includes("datos invalidos en el formulario")
+    lowered.includes("datos de solicitud inválidos") ||
+    lowered.includes("datos inválidos en el formulario")
   ) {
-    return "Hay datos invalidos en el formulario. Revisa los campos marcados e intentalo de nuevo.";
+    return "Hay datos inválidos en el formulario. Revisa los campos marcados e inténtalo de nuevo.";
   }
 
   if (
@@ -76,7 +76,7 @@ export function normalizeErrorMessage(
 
   if (
     lowered.includes("violates") ||
-    lowered.includes("viola la restriccion") ||
+    lowered.includes("viola la restricción") ||
     lowered.includes("null constraint") ||
     lowered.includes("foreign key") ||
     lowered.includes("constraint")

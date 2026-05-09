@@ -28,9 +28,24 @@ export interface MovementRecord {
 }
 
 export interface MovementFilters {
+  search?: string;
   modulo?: string;
   metodo?: string;
   desde?: string;
   hasta?: string;
   usuario_id?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface MovementPaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  lastPage: number;
+}
+
+export interface PaginatedMovementResponse {
+  data: MovementRecord[];
+  meta: MovementPaginationMeta;
 }

@@ -24,6 +24,9 @@ interface PropertiesTableProps {
   canEdit: boolean;
   canDelete: boolean;
   onDelete: (property: PropertyRecord) => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
 export function PropertiesTable({
@@ -32,6 +35,9 @@ export function PropertiesTable({
   canEdit,
   canDelete,
   onDelete,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: PropertiesTableProps) {
   const navigate = useNavigate();
   const { editProperty } = usePropertiesStore();
@@ -187,6 +193,9 @@ export function PropertiesTable({
       columns={columns}
       isLoading={isLoading}
       emptyMessage="No se encontraron propiedades"
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={onPageChange}
       wrapperClassName="rounded-2xl"
       tableClassName="w-max min-w-[1240px] text-left"
       actionsClassName="mx-auto flex w-max items-center justify-center gap-2"

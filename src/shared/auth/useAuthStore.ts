@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { loginApi, verifyTwoFaApi } from "./auth.service";
 import type { LoginCredentials, AppUser } from "./interfaces/auth.interface";
 
@@ -63,6 +63,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
+      storage: createJSONStorage(() => sessionStorage),
     },
   ),
 );

@@ -303,7 +303,7 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
             </div>
 
             <label className="mt-4 flex flex-col gap-1.5">
-              <FieldLabel>Biografia publica</FieldLabel>
+              <FieldLabel>Biografía publica</FieldLabel>
               <textarea
                 value={form.bio_publica}
                 rows={4}
@@ -539,12 +539,12 @@ function validateForm(form: FormState, mode: UserModalMode): string | null {
   if (!form.nombres.trim()) return 'Nombres es obligatorio.';
   if (!form.apellido_paterno.trim()) return 'Apellido paterno es obligatorio.';
   if (!form.apellido_materno.trim()) return 'Apellido materno es obligatorio.';
-  if (!/^\d{10}$/.test(form.telefono.trim())) return 'El telefono debe tener exactamente 10 digitos.';
-  if (!form.correo_electronico.trim()) return 'Correo electronico es obligatorio.';
-  if (!/\S+@\S+\.\S+/.test(form.correo_electronico.trim())) return 'Correo electronico no valido.';
-  if (mode === 'create' && form.contrasena.trim().length < 8) return 'La contrasena debe tener al menos 8 caracteres.';
+  if (!/^\d{10}$/.test(form.telefono.trim())) return 'El teléfono debe tener exactamente 10 dígitos.';
+  if (!form.correo_electronico.trim()) return 'Correo electrónico es obligatorio.';
+  if (!/\S+@\S+\.\S+/.test(form.correo_electronico.trim())) return 'Correo electrónico no valido.';
+  if (mode === 'create' && form.contrasena.trim().length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
   if (mode === 'edit' && form.contrasena.trim() && form.contrasena.trim().length < 8) {
-    return 'La contrasena debe tener al menos 8 caracteres.';
+    return 'La contraseña debe tener al menos 8 caracteres.';
   }
   if (form.roles_ids.length === 0) return 'Debes seleccionar al menos un rol.';
 

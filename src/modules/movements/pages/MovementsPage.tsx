@@ -17,7 +17,7 @@ import {
   normalizeMovementText,
 } from "../utils/movements.utils";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 export function MovementsPage() {
   const [movements, setMovements] = useState<MovementRecord[]>([]);
@@ -26,78 +26,82 @@ export function MovementsPage() {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [selectedMovement, setSelectedMovement] =
     useState<MovementRecord | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadMovements() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const data = await getMovements();
-
-        if (isMounted) {
-          setMovements(data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "No fue posible cargar los movimientos.",
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadMovements();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [search, selectedDate]);
 
-  const filteredMovements = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+  useEffect(() => {
+    let isCancelled = false;
 
-    return movements.filter((movement) => {
-      const matchesUserSearch = !normalizedSearch
-        ? true
-        : [movement.usuario?.nombres, movement.usuario?.correo_electronico]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase()
-            .includes(normalizedSearch);
+    const timeoutId = window.setTimeout(() => {
+      async function loadMovements() {
+        setIsLoading(true);
+        setError("");
 
-      const movementDate = new Date(movement.creado_en)
-        .toISOString()
-        .slice(0, 10);
-      const matchesDate = selectedDate ? movementDate === selectedDate : true;
+        try {
+          const dateRange = buildDateRange(selectedDate);
+          const response = await getMovements({
+            search: search.trim() || undefined,
+            ...dateRange,
+            page: currentPage,
+            limit: PAGE_SIZE,
+          });
 
-      return matchesUserSearch && matchesDate;
-    });
-  }, [movements, search, selectedDate]);
+          if (!isCancelled) {
+            setMovements(response.data);
+            setTotalItems(response.meta.total);
+            setTotalPages(response.meta.lastPage);
+          }
+        } catch (err) {
+          if (!isCancelled) {
+            setError(
+              err instanceof Error
+                ? err.message
+                : "No fue posible cargar los movimientos.",
+            );
+            setMovements([]);
+            setTotalItems(0);
+            setTotalPages(1);
+          }
+        } finally {
+          if (!isCancelled) {
+            setIsLoading(false);
+          }
+        }
+      }
 
-  const totalPages = Math.max(1, Math.ceil(filteredMovements.length / PAGE_SIZE));
+      void loadMovements();
+    }, 250);
 
-  const paginatedMovements = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredMovements.slice(start, start + PAGE_SIZE);
-  }, [currentPage, filteredMovements]);
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [currentPage, search, selectedDate]);
 
-  function handleDownloadMovements() {
-    downloadMovementsAsExcel(filteredMovements);
+  async function handleDownloadMovements() {
+    try {
+      const dateRange = buildDateRange(selectedDate);
+      const response = await getMovements({
+        search: search.trim() || undefined,
+        ...dateRange,
+        page: 1,
+        limit: Math.max(totalItems, PAGE_SIZE),
+      });
+
+      downloadMovementsAsExcel(response.data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No fue posible descargar los movimientos.",
+      );
+    }
   }
 
   const columns = useMemo<ColumnDef<MovementRecord>[]>(
@@ -211,7 +215,7 @@ export function MovementsPage() {
       <MovementsFilters
         search={search}
         selectedDate={selectedDate}
-        hasResults={filteredMovements.length > 0}
+        hasResults={totalItems > 0}
         onSearchChange={setSearch}
         onDateChange={setSelectedDate}
         onDownload={handleDownloadMovements}
@@ -225,7 +229,7 @@ export function MovementsPage() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <BaseTable
-          data={paginatedMovements}
+          data={movements}
           columns={columns}
           isLoading={isLoading}
           emptyMessage="No se encontraron movimientos con los filtros seleccionados."
@@ -252,4 +256,15 @@ export function MovementsPage() {
       />
     </div>
   );
+}
+
+function buildDateRange(selectedDate: string) {
+  if (!selectedDate) {
+    return {};
+  }
+
+  return {
+    desde: `${selectedDate}T00:00:00.000`,
+    hasta: `${selectedDate}T23:59:59.999`,
+  };
 }

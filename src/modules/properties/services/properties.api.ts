@@ -4,6 +4,9 @@ import type {
   CreatePropertyPayload,
   UpdatePropertyPayload,
   NuevaImagen,
+  PropertyFilters,
+  PaginatedPropertyResponse,
+  PropertyFilterOptionsResponse,
 } from "@/interfaces/property.interface";
 
 const PATH = "/properties";
@@ -15,6 +18,18 @@ export type PropertySearchParams = {
 // Obtener todas las propiedades
 export async function getProperties(): Promise<PropertyRecord[]> {
   return apiRequest<PropertyRecord[]>(PATH);
+}
+
+export async function getPaginatedProperties(
+  params: PropertyFilters,
+): Promise<PaginatedPropertyResponse> {
+  return apiRequest<PaginatedPropertyResponse>(PATH, {
+    params: params as Record<string, unknown>,
+  });
+}
+
+export async function getPropertyFilterOptions(): Promise<PropertyFilterOptionsResponse> {
+  return apiRequest<PropertyFilterOptionsResponse>(`${PATH}/filter-options`);
 }
 
 export async function searchProperties(

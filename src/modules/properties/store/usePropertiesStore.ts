@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import {
-  getProperties,
+  getPaginatedProperties,
   getProperty,
   createProperty,
   updateProperty,
@@ -15,17 +15,21 @@ import type {
 } from "@/interfaces/property.interface";
 import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 
+const initialFilters: PropertyFilters = {
+  page: 1,
+  limit: 10,
+};
+
 export interface PropertiesState {
-  // Estado
   properties: PropertyRecord[];
   filteredProperties: PropertyRecord[];
   currentProperty: PropertyRecord | null;
   filters: PropertyFilters;
+  totalItems: number;
+  totalPages: number;
   isLoading: boolean;
   error: string | null;
-
-  // Acciones
-  fetchProperties: () => Promise<void>;
+  fetchProperties: (options?: { page?: number; limit?: number }) => Promise<void>;
   fetchProperty: (id: number) => Promise<void>;
   addProperty: (
     payload: CreatePropertyPayload,
@@ -42,134 +46,68 @@ export interface PropertiesState {
   clearFilters: () => void;
 }
 
-// Función auxiliar para aplicar la lógica de filtrado
-const applyFilters = (
-  properties: PropertyRecord[],
-  filters: PropertyFilters,
-) => {
-  return properties.filter((prop) => {
-    // Filtro: Estatus
-    if (
-      filters.estatus &&
-      filters.estatus !== "Todos los estados" &&
-      prop.estatus !== filters.estatus
-    ) {
-      return false;
-    }
-
-    // Filtro: Tipo de Inmueble
-    if (
-      filters.tipo_inmueble &&
-      filters.tipo_inmueble !== "Todos los tipos" &&
-      prop.tipo_inmueble !== filters.tipo_inmueble
-    ) {
-      return false;
-    }
-
-    if (
-      filters.direccionMunicipio &&
-      filters.direccionMunicipio !== "Todos los municipios" &&
-      (prop.direccion?.municipio ?? "").trim() !== filters.direccionMunicipio
-    ) {
-      return false;
-    }
-
-    if (filters.exclusiva && filters.exclusiva !== "Todas las exclusividades") {
-      const isExclusive = Boolean(prop.exclusiva);
-      if (filters.exclusiva === "Exclusivas" && !isExclusive) {
-        return false;
-      }
-      if (filters.exclusiva === "No exclusivas" && isExclusive) {
-        return false;
-      }
-    }
-
-    // Filtros de Esquema Comercial (Operación y Precios)
-    const schemes = Array.isArray(prop.esquema_comercial)
-      ? prop.esquema_comercial
-      : [];
-
-    // Filtro: Tipo de Operación
-    if (
-      filters.tipo_operacion &&
-      filters.tipo_operacion !== "Todas las operaciones"
-    ) {
-      const matchesOperacion = schemes.some(
-        (scheme: any) => scheme.tipo_operacion === filters.tipo_operacion,
-      );
-      if (!matchesOperacion) return false;
-    }
-
-    // Filtro: Precios
-    const minPrice = filters.minPrecio;
-    const maxPrice = filters.maxPrecio;
-
-    if (minPrice != null || maxPrice != null) {
-      const matchesPrice = schemes.some((scheme: any) => {
-        const price = Number(scheme.precio);
-        if (isNaN(price)) return false;
-        if (minPrice != null && price < minPrice) return false;
-        if (maxPrice != null && price > maxPrice) return false;
-        return true;
-      });
-      if (!matchesPrice) return false;
-    }
-
-    return true;
-  });
-};
-
-const initialFilters: PropertyFilters = {};
-
 export const usePropertiesStore = create<PropertiesState>((set, get) => ({
   properties: [],
   filteredProperties: [],
   currentProperty: null,
   filters: initialFilters,
+  totalItems: 0,
+  totalPages: 1,
   isLoading: false,
   error: null,
 
-  // Obtener todas las propiedades
-  fetchProperties: async () => {
+  fetchProperties: async (options = {}) => {
     set({ isLoading: true, error: null });
     try {
-      const data = await getProperties();
       const currentFilters = get().filters;
-      set({
-        properties: data,
-        filteredProperties: applyFilters(data, currentFilters),
-        isLoading: false,
+      const response = await getPaginatedProperties({
+        ...currentFilters,
+        page: options.page ?? currentFilters.page ?? 1,
+        limit: options.limit ?? currentFilters.limit ?? 10,
       });
+
+      set((state) => ({
+        properties: response.data,
+        filteredProperties: response.data,
+        filters: {
+          ...state.filters,
+          page: response.meta.page,
+          limit: response.meta.limit,
+        },
+        totalItems: response.meta.total,
+        totalPages: response.meta.lastPage,
+        isLoading: false,
+      }));
     } catch (error) {
       set({
         error: getReadableErrorMessage(
           error,
           "No pudimos cargar las propiedades en este momento.",
         ),
+        properties: [],
+        filteredProperties: [],
+        totalItems: 0,
+        totalPages: 1,
         isLoading: false,
       });
     }
   },
 
-  // Actualizar filtros
   setFilters: (newFilters) => {
-    set((state) => {
-      const updatedFilters = { ...state.filters, ...newFilters };
-      return {
-        filters: updatedFilters,
-        filteredProperties: applyFilters(state.properties, updatedFilters),
-      };
-    });
-  },
-
-  clearFilters: () => {
     set((state) => ({
-      filters: initialFilters,
-      filteredProperties: state.properties, // Restauramos la lista completa
+      filters: {
+        ...state.filters,
+        ...newFilters,
+      },
     }));
   },
 
-  // Obtener una propiedad específica (para ver detalles o editar)
+  clearFilters: () => {
+    set({
+      filters: initialFilters,
+    });
+  },
+
   fetchProperty: async (id: number) => {
     set({ isLoading: true, error: null, currentProperty: null });
     try {
@@ -186,20 +124,16 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
     }
   },
 
-  // Crear una nueva propiedad
   addProperty: async (payload: CreatePropertyPayload, files: NuevaImagen[]) => {
     set({ isLoading: true, error: null });
     try {
       const newProperty = await createProperty(payload, files);
-      // Agregamos la nueva propiedad al inicio de la lista en memoria
-      set((state) => {
-        const updatedProperties = [newProperty, ...state.properties];
-        return {
-          properties: updatedProperties,
-          filteredProperties: applyFilters(updatedProperties, state.filters),
-          isLoading: false,
-        };
-      });
+      set((state) => ({
+        properties: [newProperty, ...state.properties],
+        filteredProperties: [newProperty, ...state.filteredProperties],
+        totalItems: state.totalItems + 1,
+        isLoading: false,
+      }));
     } catch (error) {
       set({
         error: getReadableErrorMessage(
@@ -208,11 +142,10 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
         ),
         isLoading: false,
       });
-      throw error; // Lanzamos el error para que el componente UI (tu página) pueda mostrar una alerta si quiere
+      throw error;
     }
   },
 
-  // Actualizar una propiedad
   editProperty: async (
     id: number,
     payload: UpdatePropertyPayload,
@@ -221,14 +154,15 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const updatedProperty = await updateProperty(id, payload, files);
-      // Actualizamos la propiedad específica en la lista en memoria
       set((state) => {
-        const updatedProperties = state.properties.map((prop) =>
-          prop.id === id ? { ...prop, ...updatedProperty } : prop,
-        );
+        const updateList = (list: PropertyRecord[]) =>
+          list.map((prop) =>
+            prop.id === id ? { ...prop, ...updatedProperty } : prop,
+          );
+
         return {
-          properties: updatedProperties,
-          filteredProperties: applyFilters(updatedProperties, state.filters), // Mantenemos sincronía
+          properties: updateList(state.properties),
+          filteredProperties: updateList(state.filteredProperties),
           currentProperty:
             state.currentProperty?.id === id
               ? { ...state.currentProperty, ...updatedProperty }
@@ -248,22 +182,18 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
     }
   },
 
-  // Eliminar una propiedad
   removeProperty: async (id: number) => {
     set({ isLoading: true, error: null });
     try {
       await deleteProperty(id);
-      // Filtramos la propiedad eliminada de la lista en memoria
-      set((state) => {
-        const updatedProperties = state.properties.filter(
+      set((state) => ({
+        properties: state.properties.filter((prop) => prop.id !== id),
+        filteredProperties: state.filteredProperties.filter(
           (prop) => prop.id !== id,
-        );
-        return {
-          properties: updatedProperties,
-          filteredProperties: applyFilters(updatedProperties, state.filters), // Mantenemos sincronía
-          isLoading: false,
-        };
-      });
+        ),
+        totalItems: Math.max(0, state.totalItems - 1),
+        isLoading: false,
+      }));
     } catch (error) {
       set({
         error: getReadableErrorMessage(
@@ -276,6 +206,5 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
     }
   },
 
-  // Limpiar la propiedad actual (útil al desmontar el componente de edición)
   clearCurrentProperty: () => set({ currentProperty: null }),
 }));

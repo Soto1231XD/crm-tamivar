@@ -109,6 +109,7 @@ export type UpdatePropertyPayload = Partial<CreatePropertyPayload> & {
 
 // Interfaz para los filtros
 export interface PropertyFilters {
+  search?: string;
   tipo_operacion?: string;
   tipo_inmueble?: string;
   estatus?: string;
@@ -116,4 +117,20 @@ export interface PropertyFilters {
   exclusiva?: string;
   minPrecio?: number;
   maxPrecio?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedPropertyResponse {
+  data: PropertyRecord[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    lastPage: number;
+  };
+}
+
+export interface PropertyFilterOptionsResponse {
+  municipios: string[];
 }
