@@ -66,14 +66,9 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
         limit: options.limit ?? currentFilters.limit ?? 10,
       });
 
-      set((state) => ({
+      set(() => ({
         properties: response.data,
         filteredProperties: response.data,
-        filters: {
-          ...state.filters,
-          page: response.meta.page,
-          limit: response.meta.limit,
-        },
         totalItems: response.meta.total,
         totalPages: response.meta.lastPage,
         isLoading: false,

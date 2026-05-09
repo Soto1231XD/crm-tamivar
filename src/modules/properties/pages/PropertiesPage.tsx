@@ -99,7 +99,18 @@ export function PropertiesPage() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [fetchProperties, currentPage, filters, search]);
+  }, [
+    fetchProperties,
+    currentPage,
+    filters.estatus,
+    filters.tipo_inmueble,
+    filters.direccionMunicipio,
+    filters.exclusiva,
+    filters.tipo_operacion,
+    filters.minPrecio,
+    filters.maxPrecio,
+    filters.search,
+  ]);
 
   function openDeleteModal(property: PropertyRecord) {
     setDeletingProperty(property);
