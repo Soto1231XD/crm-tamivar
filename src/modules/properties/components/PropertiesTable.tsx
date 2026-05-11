@@ -15,7 +15,6 @@ import {
   getPropertyStatusStyles,
   formatCurrency,
   calculateFinalPrice,
-  getFullImageUrl,
 } from "../utils/formatters";
 
 interface PropertiesTableProps {
@@ -145,27 +144,6 @@ export function PropertiesTable({
                 </span>
               );
             })}
-          </div>
-        ),
-      },
-      {
-        header: "Registrado por",
-        headerClassName: "min-w-[250px]",
-        cellClassName: "min-w-[250px] align-top",
-        render: (property) => (
-          <div className="flex items-center justify-center gap-2 text-slate-700">
-            <div className="h-6 w-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold uppercase overflow-hidden">
-              {property.creador?.foto_url ? (
-                <img
-                  src={getFullImageUrl(property.creador.foto_url)}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                `${property.creador?.nombres?.[0] || ""}${property.creador?.apellido_paterno?.[0] || ""}`
-              )}
-            </div>
-            <span>{`${property.creador?.nombres || ""} ${property.creador?.apellido_paterno || ""}`}</span>
           </div>
         ),
       },
