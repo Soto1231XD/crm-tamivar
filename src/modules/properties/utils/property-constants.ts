@@ -2,6 +2,7 @@ export const STATUS_OPTIONS = [
   "Todos los estados",
   "Disponible",
   "Apartado",
+  "No disponible",
   "Vendido",
   "Baja",
 ] as const;
