@@ -14,6 +14,7 @@ import {
   formatPhone,
   getComparableDate,
 } from '../../leads/utils/leads.utils';
+import { LEAD_LEADS_STATUS_OPTIONS } from '../components/leadLeads.shared';
 
 type UseLeadLeadsPageStateParams = {
   userId?: number | null;
@@ -68,7 +69,13 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
       const value = (lead.estado ?? '').trim();
       if (value) values.add(value);
     });
-    return [ALL_STATES, ...Array.from(values)];
+
+    const orderedStatuses = LEAD_LEADS_STATUS_OPTIONS.filter((status) => values.has(status));
+    const extraStatuses = Array.from(values)
+      .filter((status) => !LEAD_LEADS_STATUS_OPTIONS.includes(status as (typeof LEAD_LEADS_STATUS_OPTIONS)[number]))
+      .sort((left, right) => left.localeCompare(right));
+
+    return [ALL_STATES, ...orderedStatuses, ...extraStatuses];
   }, [leads]);
 
   const propertyAddressById = useMemo(
@@ -84,21 +91,32 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
 
   const filteredLeads = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return leads.filter((lead) => {
-      const fullName = `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim().toLowerCase();
-      const phone = formatPhone(lead.lada, lead.telefono).toLowerCase();
-      const leadDate = getComparableDate(lead.creado_en);
+    return leads
+      .filter((lead) => {
+        const fullName = `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim().toLowerCase();
+        const phone = formatPhone(lead.lada, lead.telefono).toLowerCase();
+        const leadDate = getComparableDate(lead.creado_en);
 
-      const matchesSearch =
-        query.length === 0 || fullName.includes(query) || phone.includes(query);
-      const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;
-      const matchesSeller =
-        sellerFilter.length === 0 || String(lead.vendedor_asignado_id ?? '') === sellerFilter;
-      const matchesLeadDateFrom = leadDateFromFilter.length === 0 || (leadDate.length > 0 && leadDate >= leadDateFromFilter);
-      const matchesLeadDateTo = leadDateToFilter.length === 0 || (leadDate.length > 0 && leadDate <= leadDateToFilter);
+        const matchesSearch =
+          query.length === 0 || fullName.includes(query) || phone.includes(query);
+        const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;
+        const matchesSeller =
+          sellerFilter.length === 0 || String(lead.vendedor_asignado_id ?? '') === sellerFilter;
+        const matchesLeadDateFrom = leadDateFromFilter.length === 0 || (leadDate.length > 0 && leadDate >= leadDateFromFilter);
+        const matchesLeadDateTo = leadDateToFilter.length === 0 || (leadDate.length > 0 && leadDate <= leadDateToFilter);
 
-      return matchesSearch && matchesStatus && matchesSeller && matchesLeadDateFrom && matchesLeadDateTo;
-    });
+        return matchesSearch && matchesStatus && matchesSeller && matchesLeadDateFrom && matchesLeadDateTo;
+      })
+      .sort((left, right) => {
+        const leftIsCancelled = (left.estado ?? '').trim().toLowerCase() === 'cancelado';
+        const rightIsCancelled = (right.estado ?? '').trim().toLowerCase() === 'cancelado';
+
+        if (leftIsCancelled !== rightIsCancelled) {
+          return leftIsCancelled ? 1 : -1;
+        }
+
+        return new Date(right.creado_en ?? 0).getTime() - new Date(left.creado_en ?? 0).getTime();
+      });
   }, [leadDateFromFilter, leadDateToFilter, leads, search, sellerFilter, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));

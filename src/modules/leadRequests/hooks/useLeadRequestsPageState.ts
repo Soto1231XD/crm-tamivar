@@ -10,6 +10,7 @@ import { ALL_STATES, PAGE_SIZE } from '@/modules/leads/utils/leads.constants';
 import { getLeadRequestSellerOptions } from '@/modules/users/services/users.api';
 import type { UserRecord } from '@/interfaces/user.interface';
 import { useLeadRequestsStore } from '../store/useLeadRequestsStore';
+import { LEAD_REQUEST_STATUS_OPTIONS } from '../components/leadRequests.shared';
 import {
   downloadLeadRequestsAsExcel,
   getComparableLeadRequestDate,
@@ -49,7 +50,13 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
       const value = (leadRequest.estado ?? '').trim();
       if (value) values.add(value);
     });
-    return [ALL_STATES, ...Array.from(values)];
+
+    const orderedStatuses = LEAD_REQUEST_STATUS_OPTIONS.filter((status) => values.has(status));
+    const extraStatuses = Array.from(values)
+      .filter((status) => !LEAD_REQUEST_STATUS_OPTIONS.includes(status as (typeof LEAD_REQUEST_STATUS_OPTIONS)[number]))
+      .sort((left, right) => left.localeCompare(right));
+
+    return [ALL_STATES, ...orderedStatuses, ...extraStatuses];
   }, [leadRequests]);
 
   const filteredLeadRequests = useMemo(() => {

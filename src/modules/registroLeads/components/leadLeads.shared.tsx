@@ -2,13 +2,13 @@ import { z } from 'zod';
 import type { LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 
 export const LEAD_LEADS_STATUS_OPTIONS = [
-  'En seguimiento',
   'En espera',
   'Contactado',
-  'Cancelado',
+  'En seguimiento',
   'Cita agendada',
   'En proceso',
   'Cerrado',
+  'Cancelado',
 ] as const;
 
 export const LEAD_LEADS_PRIORITY_OPTIONS = ['Urgente', 'Normal', 'Bajo Interes'] as const;

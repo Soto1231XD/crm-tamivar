@@ -18,6 +18,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
   'cita cerrada': { backgroundColor: '#E0F2FE', color: '#0369A1' },
   'en proceso': { backgroundColor: '#EDE9FE', color: '#6D28D9' },
   cerrado: { backgroundColor: '#DCFCE7', color: '#166534' },
+  activo: { backgroundColor: '#DCFCE7', color: '#166534' },
   disponible: { backgroundColor: '#DCFCE7', color: '#166534' },
   apartado: { backgroundColor: '#FEF9C3', color: '#A16207' },
   vendido: { backgroundColor: '#F3F4F6', color: '#374151' },

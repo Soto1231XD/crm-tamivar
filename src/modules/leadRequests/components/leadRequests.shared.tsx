@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { LeadRequestRecord, UpdateLeadRequestPayload } from '@/interfaces/lead-request.interface';
 
-export const LEAD_REQUEST_STATUS_OPTIONS = ['Activo', 'En seguimiento', 'En espera', 'Cerrado', 'Cancelado'] as const;
+export const LEAD_REQUEST_STATUS_OPTIONS = ['Activo', 'Cancelado'] as const;
 
 export const LEAD_REQUEST_PROPERTY_TYPE_OPTIONS = [
   'Casa',
