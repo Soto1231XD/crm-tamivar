@@ -133,6 +133,16 @@ function toDateTimeLocalValue(value?: string | null): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+export function toVisitApiDateTimeValue(value?: string | null): string | undefined {
+  const normalizedValue = value?.trim();
+  if (!normalizedValue) return undefined;
+
+  const parsedDate = new Date(normalizedValue);
+  if (Number.isNaN(parsedDate.getTime())) return undefined;
+
+  return parsedDate.toISOString();
+}
+
 export function toVisitDefaultValues(lead: LeadRecord | null): VisitLeadFormInput {
   if (!lead) {
     return INITIAL_VISIT_FORM;
@@ -169,7 +179,7 @@ export function buildVisitUpdatePayload(
     lada: (input) => input.lada?.trim() || undefined,
     comentarios: (input) => input.comentarios?.trim() || undefined,
     estado: (input) => input.estado?.trim() || undefined,
-    fecha_cita: (input) => input.fecha_cita?.trim() || undefined,
+    fecha_cita: (input) => toVisitApiDateTimeValue(input.fecha_cita),
   };
 
   for (const [field, mapper] of Object.entries(fieldMappers) as Array<

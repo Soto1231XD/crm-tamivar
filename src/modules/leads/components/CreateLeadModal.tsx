@@ -10,6 +10,7 @@ import {
   sanitizeVisitLada,
   sanitizeVisitPhone,
   normalizeVisitName,
+  toVisitApiDateTimeValue,
   visitLeadFieldClassName,
   visitLeadSchema,
   type VisitLeadFormInput,
@@ -79,7 +80,7 @@ export function CreateLeadModal({
       lada: values.lada?.trim() || undefined,
       comentarios: values.comentarios?.trim() || undefined,
       estado: values.estado?.trim() || undefined,
-      fecha_cita: values.fecha_cita?.trim() || undefined,
+      fecha_cita: toVisitApiDateTimeValue(values.fecha_cita),
       asesor_externo: values.asesor_externo === 'si',
       asesor_externo_nombre:
         values.asesor_externo === 'si'
