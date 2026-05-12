@@ -3,6 +3,8 @@ import toast from "react-hot-toast";
 import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 import { useNavigate } from "react-router-dom";
 import type { PropertyRecord } from "@/interfaces/property.interface";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { isSalesAdvisorOnly } from "@/shared/auth/role.utils";
 import { DeletePropertyConfirmModal } from "../components/DeletePropertyConfirmModal";
 import agregarIcon from "@/assets/images/Agregar.png";
 import desArcIcon from "@/assets/images/DesArc.png";
@@ -33,6 +35,7 @@ const PAGE_SIZE = 10;
 export function PropertiesPage() {
   const navigate = useNavigate();
   const { can } = useHasPermission();
+  const user = useAuthStore((state) => state.user);
 
   const {
     filteredProperties,
@@ -56,6 +59,10 @@ export function PropertiesPage() {
   const canEdit = can("propiedades", "actualizar");
   const canCreate = can("propiedades", "crear");
   const canDelete = can("propiedades", "eliminar");
+  const hideInternalStatus = user ? isSalesAdvisorOnly(user) : false;
+  const visibleStatusOptions = hideInternalStatus
+    ? STATUS_OPTIONS.filter((option) => option !== "Interno")
+    : STATUS_OPTIONS;
 
   useEffect(() => {
     let isMounted = true;
@@ -77,6 +84,12 @@ export function PropertiesPage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (hideInternalStatus && filters.estatus === "Interno") {
+      setFilters({ estatus: "Todos los estados", page: 1 });
+    }
+  }, [filters.estatus, hideInternalStatus, setFilters]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -238,7 +251,7 @@ export function PropertiesPage() {
             value={filters.estatus || "Todos los estados"}
             onChange={(e) => setFilters({ estatus: e.target.value, page: 1 })}
           >
-            {STATUS_OPTIONS.map((option) => (
+            {visibleStatusOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -347,6 +360,7 @@ export function PropertiesPage() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
+        statusOptions={visibleStatusOptions}
       />
 
       {deletingProperty && (

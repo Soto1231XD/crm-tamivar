@@ -21,6 +21,8 @@ import {
 } from "../utils/property-constants";
 import type { PropertySubmitPayload } from "../utils/usePropertyForm";
 import type { NuevaImagen } from "@/interfaces/property.interface";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { isSalesAdvisorOnly } from "@/shared/auth/role.utils";
 
 type PropertyFormProps = {
   property?: PropertyRecord | null;
@@ -95,6 +97,7 @@ export function PropertyForm({
   onSubmit,
 }: PropertyFormProps) {
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   const {
     form,
     submitError,
@@ -116,6 +119,10 @@ export function PropertyForm({
   const selectedOperationBlocks = OPERATION_BLOCKS.filter((operation) =>
     form.operaciones.includes(operation.key),
   );
+  const hideInternalStatus = user ? isSalesAdvisorOnly(user) : false;
+  const visibleStatusOptions = hideInternalStatus
+    ? STATUS_OPTIONS.filter((option) => option !== "Interno")
+    : STATUS_OPTIONS;
 
   return (
     <div className="space-y-5">
@@ -195,7 +202,7 @@ export function PropertyForm({
               name="estatus"
               value={form.estatus}
               onChange={handleInputChange}
-              options={STATUS_OPTIONS.filter(
+              options={visibleStatusOptions.filter(
                 (option) => option !== "Todos los estados",
               )}
               required

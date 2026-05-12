@@ -21,7 +21,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
   activo: { backgroundColor: '#DCFCE7', color: '#166534' },
   disponible: { backgroundColor: '#DCFCE7', color: '#166534' },
   apartado: { backgroundColor: '#FEF9C3', color: '#A16207' },
-  'no disponible': { backgroundColor: '#F3F4F6', color: '#374151' },
+  interno: { backgroundColor: '#F3F4F6', color: '#374151' },
   vendido: { backgroundColor: '#DBEAFE', color: '#1D4ED8' },
   baja: { backgroundColor: '#FEE2E2', color: '#991B1B' },
 };

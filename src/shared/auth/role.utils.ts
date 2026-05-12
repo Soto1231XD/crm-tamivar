@@ -8,8 +8,6 @@ const ROLE_PRIORITY = [
   'coordinador de ventas',
   'coordinador ventas',
   'marketing',
-  'asesor de ventas',
-  'asesor ventas',
   'recursos humanos',
   'rh',
 ] as const;
@@ -68,8 +66,21 @@ export function isSuperAdminRole(role: string): boolean {
   return normalizedRole === 'super administrador' || normalizedRole === 'super admin';
 }
 
+export function isSalesAdvisorOnly(user: Pick<UserRecord, 'rol' | 'roles'>): boolean {
+  const roles = extractUserRoles(user).map(normalizeRoleName).filter(Boolean);
+  if (roles.length === 0) return false;
+
+  return roles.every(
+    (role) => role === 'asesor de ventas' || role === 'asesor ventas',
+  );
+}
+
 function getRolePriorityIndex(role: string): number {
   const normalizedRole = normalizeRoleName(role);
+  if (normalizedRole === 'asesor de ventas' || normalizedRole === 'asesor ventas') {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
   const matchIndex = ROLE_PRIORITY.findIndex((currentRole) => currentRole === normalizedRole);
-  return matchIndex === -1 ? Number.MAX_SAFE_INTEGER : matchIndex;
+  return matchIndex === -1 ? Number.MAX_SAFE_INTEGER - 1 : matchIndex;
 }

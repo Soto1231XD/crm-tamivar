@@ -5,7 +5,6 @@ import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
 import type { PropertyRecord } from "@/interfaces/property.interface";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
 import { BadgeSelect } from "@/components/ui/BadgeSelect";
-import { STATUS_OPTIONS } from "../utils/property-constants";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
 import descInfIcon from "@/assets/images/DescInf.png";
@@ -22,6 +21,7 @@ interface PropertiesTableProps {
   isLoading: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  statusOptions: readonly string[];
   onDelete: (property: PropertyRecord) => void;
   currentPage: number;
   totalPages: number;
@@ -33,6 +33,7 @@ export function PropertiesTable({
   isLoading,
   canEdit,
   canDelete,
+  statusOptions,
   onDelete,
   currentPage,
   totalPages,
@@ -152,7 +153,7 @@ export function PropertiesTable({
         render: (property) => (
           <BadgeSelect
             value={property.estatus}
-            options={STATUS_OPTIONS}
+            options={statusOptions}
             onChange={(val) => handleStatusChange(property.id, val)}
             disabled={updatingStatusId === property.id}
             canEdit={canEdit}
@@ -162,7 +163,7 @@ export function PropertiesTable({
         ),
       },
     ],
-    [updatingStatusId, canEdit],
+    [updatingStatusId, canEdit, statusOptions],
   );
 
   return (
