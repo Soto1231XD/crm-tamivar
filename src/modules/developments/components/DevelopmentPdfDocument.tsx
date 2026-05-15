@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 35,
     paddingHorizontal: 35,
-    paddingBottom: 60,
+    paddingBottom: 90,
     backgroundColor: "#ffffff",
     fontFamily: "Helvetica",
   },
@@ -146,6 +146,7 @@ const styles = StyleSheet.create({
     bottom: 25,
     left: 35,
     right: 35,
+    backgroundColor: "#ffffff",
     textAlign: "center",
     color: "#475569",
     fontSize: 9,
@@ -153,6 +154,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
     paddingTop: 10,
+    paddingBottom: 4,
   },
 });
 
