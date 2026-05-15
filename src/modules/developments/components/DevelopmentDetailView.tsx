@@ -76,6 +76,7 @@ export function DevelopmentDetailView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDownloadingImages, setIsDownloadingImages] = useState(false);
+  const [downloadingModelKey, setDownloadingModelKey] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"info" | "visitas">("info");
 
   useEffect(() => {
@@ -161,6 +162,80 @@ export function DevelopmentDetailView() {
       saveAs(zipBlob, `${sanitizeFileNamePart(development.slug)}-imagenes.zip`);
     } finally {
       setIsDownloadingImages(false);
+    }
+  }
+
+  async function handleDownloadGeneralGallery() {
+    if (!development || galleryImages.length === 0 || isDownloadingImages) {
+      return;
+    }
+
+    setIsDownloadingImages(true);
+
+    try {
+      const zip = new JSZip();
+      const slugBase =
+        development.slug?.trim() || `desarrollo-${development.id ?? "detalle"}`;
+
+      for (const [index, image] of galleryImages.entries()) {
+        const response = await fetch(image.url);
+        if (!response.ok) {
+          throw new Error("No fue posible descargar una o más imágenes.");
+        }
+
+        const blob = await response.blob();
+        const extension = getImageExtension(image.url);
+        const safeTitle = sanitizeFileNamePart(image.titulo || `general-${index + 1}`);
+        const fileName = `${sanitizeFileNamePart(slugBase)}-general-${safeTitle}.${extension}`;
+
+        zip.file(fileName, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      saveAs(zipBlob, `${sanitizeFileNamePart(slugBase)}-galeria-desarrollo.zip`);
+    } finally {
+      setIsDownloadingImages(false);
+    }
+  }
+
+  async function handleDownloadModelGallery(
+    model: DevelopmentRecord["modelos"][number],
+    modelImages: Array<DevelopmentImage & { url: string }>,
+    index: number,
+  ) {
+    const modelKey = String(model.id ?? index);
+    if (!development || modelImages.length === 0 || downloadingModelKey) {
+      return;
+    }
+
+    setDownloadingModelKey(modelKey);
+
+    try {
+      const zip = new JSZip();
+      const slugBase =
+        development.slug?.trim() || `desarrollo-${development.id ?? "detalle"}`;
+      const modelName = sanitizeFileNamePart(model.nombre || `modelo-${index + 1}`);
+
+      for (const [imageIndex, image] of modelImages.entries()) {
+        const response = await fetch(image.url);
+        if (!response.ok) {
+          throw new Error("No fue posible descargar una o más imágenes.");
+        }
+
+        const blob = await response.blob();
+        const extension = getImageExtension(image.url);
+        const safeTitle = sanitizeFileNamePart(
+          image.titulo || `${modelName}-${imageIndex + 1}`,
+        );
+        const fileName = `${sanitizeFileNamePart(slugBase)}-${modelName}-${safeTitle}.${extension}`;
+
+        zip.file(fileName, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      saveAs(zipBlob, `${sanitizeFileNamePart(slugBase)}-${modelName}-imagenes.zip`);
+    } finally {
+      setDownloadingModelKey(null);
     }
   }
 
@@ -554,14 +629,25 @@ export function DevelopmentDetailView() {
             Galería del desarrollo
           </h3>
 
-          <button
-            type="button"
-            onClick={handleDownloadAllImages}
-            disabled={isDownloadingImages || allDownloadableImages.length === 0}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isDownloadingImages ? "Descargando..." : "Descargar imágenes"}
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={handleDownloadGeneralGallery}
+              disabled={isDownloadingImages || galleryImages.length === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isDownloadingImages ? "Descargando..." : "Descargar galeria"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadAllImages}
+              disabled={isDownloadingImages || allDownloadableImages.length === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isDownloadingImages ? "Descargando..." : "Descargar todo"}
+            </button>
+          </div>
         </div>
 
         {galleryImages.length > 0 ? (
@@ -770,9 +856,22 @@ export function DevelopmentDetailView() {
                   </div>
 
                   <div>
-                    <h5 className="mb-4 text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm">
-                      Galería del modelo
-                    </h5>
+                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm">
+                        Galer?a del modelo
+                      </h5>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadModelGallery(model, modelImages, index)}
+                        disabled={modelImages.length === 0 || Boolean(downloadingModelKey)}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {downloadingModelKey === String(model.id ?? index)
+                          ? "Descargando..."
+                          : "Descargar imagenes"}
+                      </button>
+                    </div>
                     {modelImages.length ? (
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {modelImages.map((image, imageIndex) => (
