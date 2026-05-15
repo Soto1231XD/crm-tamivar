@@ -137,6 +137,10 @@ const styles = StyleSheet.create({
     borderTopColor: "#e2e8f0",
     marginVertical: 10,
   },
+  schemeBlock: {
+    marginTop: 6,
+    marginBottom: 8,
+  },
   footer: {
     position: "absolute",
     bottom: 25,
@@ -303,7 +307,7 @@ export const DevelopmentPdfDocument = ({
           <Text style={styles.sectionTitle}>Modelos del Desarrollo</Text>
           {development.modelos?.length ? (
             development.modelos.map((model, index) => (
-              <View key={`model-${model.id ?? index}`} style={styles.modelCard} wrap={false}>
+              <View key={`model-${model.id ?? index}`} style={styles.modelCard}>
                 <Text style={styles.subSectionTitle}>
                   Modelo {index + 1}: {model.nombre}
                 </Text>
@@ -362,7 +366,9 @@ export const DevelopmentPdfDocument = ({
 
                 <View style={styles.divider} />
 
-                {renderSchemeSummary(model.esquema_comercial, "#312C85")}
+                <View style={styles.schemeBlock}>
+                  {renderSchemeSummary(model.esquema_comercial, "#312C85")}
+                </View>
 
                 {model.comentarios ? (
                   <View style={styles.col12}>
@@ -379,7 +385,6 @@ export const DevelopmentPdfDocument = ({
                       <View
                         key={`model-img-${index}-${imgIndex}`}
                         style={styles.galleryCol}
-                        wrap={false}
                       >
                         <Image src={img.url} style={styles.galleryImage} />
                       </View>
