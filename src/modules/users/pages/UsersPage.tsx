@@ -67,7 +67,11 @@ export function UsersPage() {
 
     return users.filter((user) => {
       const matchesSearch =
-        query.length === 0 || normalizeRoleName(user.nombres).includes(query);
+        query.length === 0 ||
+        normalizeRoleName(user.nombres).includes(query) ||
+        normalizeRoleName(user.apellido_paterno).includes(query) ||
+        normalizeRoleName(user.apellido_materno).includes(query) ||
+        normalizeRoleName(user.codigo_usuario).includes(query);
       const matchesStatus =
         statusFilter === ALL_USER_STATES ||
         getUserStatusLabel(user.activo) === statusFilter;
@@ -178,6 +182,12 @@ export function UsersPage() {
                         <h3 className="mt-2 break-words text-lg font-bold tracking-tight text-slate-900">
                           {getUserFullName(user)}
                         </h3>
+                        <span
+                          className="mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]"
+                          style={getSoftBadgeStyles("blue")}
+                        >
+                          {user.codigo_usuario?.trim() || "Sin ID"}
+                        </span>
                         <p className="mt-1 break-all text-sm leading-6 text-slate-600">
                           {user.correo_electronico?.trim() ||
                             "Sin correo electrónico"}

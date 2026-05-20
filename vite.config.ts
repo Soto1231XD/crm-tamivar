@@ -14,17 +14,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       injectRegister: false,
       includeAssets: ["logo_web.png", "logo_pwa.png"],
       manifest: false,
-      workbox: {
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
-        navigateFallback: "/index.html",
+      injectManifest: {
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}"],
       },
       devOptions: {
         enabled: true,

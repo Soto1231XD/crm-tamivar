@@ -19,6 +19,7 @@ export type UserRoleRecord =
 
 export interface UserRecord {
   id: number;
+  codigo_usuario?: string | null;
   nombres?: string | null;
   apellido_paterno?: string | null;
   apellido_materno?: string | null;

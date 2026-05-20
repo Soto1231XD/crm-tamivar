@@ -20,6 +20,40 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
+function buildMapsPreviewUrl(mapsLink: string | undefined, addressLabel: string) {
+  const fallbackQuery = addressLabel.trim();
+
+  if (!mapsLink) {
+    return fallbackQuery
+      ? `https://www.google.com/maps?output=embed&q=${encodeURIComponent(fallbackQuery)}`
+      : null;
+  }
+
+  try {
+    const parsedUrl = new URL(mapsLink);
+    const queryCandidate =
+      parsedUrl.searchParams.get("q") ||
+      parsedUrl.searchParams.get("query") ||
+      parsedUrl.searchParams.get("destination") ||
+      parsedUrl.searchParams.get("daddr");
+
+    if (queryCandidate?.trim()) {
+      return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(queryCandidate.trim())}`;
+    }
+
+    const placeMatch = decodeURIComponent(parsedUrl.pathname).match(/\/place\/([^/]+)/i);
+    if (placeMatch?.[1]) {
+      return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(placeMatch[1].replace(/\+/g, " "))}`;
+    }
+  } catch {
+    // If the provided link is malformed, we silently fall back to the address text.
+  }
+
+  return fallbackQuery
+    ? `https://www.google.com/maps?output=embed&q=${encodeURIComponent(fallbackQuery)}`
+    : null;
+}
+
 export const PropertyDetailView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -134,6 +168,11 @@ export const PropertyDetailView = () => {
   if (!currentProperty) return null;
 
   const statusStyle = getPropertyStatusStyles(currentProperty.estatus);
+  const fullAddress = formatFullDireccion(currentProperty.direccion);
+  const mapsPreviewUrl = buildMapsPreviewUrl(
+    currentProperty.enlace_direccion,
+    fullAddress,
+  );
 
   return (
     <div className="mx-auto p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-screen">
@@ -374,8 +413,9 @@ export const PropertyDetailView = () => {
                         d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                       />
                     </svg>
-                    {formatFullDireccion(currentProperty.direccion)}
+                    {fullAddress}
                   </p>
+
                 </div>
 
                 {/* Fila de Datos Clave */}
@@ -768,6 +808,43 @@ export const PropertyDetailView = () => {
           </div>
 
           {/* GALERÍA DE IMÁGENES */}
+          {mapsPreviewUrl && (
+            <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Previsualizacion del mapa
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Vista rapida solo dentro del CRM.
+                  </p>
+                </div>
+
+                {currentProperty.enlace_direccion && (
+                  <a
+                    href={currentProperty.enlace_direccion}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-blue-600 transition hover:text-blue-700"
+                  >
+                    Abrir grande
+                  </a>
+                )}
+              </div>
+
+              <div className="relative h-[320px] w-full bg-slate-100">
+                <iframe
+                  title={`Mapa de ${currentProperty.titulo}`}
+                  src={mapsPreviewUrl}
+                  className="h-full w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-6 sm:mb-8 border-b border-slate-200 pb-4">
               Galería Fotográfica

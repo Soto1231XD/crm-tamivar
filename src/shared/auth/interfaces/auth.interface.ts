@@ -1,5 +1,6 @@
 export type AppUser = {
   id: number;
+  codigo_usuario?: string;
   nombres: string;
   apellido_paterno: string;
   apellido_materno?: string;

@@ -1,15 +1,30 @@
-import { useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import toast from "react-hot-toast";
 import { getHighestPriorityRoleLabel } from "@/shared/auth/role.utils";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
 import { getFullImageUrl } from "@/shared/utils/imageUrl";
+import { useNotificationsStore } from "@/modules/notifications/store/useNotificationsStore";
+import {
+  getBrowserNotificationPermission,
+  requestBrowserNotificationPermission,
+  showBrowserNotification,
+  type BrowserNotificationPermissionState,
+} from "@/modules/notifications/utils/browserNotifications";
+import {
+  disconnectPushNotifications,
+  getPushSubscriptionStatus,
+  subscribeToPushNotifications,
+  type PushSubscriptionStatus,
+} from "@/modules/notifications/utils/pushNotifications";
 import {
   getAvailableModules,
   MODULE_LABELS,
   MODULE_PATHS,
 } from "@/shared/auth/navigation.util";
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
+import type { AppNotification } from "@/interfaces/notification.interface";
 import dashboardIcon from "@/assets/images/Dashboard.png";
 import propiedadesIcon from "@/assets/images/Propiedades.png";
 import desarrollosIcon from "@/assets/images/edificios.png";
@@ -37,12 +52,30 @@ const MODULE_ICONS: Record<ModuleKey, string> = {
 
 export function AppShell() {
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  const performLogout = useAuthStore((state) => state.logout);
   const location = useLocation();
+  const navigate = useNavigate();
+  const notifications = useNotificationsStore((state) => state.items);
+  const unreadCount = useNotificationsStore((state) => state.unreadCount);
+  const hasLoadedNotifications = useNotificationsStore((state) => state.hasLoaded);
+  const refreshNotifications = useNotificationsStore((state) => state.refresh);
+  const markNotificationAsRead = useNotificationsStore((state) => state.markAsRead);
+  const markAllNotificationsAsRead = useNotificationsStore((state) => state.markAllAsRead);
+  const resetNotifications = useNotificationsStore((state) => state.reset);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [browserNotificationPermission, setBrowserNotificationPermission] =
+    useState<BrowserNotificationPermissionState>(() =>
+      getBrowserNotificationPermission(),
+    );
+  const [pushSubscriptionStatus, setPushSubscriptionStatus] =
+    useState<PushSubscriptionStatus>("idle");
+  const notificationsRef = useRef<HTMLDivElement | null>(null);
+  const hasBootstrappedNotifications = useRef(false);
+  const notifiedIdsRef = useRef<Set<number>>(new Set());
 
   const permissions = user?.permisos ?? [];
   const availableModules = getAvailableModules(permissions);
@@ -60,6 +93,189 @@ export function AppShell() {
     ? `${user.nombres || ""} ${user.apellido_paterno || ""}`.trim() ||
       user.correo_electronico
     : "Usuario";
+
+  useEffect(() => {
+    setBrowserNotificationPermission(getBrowserNotificationPermission());
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setPushSubscriptionStatus("idle");
+      return;
+    }
+
+    let isCancelled = false;
+
+    const syncPushStatus = async () => {
+      try {
+        const status = await getPushSubscriptionStatus();
+        if (isCancelled) return;
+
+        setPushSubscriptionStatus(status);
+
+        if (status === "subscribed") {
+          await subscribeToPushNotifications();
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("No pudimos sincronizar el estado de push.", error);
+        }
+      }
+    };
+
+    void syncPushStatus();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      resetNotifications();
+      hasBootstrappedNotifications.current = false;
+      notifiedIdsRef.current = new Set();
+      return;
+    }
+
+    let isCancelled = false;
+
+    const syncNotifications = async () => {
+      try {
+        const items = await refreshNotifications();
+        if (isCancelled) return;
+
+        const nextUnreadIds = new Set(
+          items.filter((item) => !item.leida_en).map((item) => item.id),
+        );
+
+        if (hasBootstrappedNotifications.current) {
+          const newUnreadNotifications = items
+            .filter(
+              (item) =>
+                !item.leida_en && !notifiedIdsRef.current.has(item.id),
+            )
+            .slice(0, 3);
+
+          newUnreadNotifications.forEach((item) => {
+            toast(item.titulo ? `${item.titulo}: ${item.mensaje}` : item.mensaje, {
+              duration: 5000,
+            });
+
+            showBrowserNotification(item, () => {
+              void handleNotificationClick(item);
+            });
+          });
+        }
+
+        notifiedIdsRef.current = nextUnreadIds;
+        hasBootstrappedNotifications.current = true;
+      } catch (error) {
+        if (!isCancelled && !hasLoadedNotifications) {
+          console.error("No pudimos cargar las notificaciones.", error);
+        }
+      }
+    };
+
+    void syncNotifications();
+    const intervalId = window.setInterval(() => {
+      void syncNotifications();
+    }, 60000);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [
+    hasLoadedNotifications,
+    pushSubscriptionStatus,
+    refreshNotifications,
+    resetNotifications,
+    user?.id,
+  ]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!isNotificationsOpen) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const enableBrowserNotifications = async () => {
+      let permission = browserNotificationPermission;
+
+      if (permission === "default") {
+        permission = await requestBrowserNotificationPermission();
+        if (!isCancelled) {
+          setBrowserNotificationPermission(permission);
+        }
+      }
+
+      if (permission !== "granted" || isCancelled) {
+        return;
+      }
+
+      try {
+        const status = await subscribeToPushNotifications();
+        if (!isCancelled) {
+          setPushSubscriptionStatus(status);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("No pudimos activar las notificaciones push.", error);
+          setPushSubscriptionStatus("unavailable");
+          toast.error("No pudimos activar las notificaciones externas.");
+        }
+      }
+    };
+
+    void enableBrowserNotifications();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [browserNotificationPermission, isNotificationsOpen]);
+
+  const handleLogout = async () => {
+    try {
+      await disconnectPushNotifications();
+    } catch (error) {
+      console.error("No pudimos desactivar las notificaciones push al salir.", error);
+    } finally {
+      performLogout();
+    }
+  };
+
+  const handleNotificationClick = async (notification: AppNotification) => {
+    if (!notification.leida_en) {
+      await markNotificationAsRead(notification.id);
+    }
+
+    setIsNotificationsOpen(false);
+
+    if (notification.modulo === "registros") {
+      navigate(MODULE_PATHS.registros);
+      return;
+    }
+
+    if (notification.modulo === "registros_leads") {
+      navigate(MODULE_PATHS.registros_leads);
+    }
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 text-slate-900">
@@ -153,7 +369,7 @@ export function AppShell() {
 
             <button
               type="button"
-              onClick={logout}
+              onClick={() => void handleLogout()}
               className={[
                 "inline-flex w-full items-center justify-center rounded-2xl border border-red-500/60 bg-red-600 font-semibold text-white shadow-sm transition hover:bg-red-700",
                 isSidebarCollapsed
@@ -193,26 +409,180 @@ export function AppShell() {
                 </div>
               </div>
 
-              <div className="ml-auto flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-900 text-sm font-bold text-white shadow-sm">
-                  {user?.foto_url ? (
-                    <img
-                      src={getFullImageUrl(user.foto_url)}
-                      alt={displayName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span>
-                      {`${user?.nombres?.[0] || ""}${user?.apellido_paterno?.[0] || ""}`.toUpperCase()}
-                    </span>
+              <div className="ml-auto flex items-center gap-3">
+                <div className="relative" ref={notificationsRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                    className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  >
+                    <BellIcon className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute right-2 top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {isNotificationsOpen && (
+                    <div className="absolute right-0 top-14 z-50 w-[360px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
+                      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            Notificaciones
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {unreadCount > 0
+                              ? `${unreadCount} pendiente${unreadCount === 1 ? "" : "s"}`
+                              : "No tienes pendientes"}
+                          </p>
+                        </div>
+
+                        {unreadCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => void markAllNotificationsAsRead()}
+                            className="text-xs font-semibold text-sky-700 transition hover:text-sky-800"
+                          >
+                            Marcar todas
+                          </button>
+                        )}
+                      </div>
+
+                      {browserNotificationPermission !== "unsupported" && (
+                        <div className="border-b border-slate-100 bg-sky-50/70 px-5 py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">
+                                Notificaciones externas
+                              </p>
+                              <p className="mt-1 text-sm text-slate-700">
+                                {pushSubscriptionStatus === "subscribed" &&
+                                  "Las notificaciones push ya estan activas, incluso si cierras la ventana del CRM."}
+                                {pushSubscriptionStatus === "unavailable" &&
+                                  "El servicio push no esta disponible todavia en este entorno local."}
+                                {browserNotificationPermission === "default" &&
+                                  "Activa los avisos del navegador para recibir recordatorios fuera de la ventana del CRM."}
+                                {browserNotificationPermission === "denied" &&
+                                  "El navegador tiene bloqueados los avisos. Si los quieres usar, habilitalos desde la configuracion del sitio."}
+                                {browserNotificationPermission === "granted" &&
+                                  pushSubscriptionStatus === "idle" &&
+                                  "Tu navegador ya dio permiso. Enseguida intentamos registrar el canal push."}
+                              </p>
+                            </div>
+
+                            <span
+                              className={[
+                                "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                                getPushStatusBadgeClass(
+                                  browserNotificationPermission,
+                                  pushSubscriptionStatus,
+                                ),
+                              ].join(" ")}
+                            >
+                              {getPushStatusLabel(
+                                browserNotificationPermission,
+                                pushSubscriptionStatus,
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="crm-scrollbar-hidden max-h-[420px] overflow-y-auto px-3 py-3">
+                        {notifications.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                            No hay notificaciones por ahora.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {notifications.map((notification) => (
+                              <button
+                                key={notification.id}
+                                type="button"
+                                onClick={() => void handleNotificationClick(notification)}
+                                className={[
+                                  "w-full rounded-2xl border px-4 py-3 text-left transition",
+                                  notification.leida_en
+                                    ? "border-slate-200 bg-white hover:bg-slate-50"
+                                    : "border-sky-100 bg-sky-50/70 hover:bg-sky-50",
+                                ].join(" ")}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex min-w-0 items-start gap-3">
+                                    <div
+                                      className={[
+                                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-base font-semibold",
+                                        getNotificationIconClass(notification),
+                                      ].join(" ")}
+                                      aria-hidden="true"
+                                    >
+                                      {getNotificationIcon(notification)}
+                                    </div>
+
+                                    <div className="min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <p className="text-sm font-semibold text-slate-900">
+                                          {notification.titulo}
+                                        </p>
+                                        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                          {getNotificationTypeLabel(notification)}
+                                        </span>
+                                      </div>
+
+                                      <p className="mt-1 text-sm text-slate-600">
+                                        {notification.mensaje}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {!notification.leida_en && (
+                                    <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-sky-500" />
+                                  )}
+                                </div>
+
+                                <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
+                                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                    <span>{getNotificationModuleLabel(notification.modulo)}</span>
+                                    <span className="text-slate-300">•</span>
+                                    <span>
+                                      {getNotificationMomentLabel(notification)}
+                                    </span>
+                                  </div>
+                                  <span className="font-semibold text-sky-700">
+                                    {getNotificationActionLabel(notification)}
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                <div className="hidden text-right sm:block">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {displayName}
-                  </p>
-                  <p className="text-xs text-slate-500">{primaryRoleDisplay}</p>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-900 text-sm font-bold text-white shadow-sm">
+                    {user?.foto_url ? (
+                      <img
+                        src={getFullImageUrl(user.foto_url)}
+                        alt={displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>
+                        {`${user?.nombres?.[0] || ""}${user?.apellido_paterno?.[0] || ""}`.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="hidden text-right sm:block">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {displayName}
+                    </p>
+                    <p className="text-xs text-slate-500">{primaryRoleDisplay}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -236,6 +606,125 @@ export function AppShell() {
       </div>
     </div>
   );
+}
+
+function BellIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M15 17h5l-1.4-1.4a2 2 0 0 1-.6-1.4V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
+      <path d="M10 17a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
+function getPushStatusLabel(
+  permission: BrowserNotificationPermissionState,
+  status: PushSubscriptionStatus,
+) {
+  if (status === "subscribed") return "Activo";
+  if (permission === "denied") return "Bloqueado";
+  if (status === "unavailable") return "No disponible";
+  if (permission === "granted") return "Conectando";
+  return "Pendiente";
+}
+
+function getPushStatusBadgeClass(
+  permission: BrowserNotificationPermissionState,
+  status: PushSubscriptionStatus,
+) {
+  if (status === "subscribed") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (permission === "denied") {
+    return "bg-rose-100 text-rose-700";
+  }
+
+  if (status === "unavailable") {
+    return "bg-slate-200 text-slate-600";
+  }
+
+  if (permission === "granted") {
+    return "bg-amber-100 text-amber-700";
+  }
+
+  return "bg-sky-100 text-sky-700";
+}
+
+function getNotificationIcon(notification: AppNotification) {
+  if (notification.tipo === "lead_asignado") return "L";
+  if (notification.tipo === "recordatorio_cita_24h") return "24";
+  if (notification.tipo === "recordatorio_cita_5h") return "5";
+  return "N";
+}
+
+function getNotificationIconClass(notification: AppNotification) {
+  if (notification.tipo === "lead_asignado") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (notification.tipo === "recordatorio_cita_24h") {
+    return "bg-sky-100 text-sky-700";
+  }
+
+  if (notification.tipo === "recordatorio_cita_5h") {
+    return "bg-amber-100 text-amber-700";
+  }
+
+  return "bg-slate-100 text-slate-700";
+}
+
+function getNotificationTypeLabel(notification: AppNotification) {
+  if (notification.tipo === "lead_asignado") return "Lead";
+  if (notification.tipo === "recordatorio_cita_24h") return "24h";
+  if (notification.tipo === "recordatorio_cita_5h") return "5h";
+  return "General";
+}
+
+function getNotificationActionLabel(notification: AppNotification) {
+  if (notification.modulo === "registros_leads") return "Abrir lead";
+  if (notification.modulo === "registros") return "Abrir visita";
+  return "Abrir";
+}
+
+function getNotificationModuleLabel(module: string) {
+  if (module === "registros_leads") return "Registros leads";
+  if (module === "registros") return "Registros visitas";
+  return module;
+}
+
+function getNotificationMomentLabel(notification: AppNotification) {
+  const referenceDate = notification.programada_para ?? notification.creada_en;
+  if (!referenceDate) {
+    return "";
+  }
+
+  if (notification.tipo.startsWith("recordatorio_cita_")) {
+    return `Programada para ${formatNotificationDate(referenceDate)}`;
+  }
+
+  return formatNotificationDate(referenceDate);
+}
+
+function formatNotificationDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("es-MX", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function getPageTitle(pathname: string): string {

@@ -59,8 +59,8 @@ export function PropertiesPage() {
   const canEdit = can("propiedades", "actualizar");
   const canCreate = can("propiedades", "crear");
   const canDelete = can("propiedades", "eliminar");
-  const hideInternalStatus = user ? isSalesAdvisorOnly(user) : false;
-  const visibleStatusOptions = hideInternalStatus
+  const isSalesAdvisorView = user ? isSalesAdvisorOnly(user) : false;
+  const visibleStatusOptions = isSalesAdvisorView
     ? STATUS_OPTIONS.filter((option) => option !== "Interno")
     : STATUS_OPTIONS;
 
@@ -86,10 +86,10 @@ export function PropertiesPage() {
   }, []);
 
   useEffect(() => {
-    if (hideInternalStatus && filters.estatus === "Interno") {
+    if (isSalesAdvisorView && filters.estatus === "Interno") {
       setFilters({ estatus: "Todos los estados", page: 1 });
     }
-  }, [filters.estatus, hideInternalStatus, setFilters]);
+  }, [filters.estatus, isSalesAdvisorView, setFilters]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -247,16 +247,18 @@ export function PropertiesPage() {
 
       <FilterCard description="Busca propiedades por título y combina solo los filtros clave para ubicar resultados sin cansar la vista.">
         <div className="grid grid-cols-1 gap-3 items-start sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          <FilterSelect
-            value={filters.estatus || "Todos los estados"}
-            onChange={(e) => setFilters({ estatus: e.target.value, page: 1 })}
-          >
-            {visibleStatusOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </FilterSelect>
+          {!isSalesAdvisorView && (
+            <FilterSelect
+              value={filters.estatus || "Todos los estados"}
+              onChange={(e) => setFilters({ estatus: e.target.value, page: 1 })}
+            >
+              {visibleStatusOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </FilterSelect>
+          )}
 
           <FilterSelect
             value={filters.tipo_inmueble || "Todos los tipos"}
