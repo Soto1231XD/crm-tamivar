@@ -2,14 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import type { BlogRecord } from "@/interfaces/blog.interface";
 import type { UserRecord } from "@/interfaces/user.interface";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
-import { extractUserRoles, getHighestPriorityRoleLabel } from "@/shared/auth/role.utils";
+import {
+  extractUserRoles,
+  getHighestPriorityRoleLabel,
+} from "@/shared/auth/role.utils";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { canAccessDashboard } from "@/shared/auth/navigation.util";
+import { useThemeStore } from "@/shared/theme/useThemeStore";
 import { getBlogs } from "../../content/services/content.api";
 import { getLeads } from "../../leads/services/leads.api";
 import { getProperties } from "../../properties/services/properties.api";
-import { getLeadLeads } from "../../registroLeads/services/leadLeads.api";
 import { getPrimaryPropertyPrice } from "../../properties/utils/formatters";
+import { getLeadLeads } from "../../registroLeads/services/leadLeads.api";
 import { getSystemRoles } from "../../systemRoles/services/systemRoles.api";
 import { getUsers } from "../../users/services/users.api";
 import { DashboardSectionCard } from "../components/DashboardSectionCard";
@@ -61,13 +65,17 @@ const INITIAL_SUMMARY: DashboardSummaryState = {
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.token);
+  const theme = useThemeStore((state) => state.theme);
   const { can, userPermissions } = useHasPermission();
+  const isDark = theme === "dark";
 
   const displayName = user
     ? `${user.nombres || ""} ${user.apellido_paterno || ""}`.trim() ||
       user.correo_electronico
     : "Usuario";
-  const primaryRoleDisplay = user ? getHighestPriorityRoleLabel(user) : "Sin rol asignado";
+  const primaryRoleDisplay = user
+    ? getHighestPriorityRoleLabel(user)
+    : "Sin rol asignado";
   const canViewDashboard = canAccessDashboard(userPermissions);
   const dashboardCards = getVisibleDashboardCards(can);
   const dashboardSections = getVisibleDashboardSections(can);
@@ -79,7 +87,8 @@ export function DashboardPage() {
   const canReadRegistrosLeads =
     can("registros_leads", "leer") || can("registros_leads", "leer_todos");
   const canReadBlogs = can("blogs", "leer") || can("blogs", "leer_todos");
-  const canReadUsers = can("usuarios", "leer") || can("usuarios", "leer_todos");
+  const canReadUsers =
+    can("usuarios", "leer") || can("usuarios", "leer_todos");
   const canReadRoles = can("roles", "leer") || can("roles", "leer_todos");
 
   const [summary, setSummary] = useState<DashboardSummaryState>(INITIAL_SUMMARY);
@@ -152,23 +161,25 @@ export function DashboardPage() {
             )
           : [];
 
-        const visibleRecentLeads = leads
-          .slice()
-          .sort((left, right) => {
-            const leftDate = left.creado_en
-              ? new Date(left.creado_en).getTime()
-              : 0;
-            const rightDate = right.creado_en
-              ? new Date(right.creado_en).getTime()
-              : 0;
-            return rightDate - leftDate;
-          })
-          .slice(0, 5)
-          .map((lead) => ({
-            nombre: lead.nombres,
-            apellido: lead.apellidos,
-            estado: lead.estado ?? "Sin estado",
-          }));
+        const visibleRecentLeads = Array.isArray(leads)
+          ? leads
+              .slice()
+              .sort((left, right) => {
+                const leftDate = left.creado_en
+                  ? new Date(left.creado_en).getTime()
+                  : 0;
+                const rightDate = right.creado_en
+                  ? new Date(right.creado_en).getTime()
+                  : 0;
+                return rightDate - leftDate;
+              })
+              .slice(0, 5)
+              .map((lead) => ({
+                nombre: lead.nombres,
+                apellido: lead.apellidos,
+                estado: lead.estado ?? "Sin estado",
+              }))
+          : [];
 
         const activeVisitRecords = Array.isArray(leads)
           ? leads.filter(
@@ -293,26 +304,65 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-[2rem] border border-slate-300/80 bg-[#E6ECF5] px-6 py-7 shadow-sm sm:px-8">
+      <section
+        className={[
+          "relative overflow-hidden rounded-[2rem] px-6 py-7 sm:px-8",
+          isDark
+            ? "border border-slate-700/80 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.16),transparent_34%),linear-gradient(135deg,#0f172a_0%,#111827_58%,#172554_100%)] shadow-[0_24px_60px_rgba(2,6,23,0.38)]"
+            : "border border-slate-300/80 bg-[#E6ECF5] shadow-sm",
+        ].join(" ")}
+      >
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+            <p
+              className={[
+                "text-xs font-semibold uppercase tracking-[0.28em]",
+                isDark ? "text-sky-100/70" : "text-slate-500",
+              ].join(" ")}
+            >
               Panel principal
             </p>
-            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-[2rem]">
+            <h2
+              className={[
+                "mt-3 text-2xl font-black tracking-tight sm:text-[2rem]",
+                isDark ? "text-white" : "text-slate-950",
+              ].join(" ")}
+            >
               {`Bienvenido, ${displayName}`}
             </h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
-              Consulta el estado general del CRM, revisa actividad reciente y da seguimiento
-              a la operación desde un solo lugar.
+            <p
+              className={[
+                "mt-3 max-w-xl text-sm leading-6",
+                isDark ? "text-slate-300" : "text-slate-600",
+              ].join(" ")}
+            >
+              Consulta el estado general del CRM, revisa actividad reciente y da
+              seguimiento a la operación desde un solo lugar.
             </p>
           </div>
 
-          <div className="inline-flex w-fit flex-col rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 shadow-sm backdrop-blur-sm">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div
+            className={[
+              "inline-flex w-fit flex-col rounded-2xl px-4 py-3 backdrop-blur-sm",
+              isDark
+                ? "border border-slate-600/80 bg-slate-950/35 shadow-[0_18px_40px_rgba(2,6,23,0.28)]"
+                : "border border-slate-200 bg-white/85 shadow-sm",
+            ].join(" ")}
+          >
+            <span
+              className={[
+                "text-[11px] font-semibold uppercase tracking-[0.18em]",
+                isDark ? "text-sky-100/70" : "text-slate-500",
+              ].join(" ")}
+            >
               Perfil actual
             </span>
-            <span className="mt-2 text-sm font-semibold text-slate-900">
+            <span
+              className={[
+                "mt-2 text-sm font-semibold",
+                isDark ? "text-white" : "text-slate-900",
+              ].join(" ")}
+            >
               {primaryRoleDisplay}
             </span>
           </div>
@@ -335,13 +385,28 @@ export function DashboardPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-3 px-1">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p
+                className={[
+                  "text-xs font-semibold uppercase tracking-[0.18em]",
+                  isDark ? "text-slate-400" : "text-slate-500",
+                ].join(" ")}
+              >
                 Seguimiento
               </p>
-              <h3 className="mt-2 text-lg font-bold tracking-tight text-slate-950">
+              <h3
+                className={[
+                  "mt-2 text-lg font-bold tracking-tight",
+                  isDark ? "text-white" : "text-slate-950",
+                ].join(" ")}
+              >
                 Actividad reciente
               </h3>
-              <p className="mt-1 text-sm text-slate-600">
+              <p
+                className={[
+                  "mt-1 text-sm",
+                  isDark ? "text-slate-300" : "text-slate-600",
+                ].join(" ")}
+              >
                 Resumen visual de los movimientos más recientes del CRM.
               </p>
             </div>
@@ -355,7 +420,7 @@ export function DashboardPage() {
                 hasItems={getSectionItemsCount(sectionTitle, sectionData) > 0}
                 emptyMessage={getSectionEmptyMessage(sectionTitle)}
               >
-                {renderSectionItems(sectionTitle, sectionData)}
+                {renderSectionItems(sectionTitle, sectionData, isDark)}
               </DashboardSectionCard>
             ))}
           </div>

@@ -6,6 +6,7 @@ import { getHighestPriorityRoleLabel } from "@/shared/auth/role.utils";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
 import { getFullImageUrl } from "@/shared/utils/imageUrl";
 import { useNotificationsStore } from "@/modules/notifications/store/useNotificationsStore";
+import { useThemeStore } from "@/shared/theme/useThemeStore";
 import {
   getBrowserNotificationPermission,
   requestBrowserNotificationPermission,
@@ -62,11 +63,14 @@ export function AppShell() {
   const markNotificationAsRead = useNotificationsStore((state) => state.markAsRead);
   const markAllNotificationsAsRead = useNotificationsStore((state) => state.markAllAsRead);
   const resetNotifications = useNotificationsStore((state) => state.reset);
+  const theme = useThemeStore((state) => state.theme);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [browserNotificationPermission, setBrowserNotificationPermission] =
     useState<BrowserNotificationPermissionState>(() =>
       getBrowserNotificationPermission(),
@@ -79,6 +83,7 @@ export function AppShell() {
 
   const permissions = user?.permisos ?? [];
   const availableModules = getAvailableModules(permissions);
+  const isDark = theme === "dark";
 
   const navItems: Array<{ to: string; label: string; icon: string }> =
     availableModules.map((module: ModuleKey) => ({
@@ -250,14 +255,15 @@ export function AppShell() {
     };
   }, [browserNotificationPermission, isNotificationsOpen]);
 
-  const handleLogout = async () => {
-    try {
-      await disconnectPushNotifications();
-    } catch (error) {
+  const handleLogout = () => {
+    setIsProfileOpen(false);
+    setIsNotificationsOpen(false);
+    performLogout();
+    navigate("/login", { replace: true });
+
+    void disconnectPushNotifications().catch((error) => {
       console.error("No pudimos desactivar las notificaciones push al salir.", error);
-    } finally {
-      performLogout();
-    }
+    });
   };
 
   const handleNotificationClick = async (notification: AppNotification) => {
@@ -278,7 +284,7 @@ export function AppShell() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-50 text-slate-900">
+    <div className="h-screen overflow-hidden bg-[var(--crm-bg)] text-[var(--crm-text)]">
       <div className="flex h-full w-full">
         {!isSidebarCollapsed && (
           <div
@@ -562,27 +568,34 @@ export function AppShell() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-900 text-sm font-bold text-white shadow-sm">
-                    {user?.foto_url ? (
-                      <img
-                        src={getFullImageUrl(user.foto_url)}
-                        alt={displayName}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span>
-                        {`${user?.nombres?.[0] || ""}${user?.apellido_paterno?.[0] || ""}`.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileOpen((prev) => !prev)}
+                    className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left transition hover:bg-slate-100"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-900 text-sm font-bold text-white shadow-sm">
+                      {user?.foto_url ? (
+                        <img
+                          src={getFullImageUrl(user.foto_url)}
+                          alt={displayName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>
+                          {`${user?.nombres?.[0] || ""}${user?.apellido_paterno?.[0] || ""}`.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="hidden text-right sm:block">
-                    <p className="text-sm font-semibold text-slate-900">
-                      {displayName}
-                    </p>
-                    <p className="text-xs text-slate-500">{primaryRoleDisplay}</p>
-                  </div>
+                    <div className="hidden text-right sm:block">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {displayName}
+                      </p>
+                      <p className="text-xs text-slate-500">{primaryRoleDisplay}</p>
+                    </div>
+                  </button>
+
                 </div>
               </div>
             </div>
@@ -604,6 +617,159 @@ export function AppShell() {
           </main>
         </div>
       </div>
+
+      {isProfileOpen && (
+        <div
+          className="fixed inset-0 z-[90] bg-slate-950/35 backdrop-blur-[2px]"
+          onClick={() => setIsProfileOpen(false)}
+        >
+          <div
+            className={`absolute right-4 top-20 w-[min(420px,calc(100vw-2rem))] overflow-hidden rounded-[28px] border shadow-[0_32px_80px_rgba(15,23,42,0.32)] md:right-8 ${
+              isDark
+                ? "border-slate-700 bg-[linear-gradient(180deg,#0F172A_0%,#111827_100%)] text-slate-100"
+                : "border-slate-200 bg-white text-slate-900"
+            }`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div
+              className={`px-5 pb-5 pt-4 ${
+                isDark
+                  ? "bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.22),transparent_38%),linear-gradient(180deg,#0F172A_0%,#111827_100%)]"
+                  : "bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_38%),linear-gradient(180deg,#F8FAFC_0%,#FFFFFF_100%)]"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    Perfil rapido
+                  </p>
+                  <h3 className={`mt-2 text-xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-950"}`}>
+                    {displayName}
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsProfileOpen(false)}
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border text-lg transition ${
+                    isDark
+                      ? "border-slate-700 bg-white/5 text-slate-200 hover:bg-white/10"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  }`}
+                  aria-label="Cerrar perfil"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mt-5 flex items-center gap-4">
+                <div className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[24px] text-xl font-bold ${
+                  isDark
+                    ? "bg-white/10 text-white ring-1 ring-inset ring-white/10"
+                    : "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200"
+                }`}>
+                  {user?.foto_url ? (
+                    <img
+                      src={getFullImageUrl(user.foto_url)}
+                      alt={displayName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span>
+                      {`${user?.nombres?.[0] || ""}${user?.apellido_paterno?.[0] || ""}`.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                      isDark
+                        ? "bg-sky-500/12 text-sky-200 ring-1 ring-inset ring-sky-400/20"
+                        : "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200"
+                    }`}>
+                      {primaryRoleDisplay}
+                    </span>
+                    <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                      user?.activo === false
+                        ? isDark
+                          ? "bg-rose-500/12 text-rose-200 ring-1 ring-inset ring-rose-400/20"
+                          : "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200"
+                        : isDark
+                          ? "bg-emerald-500/12 text-emerald-200 ring-1 ring-inset ring-emerald-400/20"
+                          : "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
+                    }`}>
+                      {user?.activo === false ? "Inactivo" : "Activo"}
+                    </span>
+                  </div>
+
+                  {user?.codigo_usuario && (
+                    <p className={`mt-3 text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+                      ID {user.codigo_usuario}
+                    </p>
+                  )}
+                  <p className={`mt-1 text-sm ${isDark ? "text-slate-300" : "text-slate-500"}`}>
+                    {user?.correo_electronico || "Sin correo"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className={`px-5 py-5 ${isDark ? "bg-slate-950/25" : "bg-white"}`}>
+            <div className={`overflow-hidden rounded-[24px] border ${
+                isDark ? "border-slate-700 bg-slate-900/70" : "border-slate-200 bg-slate-50"
+              }`}>
+                <ProfileInfoRow label="Telefono" value={formatPhoneValue(user?.telefono)} isDark={isDark} />
+                <ProfileInfoRow label="Apellido paterno" value={user?.apellido_paterno || "Sin dato"} isDark={isDark} />
+                <ProfileInfoRow label="Apellido materno" value={user?.apellido_materno || "Sin dato"} isDark={isDark} />
+                <ProfileInfoRow label="Folio de certificacion" value={user?.folio_certificacion || "Sin dato"} isDark={isDark} />
+              </div>
+
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className={`inline-flex w-full items-center justify-between rounded-[22px] border px-4 py-3.5 text-left transition ${
+                    isDark
+                      ? "border-slate-700 bg-slate-900/70 text-slate-100 hover:bg-slate-900"
+                      : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"
+                  }`}
+                  aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                  title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                >
+                  <span className="flex items-center gap-3">
+                    <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${
+                      isDark ? "bg-slate-800 text-slate-100" : "bg-white text-slate-700 ring-1 ring-inset ring-slate-200"
+                    }`}>
+                      {isDark ? (
+                        <SunIcon className="h-4.5 w-4.5" />
+                      ) : (
+                        <MoonIcon className="h-4.5 w-4.5" />
+                      )}
+                    </span>
+                    <span>
+                      <span className={`block text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                        isDark ? "text-slate-400" : "text-slate-500"
+                      }`}>
+                        Apariencia
+                      </span>
+                      <span className="mt-1 block text-sm font-semibold">
+                        {isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span className={`text-xs font-semibold ${
+                    isDark ? "text-slate-400" : "text-slate-500"
+                  }`}>
+                    {isDark ? "Claro" : "Oscuro"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -624,6 +790,83 @@ function BellIcon({ className = "" }: { className?: string }) {
       <path d="M10 17a2 2 0 0 0 4 0" />
     </svg>
   );
+}
+
+function SunIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2.5" />
+      <path d="M12 19.5V22" />
+      <path d="M4.93 4.93l1.77 1.77" />
+      <path d="M17.3 17.3l1.77 1.77" />
+      <path d="M2 12h2.5" />
+      <path d="M19.5 12H22" />
+      <path d="M4.93 19.07l1.77-1.77" />
+      <path d="M17.3 6.7l1.77-1.77" />
+    </svg>
+  );
+}
+
+function MoonIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+    </svg>
+  );
+}
+
+function ProfileInfoRow({
+  label,
+  value,
+  isDark,
+}: {
+  label: string;
+  value: string;
+  isDark: boolean;
+}) {
+  return (
+    <div className={`flex items-start justify-between gap-4 px-4 py-3.5 ${
+      isDark ? "border-b border-slate-800 last:border-b-0" : "border-b border-slate-200 last:border-b-0"
+    }`}>
+      <p className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${
+        isDark ? "text-slate-400" : "text-slate-500"
+      }`}>
+        {label}
+      </p>
+      <p className={`max-w-[62%] break-words text-right text-sm font-medium leading-6 ${
+        isDark ? "text-slate-200" : "text-slate-800"
+      }`}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function formatPhoneValue(value?: string | number | null) {
+  if (value === null || value === undefined || value === "") {
+    return "Sin telefono";
+  }
+
+  return String(value);
 }
 
 function getPushStatusLabel(

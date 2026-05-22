@@ -173,11 +173,6 @@ export function DevelopmentsPage() {
             Consulta el inventario de desarrollos y revisa su esquema comercial,
             ubicación, entrega y número de modelos desde una sola vista.
           </p>
-          <p className="mt-3 text-sm text-[#312C85]">
-            Esta primera versión ya deja consultar y filtrar desarrollos. La
-            carga y edición completa con modelos la seguimos montando sobre esta
-            base.
-          </p>
         </div>
         <div className="ml-auto flex w-full sm:w-auto">
           <button

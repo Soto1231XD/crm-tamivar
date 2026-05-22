@@ -14,6 +14,7 @@ import editarDosIcon from "../../../assets/images/editar2.png";
 import { extractUserRoles, normalizeRoleName } from "@/shared/auth/role.utils";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
+import { useThemeStore } from "@/shared/theme/useThemeStore";
 import { getUsers } from "../../users/services/users.api";
 import { AssignedModulesModal } from "../components/AssignedModulesModal";
 import { CreateRoleModal } from "../components/CreateRoleModal";
@@ -28,6 +29,7 @@ import {
 
 export function SystemRolesPage() {
   const accessToken = useAuthStore((state) => state.token);
+  const isDark = useThemeStore((state) => state.theme === "dark");
   const { can } = useHasPermission();
 
   const canCreate = can("roles", "crear");
@@ -89,8 +91,10 @@ export function SystemRolesPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900">Roles del sistema</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+          <h2 className={`text-2xl font-black tracking-tight ${isDark ? "text-slate-100" : "text-slate-900"}`}>
+            Roles del sistema
+          </h2>
+          <p className={`mt-1 max-w-2xl text-sm leading-6 ${isDark ? "text-slate-300" : "text-slate-600"}`}>
             Define permisos y niveles de acceso del CRM
           </p>
         </div>
@@ -105,7 +109,7 @@ export function SystemRolesPage() {
         </button>
       </header>
 
-      <FilterCard description="Busca un rol por nombre para localizarlo mas rápido.">
+      <FilterCard description="Busca un rol por nombre para localizarlo más rápido.">
         <div className="md:max-w-sm">
           <FilterSearchInput
             type="text"
@@ -118,12 +122,24 @@ export function SystemRolesPage() {
 
       <section>
         {isLoading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
+          <div
+            className={`rounded-2xl px-4 py-10 text-center text-sm shadow-sm ${
+              isDark
+                ? "border border-slate-700 bg-slate-900 text-slate-300"
+                : "border border-slate-200 bg-white text-slate-600"
+            }`}
+          >
             Cargando roles...
           </div>
         ) : filteredRoles.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
-            <p className="font-semibold text-slate-700">Sin resultados</p>
+          <div
+            className={`rounded-2xl px-4 py-10 text-center text-sm shadow-sm ${
+              isDark
+                ? "border border-dashed border-slate-700 bg-slate-900 text-slate-300"
+                : "border border-dashed border-slate-300 bg-white text-slate-600"
+            }`}
+          >
+            <p className={`font-semibold ${isDark ? "text-slate-100" : "text-slate-700"}`}>Sin resultados</p>
             <p className="mt-1">No se encontraron roles</p>
           </div>
         ) : (
@@ -131,17 +147,35 @@ export function SystemRolesPage() {
             {filteredRoles.map((role) => (
               <article
                 key={role.id}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                className={`overflow-hidden rounded-2xl shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  isDark
+                    ? "border border-slate-700 bg-slate-900"
+                    : "border border-slate-200 bg-white"
+                }`}
               >
-                <div className="border-b border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.95),rgba(255,255,255,0.98))] px-5 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Rol del sistema</p>
-                  <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900">{role.rol}</h3>
+                <div
+                  className={`px-5 py-4 ${
+                    isDark
+                      ? "border-b border-slate-700 bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(17,24,39,0.98))]"
+                      : "border-b border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.95),rgba(255,255,255,0.98))]"
+                  }`}
+                >
+                  <p
+                    className={`text-xs font-semibold uppercase tracking-[0.18em] ${
+                      isDark ? "text-slate-400" : "text-slate-500"
+                    }`}
+                  >
+                    Rol del sistema
+                  </p>
+                  <h3 className={`mt-1 text-lg font-bold tracking-tight ${isDark ? "text-slate-100" : "text-slate-900"}`}>
+                    {role.rol}
+                  </h3>
                 </div>
 
                 <div className="flex flex-col gap-5 px-5 py-5 xl:flex-row xl:items-center xl:justify-between">
                   <div className="grid min-w-0 flex-1 gap-4 md:grid-cols-[1.4fr_0.7fr]">
-                    <InfoBlock label="Descripción del rol" value={getRoleDescription(role.rol)} />
-                    <InfoBlock label="Usuarios asignados" value={String(getAssignedUsersCount(role, users))} />
+                    <InfoBlock label="Descripción del rol" value={getRoleDescription(role.rol)} isDark={isDark} />
+                    <InfoBlock label="Usuarios asignados" value={String(getAssignedUsersCount(role, users))} isDark={isDark} />
                   </div>
 
                   <div className="flex flex-col gap-3 xl:items-end xl:self-stretch">
@@ -154,7 +188,13 @@ export function SystemRolesPage() {
                     </button>
 
                     {isProtectedRole(role.rol) ? (
-                      <div className="w-full max-w-[320px] rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm leading-6 text-slate-700 xl:mt-auto">
+                      <div
+                        className={`w-full max-w-[320px] rounded-xl px-4 py-3 text-sm leading-6 xl:mt-auto ${
+                          isDark
+                            ? "border border-amber-500/30 bg-amber-500/10 text-amber-100"
+                            : "border border-amber-100 bg-amber-50 text-slate-700"
+                        }`}
+                      >
                         Este es un rol base del sistema y no puede editarse ni eliminarse desde esta vista.
                       </div>
                     ) : (
@@ -224,7 +264,7 @@ export function SystemRolesPage() {
 
       const createdRole = await createSystemRole(payload, accessToken);
       setRoles((prev) => [createdRole, ...prev]);
-      toast.success("El rol se creo con éxito.");
+      toast.success("El rol se creó con éxito.");
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : "No fue posible crear el rol.";
@@ -239,7 +279,7 @@ export function SystemRolesPage() {
       const updatedRole = await updateSystemRole(editingRole.id, payload, accessToken);
       setRoles((prev) => prev.map((role) => (role.id === updatedRole.id ? updatedRole : role)));
       setEditingRole(null);
-      toast.success("El rol se actualizo con éxito.");
+      toast.success("El rol se actualizó con éxito.");
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : "No fue posible actualizar el rol.";
@@ -253,7 +293,7 @@ export function SystemRolesPage() {
       await deleteSystemRole(roleId, accessToken);
       setRoles((prev) => prev.filter((role) => role.id !== roleId));
       setDeletingRole(null);
-      toast.success("El rol se elimino con éxito.");
+      toast.success("El rol se eliminó con éxito.");
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : "No fue posible eliminar el rol.";
@@ -261,11 +301,19 @@ export function SystemRolesPage() {
   }
 }
 
-function InfoBlock({ label, value }: { label: string; value: string }) {
+function InfoBlock({ label, value, isDark }: { label: string; value: string; isDark: boolean }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-700">{value}</p>
+    <div
+      className={`rounded-xl px-4 py-4 ${
+        isDark
+          ? "border border-slate-700 bg-slate-900/70"
+          : "border border-slate-200 bg-slate-50"
+      }`}
+    >
+      <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+        {label}
+      </p>
+      <p className={`mt-2 text-sm leading-6 ${isDark ? "text-slate-200" : "text-slate-700"}`}>{value}</p>
     </div>
   );
 }
@@ -295,7 +343,7 @@ function getRoleDescription(roleName: string): string {
     return "Seguimiento comercial de propiedades y registros.";
   }
   if (normalized === "coordinador ventas" || normalized === "coordinador de ventas") {
-    return "Supervision comercial y coordinación del flujo de ventas.";
+    return "Supervisión comercial y coordinación del flujo de ventas.";
   }
   return "Rol configurado dentro del CRM para controlar accesos y permisos.";
 }
