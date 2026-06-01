@@ -31,6 +31,7 @@ import propiedadesIcon from "@/assets/images/Propiedades.png";
 import desarrollosIcon from "@/assets/images/edificios.png";
 import registrosIcon from "@/assets/images/Registro.png";
 import contenidoIcon from "@/assets/images/Contenido.png";
+import materialIcon from "@/assets/images/creador-de-contenido.png";
 import usuariosIcon from "@/assets/images/Usuarios.png";
 import rolIcon from "@/assets/images/Rol.png";
 import logsIcon from "@/assets/images/Logs.png";
@@ -42,6 +43,7 @@ const MODULE_ICONS: Record<ModuleKey, string> = {
   dashboard: dashboardIcon,
   propiedades: propiedadesIcon,
   desarrollos: desarrollosIcon,
+  material: materialIcon,
   registros: registrosIcon,
   registros_leads: registrosIcon,
   solicitudes_leads: registrosIcon,

@@ -9,6 +9,7 @@ const MODULE_LABELS: Record<string, string> = {
   users: "Usuarios",
   roles: "Roles",
   properties: "Propiedades",
+  material: "Material",
   registros: "Registros",
   "registros-leads": "Registros leads",
   blogs: "Blogs",

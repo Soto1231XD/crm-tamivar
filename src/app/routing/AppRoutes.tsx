@@ -16,6 +16,7 @@ import { DevelopmentDetailView } from "@/modules/developments/components/Develop
 import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
 import { ContentPage } from "@/modules/content/pages/ContentPage";
+import { MaterialPage } from "@/modules/material/pages/MaterialPage";
 import { PropertyDetailView } from "@/modules/properties/components/PropertyDetailView";
 import { MovementsPage } from "@/modules/movements/pages/MovementsPage";
 
@@ -59,6 +60,7 @@ export function AppRoutes() {
               element={<DevelopmentDetailView />}
             />
           </Route>
+          <Route path="modulos/material" element={<MaterialPage />} />
           <Route element={<ProtectedRoute module="registros" />}>
             <Route
               path="modulos/registros"

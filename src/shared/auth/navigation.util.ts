@@ -4,6 +4,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard: "Dashboard",
   propiedades: "Propiedades",
   desarrollos: "Desarrollos",
+  material: "Material",
   registros: "Registros visitas",
   registros_leads: "Registros leads",
   solicitudes_leads: "Solicitudes",
@@ -17,6 +18,7 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   dashboard: "/dashboard",
   propiedades: "/modulos/propiedades",
   desarrollos: "/modulos/desarrollos",
+  material: "/modulos/material",
   registros: "/modulos/registros-visitas",
   registros_leads: "/modulos/registros-leads",
   solicitudes_leads: "/modulos/solicitudes-leads",
@@ -57,6 +59,7 @@ export function getAvailableModules(permissions: string[]): ModuleKey[] {
     "dashboard",
     "propiedades",
     "desarrollos",
+    "material",
     "registros",
     "registros_leads",
     "solicitudes_leads",
@@ -70,6 +73,7 @@ export function getAvailableModules(permissions: string[]): ModuleKey[] {
 
   return allModules.filter((module) => {
     if (module === "dashboard") return canAccessDashboard(permissions);
+    if (module === "material") return true;
     return permissions.some((permission) => permission.startsWith(`${module}:`));
   });
 }
