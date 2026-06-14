@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import toast from "react-hot-toast";
 import {
   formatFullDireccion,
   formatCurrency,
@@ -16,6 +17,8 @@ import {
 import { getFeatureIcon } from "../utils/featureIcons";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
 import { PropertyVisitsList } from "./PropertyVisitsList";
+import { useMercadoLibreStore } from "../store/useMercadoLibreStore";
+import { buildMercadoLibrePreview } from "../utils/mercadoLibre";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -64,6 +67,19 @@ export const PropertyDetailView = () => {
     isLoading,
     error,
   } = usePropertiesStore();
+  const {
+    account: mercadoLibreAccount,
+    publication: mercadoLibrePublication,
+    isLoadingStatus: isLoadingMercadoLibreStatus,
+    isAuthorizing: isAuthorizingMercadoLibre,
+    isPublishing: isPublishingMercadoLibre,
+    isSyncing: isSyncingMercadoLibre,
+    fetchPropertyStatus: fetchMercadoLibrePropertyStatus,
+    startAuthorization: startMercadoLibreAuthorization,
+    publishProperty: publishToMercadoLibre,
+    syncProperty: syncMercadoLibreProperty,
+    reset: resetMercadoLibreState,
+  } = useMercadoLibreStore();
 
   // Estado para controlar las pestañas
   const [activeTab, setActiveTab] = useState<"info" | "visitas">("info");
@@ -75,6 +91,16 @@ export const PropertyDetailView = () => {
     }
     return () => clearCurrentProperty();
   }, [id, fetchProperty, clearCurrentProperty]);
+
+  useEffect(() => {
+    if (!currentProperty?.id) return;
+
+    void fetchMercadoLibrePropertyStatus(currentProperty.id);
+
+    return () => {
+      resetMercadoLibreState();
+    };
+  }, [currentProperty?.id, fetchMercadoLibrePropertyStatus, resetMercadoLibreState]);
 
   if (isLoading) {
     return (
@@ -173,6 +199,141 @@ export const PropertyDetailView = () => {
     currentProperty.enlace_direccion,
     fullAddress,
   );
+  const mercadoLibrePreview = buildMercadoLibrePreview(currentProperty);
+  const propertyId = currentProperty.id;
+
+  function handleCopyMercadoLibrePayload() {
+    const payloadText = JSON.stringify(mercadoLibrePreview.payload, null, 2);
+
+    void navigator.clipboard
+      .writeText(payloadText)
+      .then(() => {
+        toast.success("Payload base de Mercado Libre copiado.");
+      })
+      .catch(() => {
+        toast.error("No pudimos copiar el payload en este momento.");
+      });
+  }
+
+  function handleDownloadMercadoLibrePayload() {
+    const payloadText = JSON.stringify(mercadoLibrePreview.payload, null, 2);
+    const blob = new Blob([payloadText], { type: "application/json" });
+    const fileUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = fileUrl;
+    link.download = `${slugBase}-mercado-libre.json`;
+    link.click();
+
+    URL.revokeObjectURL(fileUrl);
+  }
+
+  async function handleConnectMercadoLibre() {
+    try {
+      const authorizationUrl = await startMercadoLibreAuthorization(propertyId);
+      window.open(authorizationUrl, "_blank", "noopener,noreferrer");
+      toast.success("Abrimos la autorizacion de Mercado Libre en una nueva pestaña.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No pudimos iniciar la autorizacion.");
+    }
+  }
+
+  async function handleRefreshMercadoLibreStatus() {
+    const response = await fetchMercadoLibrePropertyStatus(propertyId);
+
+    if (response) {
+      toast.success("Estado de Mercado Libre actualizado.");
+    } else {
+      toast.error("No pudimos consultar el estado de Mercado Libre.");
+    }
+  }
+
+  async function handlePublishToMercadoLibre() {
+    try {
+      const response = await publishToMercadoLibre(propertyId);
+      toast.success(response.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No pudimos publicar la propiedad.");
+    }
+  }
+
+  async function handleSyncMercadoLibre() {
+    try {
+      await syncMercadoLibreProperty(propertyId);
+      toast.success("Sincronizacion con Mercado Libre completada.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No pudimos sincronizar la propiedad.",
+      );
+    }
+  }
+
+  function handleCopyMercadoLibrePublicationId() {
+    const publicationId = mercadoLibrePublication?.publication_id;
+
+    if (!publicationId) {
+      toast.error("Todavia no hay un ID de publicacion para copiar.");
+      return;
+    }
+
+    void navigator.clipboard
+      .writeText(publicationId)
+      .then(() => {
+        toast.success("ID de publicacion copiado.");
+      })
+      .catch(() => {
+        toast.error("No pudimos copiar el ID de publicacion en este momento.");
+      });
+  }
+
+  const mercadoLibreStatus = mercadoLibrePublication?.status ?? "not_published";
+  const mercadoLibreStatusMeta = (() => {
+    switch (mercadoLibreStatus) {
+      case "active":
+        return {
+          label: "Activa",
+          tone: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+          help: "La publicacion ya esta activa en Mercado Libre.",
+        };
+      case "payment_required":
+        return {
+          label: "Pago pendiente",
+          tone: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+          help: "Mercado Libre creo el anuncio, pero aun requiere paquete o pago para activarlo.",
+        };
+      case "draft":
+        return {
+          label: "Borrador",
+          tone: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+          help: "La propiedad solo se ha sincronizado localmente como borrador.",
+        };
+      case "paused":
+        return {
+          label: "Pausada",
+          tone: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
+          help: "La publicacion existe, pero no esta activa en este momento.",
+        };
+      case "error":
+        return {
+          label: "Con error",
+          tone: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
+          help: "La ultima sincronizacion o publicacion devolvio un error.",
+        };
+      default:
+        return {
+          label: "Sin publicar",
+          tone: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+          help: "Todavia no hay una publicacion remota registrada.",
+        };
+    }
+  })();
+
+  const mercadoLibreLastSyncedLabel = mercadoLibrePublication?.last_synced_at
+    ? new Date(mercadoLibrePublication.last_synced_at).toLocaleString("es-MX", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "Sin sincronizacion previa";
 
   return (
     <div className="mx-auto p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-screen">
@@ -803,6 +964,378 @@ export const PropertyDetailView = () => {
                       No hay detalles adicionales registrados.
                     </p>
                   )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-600">
+                    Portal inmobiliario
+                  </p>
+                  <h3 className="mt-2 text-xl font-bold text-slate-900">
+                    Integracion con Mercado Libre
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Aqui validamos la base comercial de la propiedad y el estado real
+                    de su publicacion dentro de Mercado Libre.
+                  </p>
+                </div>
+
+                <div
+                  className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] ${
+                    mercadoLibrePreview.ready
+                      ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                      : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                  }`}
+                >
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      mercadoLibrePreview.ready ? "bg-emerald-500" : "bg-amber-500"
+                    }`}
+                  />
+                  {mercadoLibrePreview.ready ? "Lista para integrar" : "Requiere ajustes"}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                      Operacion base
+                    </p>
+                    <p className="mt-2 text-base font-bold text-slate-900">
+                      {mercadoLibrePreview.summary.operationLabel}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                      Precio base
+                    </p>
+                    <p className="mt-2 text-base font-bold text-slate-900">
+                      {mercadoLibrePreview.summary.priceLabel}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                      Imagenes
+                    </p>
+                    <p className="mt-2 text-base font-bold text-slate-900">
+                      {mercadoLibrePreview.summary.imageCount} listas
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:col-span-3 lg:col-span-1">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                      Estatus actual
+                    </p>
+                    <p className="mt-2 text-base font-bold text-slate-900">
+                      {mercadoLibrePreview.summary.statusLabel}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Payload base para la API
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Todavia no publicamos directo desde el CRM, pero ya podemos
+                        preparar la estructura que consumira el backend.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCopyMercadoLibrePayload}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                      >
+                        Copiar payload
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadMercadoLibrePayload}
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#27226f]"
+                      >
+                        Descargar JSON
+                      </button>
+                    </div>
+                  </div>
+
+                  <pre className="mt-4 max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs leading-6 text-slate-100">
+                    {JSON.stringify(mercadoLibrePreview.payload, null, 2)}
+                  </pre>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Cuenta y publicacion
+                      </p>
+                      <p className="mt-2 text-sm text-slate-600">
+                        Estado real que esperamos recibir desde backend.
+                      </p>
+                    </div>
+
+                    {isLoadingMercadoLibreStatus ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
+                    ) : null}
+                  </div>
+
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        Cuenta Mercado Libre
+                      </p>
+                      <p className="mt-2 text-base font-bold text-slate-900">
+                        {mercadoLibreAccount?.connected
+                          ? mercadoLibreAccount.nickname || "Conectada"
+                          : "Sin conectar"}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {mercadoLibreAccount?.connected
+                          ? "La cuenta ya quedo autorizada para publicar."
+                          : "Todavia falta autorizar una cuenta de Mercado Libre."}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        Publicacion actual
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] ${mercadoLibreStatusMeta.tone}`}
+                        >
+                          {mercadoLibreStatusMeta.label}
+                        </span>
+                        {mercadoLibrePublication?.publication_id ? (
+                          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            {mercadoLibrePublication.publication_id}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-3 text-sm text-slate-600">
+                        {mercadoLibreStatusMeta.help}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-600">
+                        {mercadoLibrePublication?.publication_id
+                          ? `ID externo: ${mercadoLibrePublication.publication_id}`
+                          : "Todavia no hay una publicacion remota registrada."}
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-slate-500">
+                        Ultima sincronizacion: {mercadoLibreLastSyncedLabel}
+                      </p>
+                      {mercadoLibrePublication?.last_error ? (
+                        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-800">
+                            Ultimo detalle recibido
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-amber-700">
+                            {mercadoLibrePublication.last_error}
+                          </p>
+                        </div>
+                      ) : null}
+                      {mercadoLibreStatus === "payment_required" ? (
+                        <div className="mt-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-800">
+                            Siguiente paso
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-indigo-700">
+                            Entra al anuncio en Mercado Libre y revisa el paquete o
+                            pago pendiente para activarlo. La integracion ya creo la
+                            publicacion correctamente.
+                          </p>
+                        </div>
+                      ) : null}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {mercadoLibrePublication?.publication_id ? (
+                          <button
+                            type="button"
+                            onClick={handleCopyMercadoLibrePublicationId}
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                          >
+                            Copiar ID
+                          </button>
+                        ) : null}
+                        {mercadoLibrePublication?.permalink ? (
+                          <a
+                            href={mercadoLibrePublication.permalink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 hover:text-indigo-800"
+                          >
+                            Abrir en Mercado Libre
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                              />
+                            </svg>
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        Categoria sugerida
+                      </p>
+                      <p className="mt-3 inline-flex rounded-full bg-slate-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-slate-700 ring-1 ring-slate-200">
+                        {mercadoLibrePreview.summary.categoryLabel}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRefreshMercadoLibreStatus}
+                        disabled={isLoadingMercadoLibreStatus}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Consultar estado
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConnectMercadoLibre}
+                        disabled={isAuthorizingMercadoLibre}
+                        className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isAuthorizingMercadoLibre ? "Conectando..." : "Conectar cuenta"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handlePublishToMercadoLibre}
+                        disabled={!mercadoLibrePreview.ready || isPublishingMercadoLibre}
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isPublishingMercadoLibre ? "Publicando..." : "Publicar"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSyncMercadoLibre}
+                        disabled={isSyncingMercadoLibre}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isSyncingMercadoLibre ? "Sincronizando..." : "Sincronizar"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-bold text-slate-900">
+                      Checklist de integracion
+                    </p>
+                    <span className="text-xs font-semibold text-slate-500">
+                      {mercadoLibrePreview.blockingIssues.length} bloqueos / {mercadoLibrePreview.recommendations.length} recomendaciones
+                    </span>
+                  </div>
+
+                  {mercadoLibrePreview.issues.length > 0 ? (
+                    <div className="mt-4 space-y-4">
+                      {mercadoLibrePreview.blockingIssues.length > 0 ? (
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-700">
+                            Bloqueos reales
+                          </p>
+                          <ul className="mt-3 space-y-3">
+                            {mercadoLibrePreview.blockingIssues.map((issue) => (
+                              <li
+                                key={`${issue.field}-${issue.message}`}
+                                className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3"
+                              >
+                                <p className="text-sm font-bold text-rose-800">
+                                  {issue.field}
+                                </p>
+                                <p className="mt-1 text-sm leading-6 text-rose-700">
+                                  {issue.message}
+                                </p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {mercadoLibrePreview.recommendations.length > 0 ? (
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">
+                            Recomendaciones
+                          </p>
+                          <ul className="mt-3 space-y-3">
+                            {mercadoLibrePreview.recommendations.map((issue) => (
+                              <li
+                                key={`${issue.field}-${issue.message}`}
+                                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
+                              >
+                                <p className="text-sm font-bold text-amber-800">
+                                  {issue.field}
+                                </p>
+                                <p className="mt-1 text-sm leading-6 text-amber-700">
+                                  {issue.message}
+                                </p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                      <p className="text-sm font-bold text-emerald-800">
+                        La propiedad ya cubre la base comercial para arrancar la integracion.
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-emerald-700">
+                        El siguiente paso real es conectar este payload con el backend para
+                        autenticacion OAuth y publicacion por API.
+                      </p>
+                    </div>
+                  )}
+
+                  <a
+                    href="https://developers.mercadolibre.com.mx/es_ar/api-docs-es/introduccion-guia-de-inmuebles"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 transition hover:text-indigo-800"
+                  >
+                    Ver documentacion oficial de Mercado Libre
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
