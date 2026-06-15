@@ -261,7 +261,7 @@ export function PaymentMultiSelect({
         >
           <div className="flex items-center justify-between gap-3">
             <span className="truncate">
-              {selectedValues.length > 0 ? selectedValues.join(", ") : "Selecciona uno o mas tipos de pago"}
+              {selectedValues.length > 0 ? selectedValues.join(", ") : "Selecciona uno o más tipos de pago"}
             </span>
             <span className="text-slate-500 transition-transform duration-200 group-open:rotate-180">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

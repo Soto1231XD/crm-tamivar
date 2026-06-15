@@ -69,11 +69,11 @@ export function MovementDetailModal({
               Detalle del movimiento
             </p>
             <h3 className="mt-2 text-2xl font-bold text-slate-900">
-              {normalizeMovementText(movement.descripcion) || "Accion realizada"}
+              {normalizeMovementText(movement.descripcion) || "Acción realizada"}
             </h3>
             <p className="mt-2 text-sm text-slate-600">
               Aquí puedes revisar el contexto completo del movimiento y los
-              datos guardados de una forma mas clara y fácil de entender.
+              datos guardados de una forma más clara y fácil de entender.
             </p>
           </div>
 
@@ -142,7 +142,7 @@ export function MovementDetailModal({
               <p className="text-sm text-slate-600">
                 Este movimiento no trae suficiente información para comparar un
                 antes y un después con precision. Aun asi puedes revisar el
-                resumen general y los datos guardados mas abajo.
+                resumen general y los datos guardados más abajo.
               </p>
             ) : (
               <div className="space-y-3">

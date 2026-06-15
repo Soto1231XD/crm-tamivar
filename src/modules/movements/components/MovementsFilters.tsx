@@ -23,7 +23,7 @@ export function MovementsFilters({
   onDownload,
 }: MovementsFiltersProps) {
   return (
-    <FilterCard description="Busca por usuario y filtra por una fecha especifica para encontrar movimientos mas rapido.">
+    <FilterCard description="Busca por usuario y filtra por una fecha especifica para encontrar movimientos más rápido.">
       <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(220px,1fr)_auto]">
         <FilterSearchInput
           placeholder="Buscar por usuario"

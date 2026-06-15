@@ -45,20 +45,25 @@ function buildStatusSummary(records: LeadRecord[], knownStatuses: readonly strin
   return [...orderedKnown, ...extra];
 }
 
-function resolveAdvisorKey(record: LeadRecord) {
+function resolveAdvisorId(record: LeadRecord) {
   if (record.vendedor_asignado_id != null) {
-    return `assigned-${record.vendedor_asignado_id}`;
+    return record.vendedor_asignado_id;
   }
 
   if (record.creado_por_id != null) {
-    return `creator-${record.creado_por_id}`;
+    return record.creado_por_id;
   }
 
   if (record.creador?.id != null) {
-    return `creator-${record.creador.id}`;
+    return record.creador.id;
   }
 
-  return "unassigned";
+  return null;
+}
+
+function resolveAdvisorKey(record: LeadRecord) {
+  const advisorId = resolveAdvisorId(record);
+  return advisorId != null ? `user-${advisorId}` : "unassigned";
 }
 
 function resolveAdvisorName(record: LeadRecord) {
@@ -99,7 +104,16 @@ function buildAdvisorStats(leads: LeadRecord[], visits: LeadRecord[]) {
   const ensureAdvisor = (record: LeadRecord) => {
     const key = resolveAdvisorKey(record);
     const current = advisors.get(key);
-    if (current) return current;
+    if (current) {
+      const resolvedName = resolveAdvisorName(record);
+      if (
+        resolvedName !== "Sin asignar" &&
+        (current.name === "Sin asignar" || current.name.startsWith("Asesor #"))
+      ) {
+        current.name = resolvedName;
+      }
+      return current;
+    }
 
     const nextAdvisor: AdvisorStats = {
       id: key,
@@ -155,6 +169,12 @@ function getDominantStatusLabel(counts: Record<string, number>, emptyLabel: stri
   return dominant ? `${dominant[0]} (${dominant[1]})` : emptyLabel;
 }
 
+function buildChartItems(counts: Record<string, number>, statuses: readonly string[]) {
+  return statuses
+    .map((status) => ({ status, value: counts[status] ?? 0 }))
+    .filter((item) => item.value > 0);
+}
+
 function AdvisorDetailPanel({
   advisor,
   isDark,
@@ -162,23 +182,46 @@ function AdvisorDetailPanel({
   advisor: AdvisorStats;
   isDark: boolean;
 }) {
+  const leadChartItems = buildChartItems(advisor.leadStatuses, LEAD_LEADS_STATUS_OPTIONS);
+  const visitChartItems = buildChartItems(advisor.visitStatuses, VISIT_STATUS_OPTIONS);
+
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
-        <AdvisorStatusChips
-          title="Leads"
-          counts={advisor.leadStatuses}
-          statuses={LEAD_LEADS_STATUS_OPTIONS}
-          toneClass="bg-brand-100 text-brand-700"
+    <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-2">
+        <AdvisorVerticalBarChart
+          title="Gráfica de leads"
+          description="Distribución actual de registros leads por estado."
+          items={leadChartItems}
+          emptyMessage="Sin leads registrados para graficar."
+          barClassName="bg-brand-600"
+          mutedBarClassName={isDark ? "bg-brand-400/15" : "bg-brand-100"}
+        />
+        <AdvisorVerticalBarChart
+          title="Gráfica de visitas"
+          description="Distribución actual de registros visitas por estado."
+          items={visitChartItems}
+          emptyMessage="Sin visitas registradas para graficar."
+          barClassName={isDark ? "bg-sky-400" : "bg-sky-500"}
+          mutedBarClassName={isDark ? "bg-sky-400/15" : "bg-sky-100"}
         />
       </div>
-      <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
-        <AdvisorStatusChips
-          title="Visitas"
-          counts={advisor.visitStatuses}
-          statuses={VISIT_STATUS_OPTIONS}
-          toneClass={isDark ? "bg-sky-500/12 text-sky-300" : "bg-sky-50 text-sky-700"}
-        />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
+          <AdvisorStatusChips
+            title="Leads"
+            counts={advisor.leadStatuses}
+            statuses={LEAD_LEADS_STATUS_OPTIONS}
+            toneClass="bg-brand-100 text-brand-700"
+          />
+        </div>
+        <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
+          <AdvisorStatusChips
+            title="Visitas"
+            counts={advisor.visitStatuses}
+            statuses={VISIT_STATUS_OPTIONS}
+            toneClass={isDark ? "bg-sky-500/12 text-sky-300" : "bg-sky-50 text-sky-700"}
+          />
+        </div>
       </div>
     </div>
   );
@@ -316,6 +359,70 @@ function AdvisorStatusChips({
   );
 }
 
+function AdvisorVerticalBarChart({
+  title,
+  description,
+  items,
+  emptyMessage,
+  barClassName,
+  mutedBarClassName,
+}: {
+  title: string;
+  description: string;
+  items: Array<{ status: string; value: number }>;
+  emptyMessage: string;
+  barClassName: string;
+  mutedBarClassName: string;
+}) {
+  const maxValue = items.reduce((currentMax, item) => Math.max(currentMax, item.value), 0);
+
+  return (
+    <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
+        {title}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-[var(--crm-text-muted)]">{description}</p>
+
+      {items.length === 0 ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-muted)] px-4 py-6 text-sm text-[var(--crm-text-muted)]">
+          {emptyMessage}
+        </div>
+      ) : (
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          {items.map((item) => {
+            const height = maxValue > 0 ? Math.max((item.value / maxValue) * 100, 14) : 0;
+
+            return (
+              <div
+                key={`${title}-${item.status}`}
+                className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-muted)] px-3 py-3"
+              >
+                <div className="flex h-36 items-end justify-center rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-2 pb-3 pt-4">
+                  <div
+                    className={`flex h-full w-full items-end justify-center rounded-lg ${mutedBarClassName}`}
+                  >
+                    <div
+                      className={`w-full max-w-[56px] rounded-t-xl ${barClassName}`}
+                      style={{ height: `${height}%` }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                <p className="mt-3 text-center text-xl font-black text-[var(--crm-text)]">
+                  {item.value}
+                </p>
+                <p className="mt-1 text-center text-xs font-semibold leading-5 text-[var(--crm-text-muted)]">
+                  {item.status}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function StatisticsPage() {
   const theme = useThemeStore((state) => state.theme);
   const isDark = theme === "dark";
@@ -380,7 +487,6 @@ export function StatisticsPage() {
       totalLeads: leadRecords.length,
       totalVisits: visitRecords.length,
       assignedLeads: countAssigned(leadRecords),
-      assignedVisits: countAssigned(visitRecords),
       contactedLeads: countStatus(leadRecords, "Contactado"),
       scheduledVisits: countStatus(visitRecords, "Agendado"),
       advisorsWithLoad: advisorStats.filter(
@@ -400,9 +506,15 @@ export function StatisticsPage() {
         headerClassName: "min-w-[220px]",
         cellClassName: "min-w-[220px] whitespace-normal align-middle",
         render: (advisor) => (
-          <div className="min-w-[200px]">
-            <p className="font-medium text-slate-800">{advisor.name}</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setExpandedAdvisorKey(advisor.key)}
+            className="min-w-[200px] text-left transition hover:opacity-90"
+          >
+            <span className="font-semibold text-brand-700 hover:text-brand-800 hover:underline">
+              {advisor.name}
+            </span>
+          </button>
         ),
       },
       {
@@ -505,11 +617,6 @@ export function StatisticsPage() {
               helper="Leads que ya tienen asesor asignado."
             />
             <SummaryMetric
-              label="Visitas asignadas"
-              value={globalMetrics.assignedVisits}
-              helper="Registros visita que ya tienen responsable asignado."
-            />
-            <SummaryMetric
               label="Leads contactados"
               value={globalMetrics.contactedLeads}
               helper="Leads que ya avanzaron al estado Contactado."
@@ -573,7 +680,7 @@ export function StatisticsPage() {
 
               <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-muted)] px-4 py-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
-                  Asesor con mas carga
+                  Asesor con más carga
                 </p>
                 <p className="mt-3 text-lg font-black tracking-tight text-[var(--crm-text)]">
                   {topAdvisor?.name ?? "Sin datos"}
@@ -602,21 +709,12 @@ export function StatisticsPage() {
                     tableClassName="w-max min-w-[1220px] text-left"
                     actionsClassName="mx-auto flex w-max items-center justify-center gap-2"
                     customActions={(advisor) => (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setExpandedAdvisorKey(advisor.key)}
-                          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
-                        >
-                          Ver detalles
-                        </button>
-                        <DownloadAdvisorReportButton
-                          advisor={advisor}
-                          className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {(loading) => (loading ? "Generando..." : "Reporte")}
-                        </DownloadAdvisorReportButton>
-                      </>
+                      <DownloadAdvisorReportButton
+                        advisor={advisor}
+                        className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {(loading) => (loading ? "Generando..." : "Reporte")}
+                      </DownloadAdvisorReportButton>
                     )}
                   />
 
@@ -660,28 +758,6 @@ export function StatisticsPage() {
                                 {selectedAdvisor.visitCount}
                               </p>
                             </div>
-                          </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-4 py-4">
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--crm-text-muted)]">
-                                Reporte individual
-                              </p>
-                              <p className="mt-1 text-sm text-[var(--crm-text-muted)]">
-                                Descarga el resumen del asesor con sus gráficas de estados en PDF.
-                              </p>
-                            </div>
-
-                            <DownloadAdvisorReportButton
-                              advisor={selectedAdvisor}
-                              className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {(loading) =>
-                                loading ? "Generando reporte..." : "Descargar reporte PDF"
-                              }
-                            </DownloadAdvisorReportButton>
                           </div>
                         </div>
 

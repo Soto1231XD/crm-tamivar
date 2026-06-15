@@ -178,22 +178,38 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     return filteredLeads.slice(start, start + PAGE_SIZE);
   }, [currentPage, filteredLeads]);
 
+  const availableProperties = useMemo(
+    () =>
+      properties.filter(
+        (property) => (property.estatus ?? '').trim().toLowerCase() === 'disponible',
+      ),
+    [properties],
+  );
+
+  const availableDevelopments = useMemo(
+    () =>
+      developments.filter(
+        (development) => (development.estatus ?? '').trim().toLowerCase() === 'disponible',
+      ),
+    [developments],
+  );
+
   const propertyChoices = useMemo(
     () =>
-      properties.map((property) => ({
+      availableProperties.map((property) => ({
         id: property.id,
         label: property.titulo?.trim() || 'Sin titulo',
       })),
-    [properties],
+    [availableProperties],
   );
 
   const developmentChoices = useMemo(
     () =>
-      developments.map((development) => ({
+      availableDevelopments.map((development) => ({
         id: development.id,
         label: development.titulo?.trim() || 'Sin titulo',
       })),
-    [developments],
+    [availableDevelopments],
   );
 
   const userNameById = useMemo(

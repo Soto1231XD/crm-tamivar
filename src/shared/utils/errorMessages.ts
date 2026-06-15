@@ -27,8 +27,8 @@ export function normalizeErrorMessage(
 
   if (
     lowered === "internal server error" ||
-    lowered === "error en el servidor. inténtalo mas tarde." ||
-    lowered === "error en el servidor. inténtalo mas tarde."
+    lowered === "error en el servidor. inténtalo más tarde." ||
+    lowered === "error en el servidor. inténtalo más tarde."
   ) {
     return fallback;
   }
