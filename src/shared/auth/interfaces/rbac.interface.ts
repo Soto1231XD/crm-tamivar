@@ -1,5 +1,6 @@
 export type ModuleKey =
   | 'dashboard'
+  | 'Estadísticas'
   | 'propiedades'
   | 'desarrollos'
   | 'material'

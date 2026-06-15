@@ -41,6 +41,7 @@ import logoBlanco from "@/assets/images/logo_blanco.png";
 
 const MODULE_ICONS: Record<ModuleKey, string> = {
   dashboard: dashboardIcon,
+  Estadísticas: dashboardIcon,
   propiedades: propiedadesIcon,
   desarrollos: desarrollosIcon,
   material: materialIcon,
@@ -84,7 +85,7 @@ export function AppShell() {
   const notifiedIdsRef = useRef<Set<number>>(new Set());
 
   const permissions = user?.permisos ?? [];
-  const availableModules = getAvailableModules(permissions);
+  const availableModules = getAvailableModules(permissions, user?.roles ?? []);
   const isDark = theme === "dark";
 
   const navItems: Array<{ to: string; label: string; icon: string }> =
@@ -672,7 +673,7 @@ export function AppShell() {
                       {browserNotificationPermission === "default" &&
                         "Activa los avisos del navegador para recibir recordatorios fuera de la ventana del CRM."}
                       {browserNotificationPermission === "denied" &&
-                        "El navegador tiene bloqueados los avisos. Si los quieres usar, habilitados desde la configuracion del sitio."}
+                        "El navegador tiene bloqueados los avisos. Si los quieres usar, habilitados desde la configuración del sitio."}
                       {browserNotificationPermission === "granted" &&
                         pushSubscriptionStatus === "idle" &&
                         "Tu navegador ya dio permiso. Enseguida intentamos registrar el canal push."}

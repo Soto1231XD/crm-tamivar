@@ -17,6 +17,7 @@ import { UsersPage } from "@/modules/users/pages/UsersPage";
 import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
 import { ContentPage } from "@/modules/content/pages/ContentPage";
 import { MaterialPage } from "@/modules/material/pages/MaterialPage";
+import { StatisticsPage } from "@/modules/statistics/pages/StatisticsPage";
 import { PropertyDetailView } from "@/modules/properties/components/PropertyDetailView";
 import { MovementsPage } from "@/modules/movements/pages/MovementsPage";
 
@@ -31,6 +32,10 @@ export function AppRoutes() {
 
           <Route element={<ProtectedRoute module="dashboard" />}>
             <Route path="dashboard" element={<DashboardPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute module="Estadísticas" />}>
+            <Route path="modulos/Estadísticas" element={<StatisticsPage />} />
           </Route>
 
           <Route element={<ProtectedRoute module="propiedades" />}>

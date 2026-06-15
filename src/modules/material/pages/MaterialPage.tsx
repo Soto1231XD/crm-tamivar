@@ -18,7 +18,7 @@ const MATERIAL_CATEGORIES: MaterialCategory[] = [
     id: "videos",
     title: "Videos",
     description:
-      "Recursos audiovisuales de las propiedades, promocion y apoyo comercial del equipo.",
+      "Recursos audiovisuales de las propiedades, promoción y apoyo comercial del equipo.",
     helper: "Carpeta disponible en Google Drive",
     href: "https://drive.google.com/drive/folders/1woo6QEqqJJliOPwptEQOPV8ldw5aUx7n?usp=sharing",
     icon: VideoIcon,
@@ -34,9 +34,9 @@ const MATERIAL_CATEGORIES: MaterialCategory[] = [
   },
   {
     id: "documentacion",
-    title: "Documentacion",
+    title: "Documentación",
     description:
-      "Procesos y archivos de documentacion para distintas fases de administracion.",
+      "Procesos y archivos de documentación para distintas fases de administración.",
     helper: "Carpeta disponible en Google Drive",
     href: "https://drive.google.com/drive/folders/1xMP5_sG49u60Ib0pycXX7iWwCa-EhU3v?usp=sharing",
     icon: DocumentIcon,
@@ -122,7 +122,7 @@ function DocumentIcon({ className = "" }: { className?: string }) {
 export function MaterialPage() {
   const handleCategoryClick = (category: MaterialCategory) => {
     if (!category.href) {
-      toast("Aun no hemos definido el enlace de esta categoria.");
+      toast("Aun no hemos definido el enlace de esta categoría.");
       return;
     }
 
@@ -143,7 +143,7 @@ export function MaterialPage() {
             </h1>
 
             <p className="max-w-2xl text-sm leading-7 text-[var(--crm-text-muted)] sm:text-[15px]">
-              Aqui vamos a concentrar recursos internos de apoyo para el equipo.
+              Aquí vamos a concentrar recursos internos de apoyo para el equipo.
             </p>
           </div>
         </div>

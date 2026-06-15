@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { canAccessDashboard } from "@/shared/auth/navigation.util";
+import { canAccessDashboard, canAccessStatistics } from "@/shared/auth/navigation.util";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
@@ -11,6 +11,7 @@ type ProtectedRouteProps = {
 
 export function ProtectedRoute({ module }: ProtectedRouteProps) {
   const token = useAuthStore((state) => state.token);
+  const userRoles = useAuthStore((state) => state.user?.roles ?? []);
   const { can, userPermissions } = useHasPermission();
 
   if (
@@ -26,9 +27,14 @@ export function ProtectedRoute({ module }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
+  if (module === "Estadísticas" && !canAccessStatistics(userRoles)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   if (
     module &&
     module !== "dashboard" &&
+    module !== "Estadísticas" &&
     !can(module, "leer") &&
     !can(module, "leer_todos") &&
     !can(module, "*")

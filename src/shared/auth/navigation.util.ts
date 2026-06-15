@@ -2,6 +2,7 @@ import type { ModuleKey } from "./interfaces/rbac.interface";
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard: "Dashboard",
+  Estadísticas: "Estadísticas",
   propiedades: "Propiedades",
   desarrollos: "Desarrollos",
   material: "Material",
@@ -16,6 +17,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
   dashboard: "/dashboard",
+  Estadísticas: "/modulos/Estadísticas",
   propiedades: "/modulos/propiedades",
   desarrollos: "/modulos/desarrollos",
   material: "/modulos/material",
@@ -39,6 +41,20 @@ const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
   "roles",
 ];
 
+const STATISTICS_ALLOWED_ROLES = [
+  "super administrador",
+  "administrador",
+  "coordinador de ventas",
+];
+
+function normalizeRole(role: string): string {
+  return role
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 function hasModuleReadAccess(permissions: string[], module: ModuleKey): boolean {
   if (permissions.includes("*:*")) return true;
   if (permissions.includes(`${module}:*`)) return true;
@@ -54,9 +70,19 @@ export function canAccessDashboard(permissions: string[]): boolean {
   );
 }
 
-export function getAvailableModules(permissions: string[]): ModuleKey[] {
+export function canAccessStatistics(userRoles: string[] = []): boolean {
+  return userRoles
+    .map(normalizeRole)
+    .some((role) => STATISTICS_ALLOWED_ROLES.includes(role));
+}
+
+export function getAvailableModules(
+  permissions: string[],
+  userRoles: string[] = [],
+): ModuleKey[] {
   const allModules: ModuleKey[] = [
     "dashboard",
+    "Estadísticas",
     "propiedades",
     "desarrollos",
     "material",
@@ -73,13 +99,17 @@ export function getAvailableModules(permissions: string[]): ModuleKey[] {
 
   return allModules.filter((module) => {
     if (module === "dashboard") return canAccessDashboard(permissions);
+    if (module === "Estadísticas") return canAccessStatistics(userRoles);
     if (module === "material") return true;
     return permissions.some((permission) => permission.startsWith(`${module}:`));
   });
 }
 
-export function getDefaultDashboardPath(permissions: string[]): string {
-  const availableModules = getAvailableModules(permissions);
+export function getDefaultDashboardPath(
+  permissions: string[],
+  userRoles: string[] = [],
+): string {
+  const availableModules = getAvailableModules(permissions, userRoles);
 
   if (canAccessDashboard(permissions)) return "/dashboard";
 

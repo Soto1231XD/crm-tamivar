@@ -110,7 +110,7 @@ export function LoginPage() {
 
       const user = useAuthStore.getState().user;
       if (user?.permisos) {
-        navigate(getDefaultDashboardPath(user.permisos), { replace: true });
+        navigate(getDefaultDashboardPath(user.permisos, user.roles), { replace: true });
       }
     } catch (currentError) {
       setError(
@@ -131,7 +131,7 @@ export function LoginPage() {
     try {
       const user = await confirmTwoFa(challengeId, codigo.replace(/\D/g, ""));
       if (user?.permisos) {
-        navigate(getDefaultDashboardPath(user.permisos), { replace: true });
+        navigate(getDefaultDashboardPath(user.permisos, user.roles), { replace: true });
         return;
       }
 
