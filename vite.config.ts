@@ -31,8 +31,21 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      // Definimos que @ apunta a la carpeta src
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-motion": ["framer-motion"],
+          "vendor-pdf": ["@react-pdf/renderer"],
+          "vendor-xlsx": ["xlsx", "jszip", "file-saver"],
+          "vendor-forms": ["react-hook-form", "@hookform/resolvers", "zod"],
+          "vendor-ui": ["react-hot-toast", "swiper"],
+        },
+      },
     },
   },
 });

@@ -1,28 +1,67 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../layout/AppShell";
 import { LoginPage } from "@/app/LoginPage";
 import { ProtectedRoute } from "./ProtectedRoute";
-import { DashboardPage } from "@/modules/dashboard/pages/DashboardPage";
-import { PropertiesPage } from "@/modules/properties/pages/PropertiesPage";
-import { CreatePropertyPage } from "@/modules/properties/pages/CreatePropertyPage";
-import { EditPropertyPage } from "@/modules/properties/pages/EditPropertyPage";
-import { LeadsPage } from "@/modules/leads/pages/LeadsPage";
-import { LeadLeadsPage } from "@/modules/registroLeads/pages/LeadLeadsPage";
-import { LeadRequestsPage } from "@/modules/leadRequests/pages/LeadRequestsPage";
-import { DevelopmentsPage } from "@/modules/developments/pages/DevelopmentsPage";
-import { CreateDevelopmentPage } from "@/modules/developments/pages/CreateDevelopmentPage";
-import { EditDevelopmentPage } from "@/modules/developments/pages/EditDevelopmentPage";
-import { DevelopmentDetailView } from "@/modules/developments/components/DevelopmentDetailView";
-import { UsersPage } from "@/modules/users/pages/UsersPage";
-import { SystemRolesPage } from "@/modules/systemRoles/pages/SystemRolesPage";
-import { ContentPage } from "@/modules/content/pages/ContentPage";
-import { MaterialPage } from "@/modules/material/pages/MaterialPage";
-import { StatisticsPage } from "@/modules/statistics/pages/StatisticsPage";
-import { PropertyDetailView } from "@/modules/properties/components/PropertyDetailView";
-import { MovementsPage } from "@/modules/movements/pages/MovementsPage";
+
+const DashboardPage = lazy(() =>
+  import("@/modules/dashboard/pages/DashboardPage").then((m) => ({ default: m.DashboardPage }))
+);
+const PropertiesPage = lazy(() =>
+  import("@/modules/properties/pages/PropertiesPage").then((m) => ({ default: m.PropertiesPage }))
+);
+const CreatePropertyPage = lazy(() =>
+  import("@/modules/properties/pages/CreatePropertyPage").then((m) => ({ default: m.CreatePropertyPage }))
+);
+const EditPropertyPage = lazy(() =>
+  import("@/modules/properties/pages/EditPropertyPage").then((m) => ({ default: m.EditPropertyPage }))
+);
+const PropertyDetailView = lazy(() =>
+  import("@/modules/properties/components/PropertyDetailView").then((m) => ({ default: m.PropertyDetailView }))
+);
+const LeadsPage = lazy(() =>
+  import("@/modules/leads/pages/LeadsPage").then((m) => ({ default: m.LeadsPage }))
+);
+const LeadLeadsPage = lazy(() =>
+  import("@/modules/registroLeads/pages/LeadLeadsPage").then((m) => ({ default: m.LeadLeadsPage }))
+);
+const LeadRequestsPage = lazy(() =>
+  import("@/modules/leadRequests/pages/LeadRequestsPage").then((m) => ({ default: m.LeadRequestsPage }))
+);
+const DevelopmentsPage = lazy(() =>
+  import("@/modules/developments/pages/DevelopmentsPage").then((m) => ({ default: m.DevelopmentsPage }))
+);
+const CreateDevelopmentPage = lazy(() =>
+  import("@/modules/developments/pages/CreateDevelopmentPage").then((m) => ({ default: m.CreateDevelopmentPage }))
+);
+const EditDevelopmentPage = lazy(() =>
+  import("@/modules/developments/pages/EditDevelopmentPage").then((m) => ({ default: m.EditDevelopmentPage }))
+);
+const DevelopmentDetailView = lazy(() =>
+  import("@/modules/developments/components/DevelopmentDetailView").then((m) => ({ default: m.DevelopmentDetailView }))
+);
+const UsersPage = lazy(() =>
+  import("@/modules/users/pages/UsersPage").then((m) => ({ default: m.UsersPage }))
+);
+const SystemRolesPage = lazy(() =>
+  import("@/modules/systemRoles/pages/SystemRolesPage").then((m) => ({ default: m.SystemRolesPage }))
+);
+const ContentPage = lazy(() =>
+  import("@/modules/content/pages/ContentPage").then((m) => ({ default: m.ContentPage }))
+);
+const MaterialPage = lazy(() =>
+  import("@/modules/material/pages/MaterialPage").then((m) => ({ default: m.MaterialPage }))
+);
+const StatisticsPage = lazy(() =>
+  import("@/modules/statistics/pages/StatisticsPage").then((m) => ({ default: m.StatisticsPage }))
+);
+const MovementsPage = lazy(() =>
+  import("@/modules/movements/pages/MovementsPage").then((m) => ({ default: m.MovementsPage }))
+);
 
 export function AppRoutes() {
   return (
+    <Suspense fallback={null}>
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
@@ -96,5 +135,6 @@ export function AppRoutes() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }

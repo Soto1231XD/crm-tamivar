@@ -6,7 +6,7 @@ import type {
   DevelopmentRecord,
 } from "@/interfaces/development.interface";
 import {
-  FilterCard,
+  CollapsibleFilters,
   FilterPriceInput,
   FilterSearchInput,
   FilterSelect,
@@ -192,16 +192,30 @@ export function DevelopmentsPage() {
         </div>
       </header>
 
-      <FilterCard description="Busca por título o ubicación y combina filtros para ubicar desarrollos más rápido.">
+      <CollapsibleFilters
+        activeCount={[
+          selectedStatus !== "Todos los estados",
+          selectedType !== "Todos los tipos",
+          selectedOperation !== "Todas las operaciones",
+          minPrice != null,
+          maxPrice != null,
+        ].filter(Boolean).length}
+        searchSlot={
+          <FilterSearchInput
+            type="text"
+            placeholder="Buscar por título, fraccionamiento, municipio o estado"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        }
+      >
         <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <FilterSelect
             value={selectedStatus}
             onChange={(event) => setSelectedStatus(event.target.value)}
           >
             {STATUS_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+              <option key={option} value={option}>{option}</option>
             ))}
           </FilterSelect>
 
@@ -210,9 +224,7 @@ export function DevelopmentsPage() {
             onChange={(event) => setSelectedType(event.target.value)}
           >
             {typeOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+              <option key={option} value={option}>{option}</option>
             ))}
           </FilterSelect>
 
@@ -221,9 +233,7 @@ export function DevelopmentsPage() {
             onChange={(event) => setSelectedOperation(event.target.value)}
           >
             {operationOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+              <option key={option} value={option}>{option}</option>
             ))}
           </FilterSelect>
 
@@ -238,17 +248,8 @@ export function DevelopmentsPage() {
             value={maxPrice}
             onChange={setMaxPrice}
           />
-
-          <div className="sm:col-span-2 md:col-span-3 lg:col-span-5">
-            <FilterSearchInput
-              type="text"
-              placeholder="Buscar por título, fraccionamiento, municipio o estado"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
         </div>
-      </FilterCard>
+      </CollapsibleFilters>
 
       {error ? (
         <section className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-sm">

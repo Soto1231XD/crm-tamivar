@@ -65,28 +65,6 @@ function formatDevelopmentAddress(direccion?: DevelopmentAddress): string {
   return parts.length > 0 ? parts.join(", ") : "Sin ubicación";
 }
 
-function getCreatorName(development: DevelopmentRecord): string {
-  const creator = development.creador;
-  if (!creator) return "Sin registro";
-
-  return [
-    creator.nombres,
-    creator.apellido_paterno,
-    creator.apellido_materno,
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-function getInitials(label: string): string {
-  return label
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 function getDeliveryLabel(development: DevelopmentRecord): string {
   if (development.entrega_inmediata === true) return "Inmediata";
   if (development.fecha_entrega) {
@@ -117,14 +95,6 @@ export function DevelopmentsTable({
               {development.slug}
             </p>
           </div>
-        ),
-      },
-      {
-        header: "Tipo de inmueble",
-        render: (development) => (
-          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
-            {development.tipo_inmueble}
-          </span>
         ),
       },
       {
@@ -189,28 +159,6 @@ export function DevelopmentsTable({
           </span>
         ),
       },
-      {
-        header: "Registrado por",
-        headerClassName: "min-w-[240px]",
-        cellClassName: "min-w-[240px] align-top",
-        render: (development) => {
-          const fullName = getCreatorName(development);
-
-          return (
-            <div className="flex items-center gap-3 text-left">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-bold uppercase text-brand-700">
-                {getInitials(fullName || "SR")}
-              </div>
-              <div>
-                <p className="font-medium text-slate-800">{fullName}</p>
-                <p className="text-xs text-slate-500">
-                  {development.creador?.correo_electronico ?? "Sin correo"}
-                </p>
-              </div>
-            </div>
-          );
-        },
-      },
     ],
     [],
   );
@@ -222,7 +170,7 @@ export function DevelopmentsTable({
       isLoading={isLoading}
       emptyMessage="No se encontraron desarrollos"
       wrapperClassName="rounded-2xl"
-      tableClassName="w-max min-w-[1380px] text-left"
+      tableClassName="w-max min-w-[1100px] text-left"
       actionsClassName="mx-auto flex w-max items-center justify-center gap-2"
       canDelete={canDelete}
       onDelete={onDelete}

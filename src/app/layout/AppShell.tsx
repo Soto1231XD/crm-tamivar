@@ -54,6 +54,32 @@ const MODULE_ICONS: Record<ModuleKey, string> = {
   movimientos: logsIcon,
 };
 
+type NavGroupConfig = {
+  label: string;
+  icon: string;
+  modules: ModuleKey[];
+};
+
+const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
+  {
+    label: "Clientes",
+    icon: registrosIcon,
+    modules: ["registros", "registros_leads", "solicitudes_leads"],
+  },
+  {
+    label: "Contenido",
+    icon: contenidoIcon,
+    modules: ["blogs", "material"],
+  },
+  {
+    label: "Administración",
+    icon: usuariosIcon,
+    modules: ["usuarios", "roles", "movimientos"],
+  },
+];
+
+const STANDALONE_MODULES = new Set<ModuleKey>(["dashboard", "Estadísticas", "propiedades", "desarrollos"]);
+
 export function AppShell() {
   const user = useAuthStore((state) => state.user);
   const performLogout = useAuthStore((state) => state.logout);
@@ -94,6 +120,33 @@ export function AppShell() {
       label: MODULE_LABELS[module] || module,
       icon: MODULE_ICONS[module],
     }));
+
+  const standaloneNavItems = availableModules
+    .filter((m) => STANDALONE_MODULES.has(m))
+    .map((m) => ({ to: MODULE_PATHS[m], label: MODULE_LABELS[m] || m, icon: MODULE_ICONS[m] }));
+
+  const activeNavGroups = NAV_GROUP_CONFIGS.map((group) => ({
+    ...group,
+    items: group.modules
+      .filter((m) => availableModules.includes(m))
+      .map((m) => ({ to: MODULE_PATHS[m], label: MODULE_LABELS[m] || m, icon: MODULE_ICONS[m] })),
+  })).filter((group) => group.items.length > 0);
+
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    const current = NAV_GROUP_CONFIGS.find((g) =>
+      g.modules.some((m) => location.pathname.startsWith(MODULE_PATHS[m]))
+    );
+    return new Set(current ? [current.label] : []);
+  });
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
 
   const primaryRoleDisplay = user ? getHighestPriorityRoleLabel(user) : "Sin rol asignado";
   const pageTitle = getPageTitle(location.pathname);
@@ -217,6 +270,15 @@ export function AppShell() {
   }, []);
 
   useEffect(() => {
+    const current = NAV_GROUP_CONFIGS.find((g) =>
+      g.modules.some((m) => location.pathname.startsWith(MODULE_PATHS[m]))
+    );
+    if (current) {
+      setOpenGroups((prev) => new Set([...prev, current.label]));
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!isNotificationsOpen) {
       return;
     }
@@ -337,33 +399,117 @@ export function AppShell() {
           </div>
 
           <nav className="crm-scrollbar-hidden mt-8 flex flex-1 flex-col gap-2 overflow-y-auto">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={() =>
-                  window.innerWidth < 768 && setIsSidebarCollapsed(true)
-                }
-                className={({ isActive }) =>
-                  [
-                    "group flex items-center gap-3 rounded-2xl text-sm transition-all duration-200",
-                    isSidebarCollapsed
-                      ? "justify-center px-2 py-3.5"
-                      : "px-3.5 py-3",
-                    isActive
-                      ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white",
-                  ].join(" ")
-                }
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
-                  <img src={item.icon} alt="" className="h-5 w-5 shrink-0" />
-                </span>
-                {!isSidebarCollapsed && (
-                  <span className="truncate font-medium">{item.label}</span>
-                )}
-              </NavLink>
-            ))}
+            {isSidebarCollapsed ? (
+              navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => window.innerWidth < 768 && setIsSidebarCollapsed(true)}
+                  className={({ isActive }) =>
+                    [
+                      "group flex items-center justify-center rounded-2xl px-2 py-3.5 text-sm transition-all duration-200",
+                      isActive
+                        ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white",
+                    ].join(" ")
+                  }
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
+                    <img src={item.icon} alt="" className="h-5 w-5 shrink-0" />
+                  </span>
+                </NavLink>
+              ))
+            ) : (
+              <>
+                {standaloneNavItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => window.innerWidth < 768 && setIsSidebarCollapsed(true)}
+                    className={({ isActive }) =>
+                      [
+                        "group flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm transition-all duration-200",
+                        isActive
+                          ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                          : "text-slate-300 hover:bg-white/5 hover:text-white",
+                      ].join(" ")
+                    }
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
+                      <img src={item.icon} alt="" className="h-5 w-5 shrink-0" />
+                    </span>
+                    <span className="truncate font-medium">{item.label}</span>
+                  </NavLink>
+                ))}
+
+                {activeNavGroups.map((group) => {
+                  const isOpen = openGroups.has(group.label);
+                  const isGroupActive = group.items.some((item) =>
+                    location.pathname.startsWith(item.to)
+                  );
+
+                  return (
+                    <div key={group.label}>
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(group.label)}
+                        className={[
+                          "group flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm transition-all duration-200",
+                          isGroupActive
+                            ? "text-white"
+                            : "text-slate-400 hover:bg-white/5 hover:text-white",
+                        ].join(" ")}
+                      >
+                        <span
+                          className={[
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10",
+                            isGroupActive ? "bg-white/10" : "bg-white/5",
+                          ].join(" ")}
+                        >
+                          <img src={group.icon} alt="" className="h-5 w-5 shrink-0" />
+                        </span>
+                        <span className="flex-1 truncate text-left font-medium">
+                          {group.label}
+                        </span>
+                        <ChevronDownIcon
+                          className={[
+                            "h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200",
+                            isOpen ? "rotate-0" : "-rotate-90",
+                          ].join(" ")}
+                        />
+                      </button>
+
+                      {isOpen && (
+                        <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-white/10 pl-3">
+                          {group.items.map((item) => (
+                            <NavLink
+                              key={item.to}
+                              to={item.to}
+                              onClick={() =>
+                                window.innerWidth < 768 && setIsSidebarCollapsed(true)
+                              }
+                              className={({ isActive }) =>
+                                [
+                                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
+                                  isActive
+                                    ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                                    : "text-slate-400 hover:bg-white/5 hover:text-white",
+                                ].join(" ")
+                              }
+                            >
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
+                                <img src={item.icon} alt="" className="h-4 w-4 shrink-0" />
+                              </span>
+                              <span className="truncate font-medium">{item.label}</span>
+                            </NavLink>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </nav>
 
           <div className="mt-auto space-y-4 pt-4">
@@ -436,142 +582,6 @@ export function AppShell() {
                     )}
                   </button>
 
-                  {false && isNotificationsOpen && (
-                    <div className="absolute right-0 top-14 z-50 w-[360px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
-                      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">
-                            Notificaciones
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {unreadCount > 0
-                              ? `${unreadCount} pendiente${unreadCount === 1 ? "" : "s"}`
-                              : "No tienes pendientes"}
-                          </p>
-                        </div>
-
-                        {unreadCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => void markAllNotificationsAsRead()}
-                            className="text-xs font-semibold text-sky-700 transition hover:text-sky-800"
-                          >
-                            Marcar todas
-                          </button>
-                        )}
-                      </div>
-
-                      {browserNotificationPermission !== "unsupported" && (
-                        <div className="border-b border-slate-100 bg-sky-50/70 px-5 py-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">
-                                Notificaciones externas
-                              </p>
-                              <p className="mt-1 text-sm text-slate-700">
-                                {pushSubscriptionStatus === "subscribed" &&
-                                  "Las notificaciones push ya están activas, incluso si cierras la ventana del CRM."}
-                                {pushSubscriptionStatus === "unavailable" &&
-                                  "El servicio push no esta disponible todavía en este entorno local."}
-                                {browserNotificationPermission === "default" &&
-                                  "Activa los avisos del navegador para recibir recordatorios fuera de la ventana del CRM."}
-                                {browserNotificationPermission === "denied" &&
-                                  "El navegador tiene bloqueados los avisos. Si los quieres usar, habilitados desde la configuración del sitio."}
-                                {browserNotificationPermission === "granted" &&
-                                  pushSubscriptionStatus === "idle" &&
-                                  "Tu navegador ya dio permiso. Enseguida intentamos registrar el canal push."}
-                              </p>
-                            </div>
-
-                            <span
-                              className={[
-                                "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]",
-                                getPushStatusBadgeClass(
-                                  browserNotificationPermission,
-                                  pushSubscriptionStatus,
-                                ),
-                              ].join(" ")}
-                            >
-                              {getPushStatusLabel(
-                                browserNotificationPermission,
-                                pushSubscriptionStatus,
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="crm-scrollbar-hidden max-h-[420px] overflow-y-auto px-3 py-3">
-                        {notifications.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                            No hay notificaciones por ahora.
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {notifications.map((notification) => (
-                              <button
-                                key={notification.id}
-                                type="button"
-                                onClick={() => void handleNotificationClick(notification)}
-                                className={[
-                                  "w-full rounded-2xl border px-4 py-3 text-left transition",
-                                  notification.leida_en
-                                    ? "border-slate-200 bg-white hover:bg-slate-50"
-                                    : "border-sky-100 bg-sky-50/70 hover:bg-sky-50",
-                                ].join(" ")}
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex min-w-0 items-start gap-3">
-                                    <div
-                                      className={[
-                                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-base font-semibold",
-                                        getNotificationIconClass(notification),
-                                      ].join(" ")}
-                                      aria-hidden="true"
-                                    >
-                                      {getNotificationIcon(notification)}
-                                    </div>
-
-                                    <div className="min-w-0">
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {notification.titulo}
-                                        </p>
-                                        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                                          {getNotificationTypeLabel(notification)}
-                                        </span>
-                                      </div>
-
-                                      <p className="mt-1 text-sm text-slate-600">
-                                        {notification.mensaje}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  {!notification.leida_en && (
-                                    <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-sky-500" />
-                                  )}
-                                </div>
-
-                                <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
-                                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                    <span>{getNotificationModuleLabel(notification.modulo)}</span>
-                                    <span className="text-slate-300">•</span>
-                                    <span>
-                                      {getNotificationMomentLabel(notification)}
-                                    </span>
-                                  </div>
-                                  <span className="font-semibold text-sky-700">
-                                    {getNotificationActionLabel(notification)}
-                                  </span>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div className="relative">
@@ -922,6 +932,23 @@ export function AppShell() {
         </div>
       )}
     </div>
+  );
+}
+
+function ChevronDownIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }
 

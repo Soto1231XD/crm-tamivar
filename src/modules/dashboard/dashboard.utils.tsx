@@ -53,6 +53,18 @@ export type RecentPublicationItem = {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const priceFormatter = new Intl.NumberFormat('es-MX', {
+  style: 'currency',
+  currency: 'MXN',
+  maximumFractionDigits: 2,
+});
+
+const dateFormatter = new Intl.DateTimeFormat('es-MX', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
 export function formatDireccion(direccion: RecentPropertyItem['direccion']): string {
   const parts = [direccion.calle, direccion.municipio, direccion.fraccionamiento]
     .map((part) => part.trim())
@@ -70,12 +82,7 @@ export function renderPrice(value: string, isDark = false) {
     );
   }
 
-  const formatter = new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    maximumFractionDigits: 2,
-  });
-  const parts = formatter.formatToParts(parsedValue);
+  const parts = priceFormatter.formatToParts(parsedValue);
 
   return (
     <span className="text-xs font-semibold">
@@ -102,11 +109,7 @@ export function renderPrice(value: string, isDark = false) {
 export function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('es-MX', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
+  return dateFormatter.format(date);
 }
 
 export function getUserRoleLabel(usuario: { rol?: string; roles?: string[] }): string {
@@ -275,24 +278,21 @@ export function renderSectionItems(sectionTitle: string, data: DashboardSectionD
   return null;
 }
 
-function getPublicationImageUrl(images?: RecentPublicationItem['imagenes']): string | null {
-  if (!Array.isArray(images) || images.length === 0) return null;
+type ImageItem = { url?: string; principal?: boolean } | null | undefined;
 
+function getImageUrl(images?: ImageItem[] | null): string | null {
+  if (!Array.isArray(images) || images.length === 0) return null;
   const principalImage = images.find((image) => image?.principal) ?? images[0];
   if (!principalImage?.url) return null;
-
   return principalImage.url.startsWith('http')
     ? principalImage.url
     : `${API_URL}/${principalImage.url}`;
 }
 
+function getPublicationImageUrl(images?: RecentPublicationItem['imagenes']): string | null {
+  return getImageUrl(images);
+}
+
 function getPropertyImageUrl(images?: RecentPropertyItem['imagenes']): string | null {
-  if (!Array.isArray(images) || images.length === 0) return null;
-
-  const principalImage = images.find((image) => image?.principal) ?? images[0];
-  if (!principalImage?.url) return null;
-
-  return principalImage.url.startsWith('http')
-    ? principalImage.url
-    : `${API_URL}/${principalImage.url}`;
+  return getImageUrl(images);
 }

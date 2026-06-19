@@ -18,7 +18,7 @@ import { usePropertiesStore } from "../store/usePropertiesStore";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { downloadPropertiesAsExcel } from "../utils/propertyExport";
 import {
-  FilterCard,
+  CollapsibleFilters,
   FilterSearchInput,
   FilterSelect,
   FilterPriceInput,
@@ -245,44 +245,66 @@ export function PropertiesPage() {
         </div>
       </header>
 
-      <FilterCard description="Busca propiedades por título y combina solo los filtros clave para ubicar resultados sin cansar la vista.">
-        <div className="grid grid-cols-1 gap-3 items-start sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+      <CollapsibleFilters
+        activeCount={[
+          !isSalesAdvisorView && !!filters.estatus && filters.estatus !== "Todos los estados",
+          !!filters.tipo_inmueble && filters.tipo_inmueble !== "Todos los tipos",
+          !!filters.direccionMunicipio && filters.direccionMunicipio !== "Todos los municipios",
+          !!filters.exclusiva && filters.exclusiva !== "Todas las exclusividades",
+          !!filters.tipo_operacion && filters.tipo_operacion !== "Todas las operaciones",
+          filters.minPrecio != null,
+          filters.maxPrecio != null,
+        ].filter(Boolean).length}
+        searchSlot={
+          <FilterSearchInput
+            type="text"
+            placeholder="Buscar por título o calle"
+            value={search}
+            onChange={(event) => {
+              const value = event.target.value;
+              setSearch(value);
+              setFilters({ search: value, page: 1 });
+            }}
+          />
+        }
+        downloadSlot={
+          <button
+            type="button"
+            onClick={handleDownloadProperties}
+            className="inline-flex h-10.5 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d]"
+          >
+            <img src={desArcIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Descargar Excel</span>
+          </button>
+        }
+      >
+        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {!isSalesAdvisorView && (
             <FilterSelect
               value={filters.estatus || "Todos los estados"}
               onChange={(e) => setFilters({ estatus: e.target.value, page: 1 })}
             >
               {visibleStatusOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
+                <option key={option} value={option}>{option}</option>
               ))}
             </FilterSelect>
           )}
 
           <FilterSelect
             value={filters.tipo_inmueble || "Todos los tipos"}
-            onChange={(e) =>
-              setFilters({ tipo_inmueble: e.target.value, page: 1 })
-            }
+            onChange={(e) => setFilters({ tipo_inmueble: e.target.value, page: 1 })}
           >
             {TYPE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+              <option key={option} value={option}>{option}</option>
             ))}
           </FilterSelect>
 
           <FilterSelect
             value={filters.direccionMunicipio || "Todos los municipios"}
-            onChange={(e) =>
-              setFilters({ direccionMunicipio: e.target.value, page: 1 })
-            }
+            onChange={(e) => setFilters({ direccionMunicipio: e.target.value, page: 1 })}
           >
             {municipalityOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+              <option key={option} value={option}>{option}</option>
             ))}
           </FilterSelect>
 
@@ -291,22 +313,16 @@ export function PropertiesPage() {
             onChange={(e) => setFilters({ exclusiva: e.target.value, page: 1 })}
           >
             {EXCLUSIVE_FILTER_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+              <option key={option} value={option}>{option}</option>
             ))}
           </FilterSelect>
 
           <FilterSelect
             value={filters.tipo_operacion || "Todas las operaciones"}
-            onChange={(e) =>
-              setFilters({ tipo_operacion: e.target.value, page: 1 })
-            }
+            onChange={(e) => setFilters({ tipo_operacion: e.target.value, page: 1 })}
           >
             {PROPERTY_OPERATION_FILTER_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+              <option key={option} value={option}>{option}</option>
             ))}
           </FilterSelect>
 
@@ -321,37 +337,8 @@ export function PropertiesPage() {
             value={filters.maxPrecio}
             onChange={(val) => setFilters({ maxPrecio: val, page: 1 })}
           />
-
-          <div className="sm:col-span-2 xl:col-span-3">
-            <FilterSearchInput
-              type="text"
-              placeholder="Buscar por título o calle"
-              value={search}
-              onChange={(event) => {
-                const value = event.target.value;
-                setSearch(value);
-                setFilters({ search: value, page: 1 });
-              }}
-            />
-          </div>
-
-          <div className="sm:col-span-2 md:col-span-1 xl:col-span-1">
-            <button
-              type="button"
-              onClick={handleDownloadProperties}
-              className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d]"
-            >
-              <img
-                src={desArcIcon}
-                alt=""
-                className="h-5 w-5 shrink-0"
-                aria-hidden="true"
-              />
-              <span>Descargar Excel</span>
-            </button>
-          </div>
         </div>
-      </FilterCard>
+      </CollapsibleFilters>
 
       <PropertiesTable
         data={filteredProperties}
