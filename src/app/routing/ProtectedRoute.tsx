@@ -11,7 +11,7 @@ type ProtectedRouteProps = {
 
 export function ProtectedRoute({ module }: ProtectedRouteProps) {
   const token = useAuthStore((state) => state.token);
-  const userRoles = useAuthStore((state) => state.user?.roles ?? []);
+  const userRoles = useAuthStore((state) => state.user?.roles) ?? [];
   const { can, userPermissions } = useHasPermission();
 
   if (

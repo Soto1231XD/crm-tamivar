@@ -61,7 +61,13 @@ const MovementsPage = lazy(() =>
 
 export function AppRoutes() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-white">
+          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-slate-200 border-t-brand-700" />
+        </div>
+      }
+    >
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />

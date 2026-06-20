@@ -14,11 +14,6 @@ api.interceptors.request.use((config) => {
 
   if (token && isTokenExpired(token)) {
     useAuthStore.getState().logout();
-
-    if (window.location.pathname !== "/login") {
-      window.location.replace("/login");
-    }
-
     return Promise.reject(new Error("Sesión expirada o no autorizada."));
   }
 
@@ -79,11 +74,6 @@ export async function apiRequest<T>(
     if (err.response?.status === 401) {
       if (token) {
         useAuthStore.getState().logout();
-
-        if (window.location.pathname !== "/login") {
-          window.location.replace("/login");
-        }
-
         throw new Error("Sesión expirada o no autorizada.");
       }
 

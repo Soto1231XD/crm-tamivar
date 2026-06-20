@@ -90,7 +90,13 @@ export function DevelopmentsTable({
         cellClassName: "min-w-[220px] whitespace-normal align-top",
         render: (development) => (
           <div className="space-y-1 text-left">
-            <p className="font-semibold text-slate-900">{development.titulo}</p>
+            <button
+              type="button"
+              className="text-left font-semibold text-slate-900 hover:text-[#4F5EF8] hover:underline transition-colors cursor-pointer"
+              onClick={() => navigate(`/modulos/desarrollos/${development.id}`)}
+            >
+              {development.titulo}
+            </button>
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
               {development.slug}
             </p>
