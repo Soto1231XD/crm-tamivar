@@ -67,9 +67,13 @@ export function PropertiesTable({
         headerClassName: "min-w-[180px]",
         cellClassName: "min-w-[180px] whitespace-normal align-top",
         render: (property) => (
-          <span className="font-medium text-slate-800">
+          <button
+            type="button"
+            className="text-left font-medium text-slate-800 hover:text-[#4F5EF8] hover:underline transition-colors cursor-pointer"
+            onClick={() => navigate(`/modulos/propiedades/${property.id}`)}
+          >
             {property.titulo || "Sin título"}
-          </span>
+          </button>
         ),
       },
       {

@@ -27,7 +27,7 @@ export function ProtectedRoute({ module }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (module === "Estadísticas" && !canAccessStatistics(userRoles)) {
+  if (module === "Estadísticas" && !canAccessStatistics(userRoles, userPermissions)) {
     return <Navigate to="/dashboard" replace />;
   }
 

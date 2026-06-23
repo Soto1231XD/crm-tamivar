@@ -70,7 +70,8 @@ export function canAccessDashboard(permissions: string[]): boolean {
   );
 }
 
-export function canAccessStatistics(userRoles: string[] = []): boolean {
+export function canAccessStatistics(userRoles: string[] = [], permissions: string[] = []): boolean {
+  if (hasModuleReadAccess(permissions, "Estad\u00edsticas")) return true;
   return userRoles
     .map(normalizeRole)
     .some((role) => STATISTICS_ALLOWED_ROLES.includes(role));
@@ -99,7 +100,7 @@ export function getAvailableModules(
 
   return allModules.filter((module) => {
     if (module === "dashboard") return canAccessDashboard(permissions);
-    if (module === "Estadísticas") return canAccessStatistics(userRoles);
+    if (module === "Estadísticas") return canAccessStatistics(userRoles, permissions);
     if (module === "material") return true;
     return permissions.some((permission) => permission.startsWith(`${module}:`));
   });
