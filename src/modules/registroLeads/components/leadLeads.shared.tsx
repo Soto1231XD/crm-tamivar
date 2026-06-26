@@ -45,7 +45,7 @@ export const LEAD_LEADS_PAYMENT_METHOD_OPTIONS = [
 export const LEAD_LEADS_SOURCE_OPTIONS = ['Orgánico', 'Campaña', 'Otro'] as const;
 
 export const leadLeadFieldClassName =
-  'w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10';
+  'w-full rounded-xl border border-[var(--crm-border-strong)] bg-[var(--crm-surface-soft)] px-3.5 py-2.5 text-sm text-[var(--crm-text)] outline-none transition placeholder:text-[var(--crm-placeholder)] focus:border-[var(--crm-primary)] focus:bg-[var(--crm-surface)] focus:ring-2 focus:ring-[var(--crm-primary-soft)]';
 
 const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/;
 const LADA_REGEX = /^\+?[0-9]+$/;
@@ -107,9 +107,9 @@ type LeadLeadDirtyFields = Partial<Record<keyof LeadLeadFormValues, boolean | bo
 
 export function LeadLeadFieldLabel({ children, required = false }: { children: string; required?: boolean }) {
   return (
-    <span className="text-sm font-medium text-slate-700">
+    <span className="text-sm font-medium text-[var(--crm-text-muted)]">
       {children}
-      {required ? <span className="ml-1 font-semibold text-red-600">*</span> : null}
+      {required ? <span className="ml-1 font-semibold text-[var(--crm-danger-text)]">*</span> : null}
     </span>
   );
 }

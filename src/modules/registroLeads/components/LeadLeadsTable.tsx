@@ -40,6 +40,29 @@ type LeadLeadsTableProps = {
   onDelete: (lead: LeadRecord) => void;
 };
 
+function formatCommentEntryDate(date = new Date()) {
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function appendDatedComment(
+  existingComment: string | null | undefined,
+  nextComment: string,
+) {
+  const trimmedComment = nextComment.trim();
+  const previousComment = (existingComment ?? "").trim();
+
+  if (!trimmedComment) {
+    return previousComment;
+  }
+
+  const datedComment = `${formatCommentEntryDate()}: ${trimmedComment}`;
+  return previousComment ? `${previousComment}\n${datedComment}` : datedComment;
+}
+
 export function LeadLeadsTable({
   leads,
   isLoading,
@@ -61,15 +84,13 @@ export function LeadLeadsTable({
 
   useEffect(() => {
     setCommentDrafts((current) => {
-      const nextDrafts = { ...current };
+      const visibleLeadIds = new Set(leads.map((lead) => lead.id));
 
-      leads.forEach((lead) => {
-        if (!(lead.id in nextDrafts)) {
-          nextDrafts[lead.id] = lead.comentarios ?? "";
-        }
-      });
-
-      return nextDrafts;
+      return Object.fromEntries(
+        Object.entries(current).filter(([leadId]) =>
+          visibleLeadIds.has(Number(leadId)),
+        ),
+      );
     });
   }, [leads]);
 
@@ -281,33 +302,49 @@ export function LeadLeadsTable({
           );
         }
 
-        const draft = commentDrafts[lead.id] ?? lead.comentarios ?? "";
-        const hasChanges = draft.trim() !== (lead.comentarios ?? "").trim();
+        const currentComments = (lead.comentarios ?? "").trim();
+        const draft = commentDrafts[lead.id] ?? "";
+        const nextComments = appendDatedComment(lead.comentarios, draft);
+        const hasChanges = draft.trim().length > 0;
+        const exceedsLimit = nextComments.length > 1500;
 
         return (
-          <div className="flex max-w-[260px] flex-col gap-2">
+          <div className="flex max-w-[280px] flex-col gap-2">
             <textarea
-              value={draft}
-              rows={3}
+              value={draft ? `${currentComments ? `${currentComments}\n` : ""}${draft}` : currentComments}
+              rows={5}
               maxLength={1500}
               disabled={updatingLeadId === lead.id}
-              onChange={(event) =>
+              onChange={(event) => {
+                const value = event.target.value;
+                const nextDraft = currentComments && value.startsWith(currentComments)
+                  ? value.slice(currentComments.length).replace(/^\s*\n?/, "")
+                  : value;
+
                 setCommentDrafts((current) => ({
                   ...current,
-                  [lead.id]: event.target.value,
-                }))
-              }
+                  [lead.id]: nextDraft,
+                }));
+              }}
               className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm leading-5 text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-2 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
-              placeholder="Agregar comentario"
+              placeholder="Ej. El cliente comento que le interesa la casa"
             />
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-slate-400">
-                {draft.length}/1500
+              <span
+                className={`text-[11px] ${exceedsLimit ? "text-red-600" : "text-slate-400"}`}
+              >
+                {nextComments.length}/1500
               </span>
               <button
                 type="button"
-                disabled={!hasChanges || updatingLeadId === lead.id}
-                onClick={() => onQuickChange(lead.id, "comentarios", draft)}
+                disabled={!hasChanges || exceedsLimit || updatingLeadId === lead.id}
+                onClick={() => {
+                  onQuickChange(lead.id, "comentarios", nextComments);
+                  setCommentDrafts((current) => ({
+                    ...current,
+                    [lead.id]: "",
+                  }));
+                }}
                 className="inline-flex items-center rounded-lg bg-[#312C85] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Guardar

@@ -20,6 +20,14 @@ type UseLeadRequestsPageStateParams = {
   userId?: number | null;
 };
 
+function getLeadRequestStatusRank(status?: string | null) {
+  const normalizedStatus = status?.trim().toLowerCase();
+
+  if (normalizedStatus === 'activo') return 0;
+  if (normalizedStatus === 'cancelado') return 2;
+  return 1;
+}
+
 export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStateParams) {
   const { leadRequests, isLoading, fetchLeadRequests, addLeadRequest, editLeadRequest, removeLeadRequest } =
     useLeadRequestsStore();
@@ -75,6 +83,12 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
         return matchesSearch && matchesStatus && matchesLeadDateFrom && matchesLeadDateTo;
       })
       .sort((left, right) => {
+        const statusRankDiff = getLeadRequestStatusRank(left.estado) - getLeadRequestStatusRank(right.estado);
+
+        if (statusRankDiff !== 0) {
+          return statusRankDiff;
+        }
+
         const leftBudget = left.presupuesto == null || Number.isNaN(Number(left.presupuesto)) ? Number.NEGATIVE_INFINITY : Number(left.presupuesto);
         const rightBudget =
           right.presupuesto == null || Number.isNaN(Number(right.presupuesto)) ? Number.NEGATIVE_INFINITY : Number(right.presupuesto);

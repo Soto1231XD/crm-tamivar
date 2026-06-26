@@ -58,6 +58,12 @@ const StatisticsPage = lazy(() =>
 const MovementsPage = lazy(() =>
   import("@/modules/movements/pages/MovementsPage").then((m) => ({ default: m.MovementsPage }))
 );
+const OperacionesPage = lazy(() =>
+  import("@/modules/operaciones/pages/OperacionesPage").then((m) => ({ default: m.OperacionesPage }))
+);
+const CarteraClientesPage = lazy(() =>
+  import("@/modules/carteraClientes/pages/CarteraClientesPage").then((m) => ({ default: m.CarteraClientesPage }))
+);
 
 export function AppRoutes() {
   return (
@@ -135,6 +141,12 @@ export function AppRoutes() {
           </Route>
           <Route element={<ProtectedRoute module="movimientos" />}>
             <Route path="modulos/movimientos" element={<MovementsPage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="Operaciones" />}>
+            <Route path="modulos/operaciones" element={<OperacionesPage />} />
+          </Route>
+          <Route element={<ProtectedRoute module="CarteraClientes" />}>
+            <Route path="modulos/cartera-clientes" element={<CarteraClientesPage />} />
           </Route>
         </Route>
       </Route>

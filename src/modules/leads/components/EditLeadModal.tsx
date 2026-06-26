@@ -157,7 +157,7 @@ export function EditLeadModal({
                   },
                 })}
                 className={visitLeadFieldClassName}
-                placeholder="+52"
+                placeholder="Ej. +52"
               />
             </label>
 
@@ -173,7 +173,7 @@ export function EditLeadModal({
                 })}
                 className={visitLeadFieldClassName}
                 maxLength={4}
-                placeholder="6678"
+                placeholder="Ej. 6678"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
               <span className="text-xs text-slate-500">
@@ -254,7 +254,7 @@ export function EditLeadModal({
                 })}
                 className={visitLeadFieldClassName}
                 disabled={asesorExterno !== 'si'}
-                placeholder={asesorExterno === 'si' ? 'Nombre del broker externo' : 'N/A'}
+                placeholder={asesorExterno === 'si' ? 'Ej. Nombre del broker externo' : 'No aplica'}
               />
               {errors.asesor_externo_nombre ? (
                 <span className="text-xs text-red-600">{errors.asesor_externo_nombre.message}</span>
@@ -267,7 +267,7 @@ export function EditLeadModal({
                 {...register('comentarios')}
                 rows={3}
                 className={`${visitLeadFieldClassName} resize-none`}
-                placeholder="Comentarios del registro"
+                placeholder="Ej. Comentarios del registro"
               />
             </label>
           </div>

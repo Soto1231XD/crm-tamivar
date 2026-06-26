@@ -153,6 +153,7 @@ export function EditLeadRequestModal({
                 })}
                 className={leadRequestFieldClassName}
                 maxLength={14}
+                placeholder="Ej. 9981144249"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
             </label>
@@ -172,7 +173,7 @@ export function EditLeadRequestModal({
 
             <label className="flex flex-col gap-1.5">
               <LeadRequestFieldLabel required>Solicitud</LeadRequestFieldLabel>
-              <input type="text" {...register('solicitud')} className={leadRequestFieldClassName} />
+              <input type="text" {...register('solicitud')} className={leadRequestFieldClassName} placeholder="Ej. Compra, renta, casa vacacional, inversión..." />
               {errors.solicitud ? <span className="text-xs text-red-600">{errors.solicitud.message}</span> : null}
             </label>
 
@@ -205,6 +206,7 @@ export function EditLeadRequestModal({
                   },
                 })}
                 className={leadRequestFieldClassName}
+                placeholder="Ej. 10,000,000"
               />
             </label>
 
@@ -228,13 +230,13 @@ export function EditLeadRequestModal({
 
             <label className="flex flex-col gap-1.5 md:col-span-2">
               <LeadRequestFieldLabel>Ubicación</LeadRequestFieldLabel>
-              <textarea {...register('ubicacion')} rows={2} className={`${leadRequestFieldClassName} resize-none`} />
+              <textarea {...register('ubicacion')} rows={2} className={`${leadRequestFieldClassName} resize-none`} placeholder="Ej. Zona hotelera, Lagos del Sol, Villamagna..." />
               {errors.ubicacion ? <span className="text-xs text-red-600">{errors.ubicacion.message}</span> : null}
             </label>
 
             <label className="flex flex-col gap-1.5">
               <LeadRequestFieldLabel>N. habitaciones</LeadRequestFieldLabel>
-              <input type="text" {...register('numero_habitaciones')} className={leadRequestFieldClassName} />
+              <input type="text" {...register('numero_habitaciones')} className={leadRequestFieldClassName} placeholder="Ej. 3 / Estudio / 300 m2" />
               {errors.numero_habitaciones ? <span className="text-xs text-red-600">{errors.numero_habitaciones.message}</span> : null}
             </label>
 

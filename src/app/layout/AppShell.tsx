@@ -52,6 +52,9 @@ const MODULE_ICONS: Record<ModuleKey, string> = {
   usuarios: usuariosIcon,
   roles: rolIcon,
   movimientos: logsIcon,
+  Operaciones: logsIcon,
+  Comisiones: logsIcon,
+  CarteraClientes: usuariosIcon,
 };
 
 type NavGroupConfig = {
@@ -78,7 +81,7 @@ const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
   },
 ];
 
-const STANDALONE_MODULES = new Set<ModuleKey>(["dashboard", "Estadísticas", "propiedades", "desarrollos"]);
+const STANDALONE_MODULES = new Set<ModuleKey>(["dashboard", "Estadísticas", "propiedades", "desarrollos", "Operaciones", "CarteraClientes"]);
 
 export function AppShell() {
   const user = useAuthStore((state) => state.user);

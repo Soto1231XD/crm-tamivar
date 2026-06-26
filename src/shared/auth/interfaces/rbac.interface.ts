@@ -10,7 +10,10 @@ export type ModuleKey =
   | 'blogs'
   | 'usuarios'
   | 'roles'
-  | 'movimientos';
+  | 'movimientos'
+  | 'Operaciones'
+  | 'Comisiones'
+  | 'CarteraClientes';
 
 export type ModulePermissions = {
   ver: boolean;

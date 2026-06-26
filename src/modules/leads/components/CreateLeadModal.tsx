@@ -109,8 +109,8 @@ export function CreateLeadModal({
       maxWidthClassName="max-w-2xl"
       panelClassName="max-h-[88vh]"
     >
-      <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-slate-600">
-        <span className="font-semibold text-red-600">*</span> Campo obligatorio
+      <div className="mb-4 rounded-xl border border-[var(--crm-danger-border)] bg-[var(--crm-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--crm-danger-text)]">
+        <span className="font-semibold">*</span> Campo obligatorio
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -163,7 +163,7 @@ export function CreateLeadModal({
                   },
                 })}
                 className={visitLeadFieldClassName}
-                placeholder="+52"
+                placeholder="Ej. +52"
               />
             </label>
 
@@ -179,7 +179,7 @@ export function CreateLeadModal({
                 })}
                 className={visitLeadFieldClassName}
                 maxLength={4}
-                placeholder="6678"
+                placeholder="Ej. 6678"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
               <span className="text-xs text-slate-500">
@@ -260,7 +260,7 @@ export function CreateLeadModal({
                 })}
                 className={visitLeadFieldClassName}
                 disabled={asesorExterno !== 'si'}
-                placeholder={asesorExterno === 'si' ? 'Nombre del broker externo' : 'N/A'}
+                placeholder={asesorExterno === 'si' ? 'Ej. Nombre del broker externo' : 'No aplica'}
               />
               {errors.asesor_externo_nombre ? (
                 <span className="text-xs text-red-600">{errors.asesor_externo_nombre.message}</span>
@@ -273,7 +273,7 @@ export function CreateLeadModal({
                 {...register('comentarios')}
                 rows={3}
                 className={`${visitLeadFieldClassName} resize-none`}
-                placeholder="Comentarios del registro"
+                placeholder="Ej. Comentarios del registro"
               />
             </label>
           </div>

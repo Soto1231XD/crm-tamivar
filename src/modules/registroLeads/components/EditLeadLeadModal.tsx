@@ -156,7 +156,7 @@ export function EditLeadLeadModal({
                   },
                 })}
                 className={leadLeadFieldClassName}
-                placeholder="+52"
+                placeholder="Ej. +52"
               />
             </label>
 
@@ -172,7 +172,7 @@ export function EditLeadLeadModal({
                 })}
                 className={leadLeadFieldClassName}
                 maxLength={10}
-                placeholder="9981144249"
+                placeholder="Ej. 9981144249"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
             </label>
@@ -290,7 +290,7 @@ export function EditLeadLeadModal({
                   },
                 })}
                 className={leadLeadFieldClassName}
-                placeholder="3,500,000"
+                placeholder="Ej. 3,500,000"
               />
             </label>
 
@@ -313,7 +313,7 @@ export function EditLeadLeadModal({
                 {...register('solicitud')}
                 rows={3}
                 className={`${leadLeadFieldClassName} resize-none`}
-                placeholder="Detalle de la solicitud del cliente"
+                placeholder="Ej. Detalle de la solicitud del cliente"
               />
               {errors.solicitud ? <span className="text-xs text-red-600">{errors.solicitud.message}</span> : null}
             </label>
@@ -324,7 +324,7 @@ export function EditLeadLeadModal({
                 {...register('caracteristicas')}
                 rows={3}
                 className={`${leadLeadFieldClassName} resize-none`}
-                placeholder="Preferencias del cliente"
+                placeholder="Ej. Preferencias del cliente"
               />
               {errors.caracteristicas ? <span className="text-xs text-red-600">{errors.caracteristicas.message}</span> : null}
             </label>
@@ -335,7 +335,7 @@ export function EditLeadLeadModal({
                 {...register('comentarios')}
                 rows={3}
                 className={`${leadLeadFieldClassName} resize-none`}
-                placeholder="Actualización del vendedor asignado"
+                placeholder="Ej. Actualización del vendedor asignado"
               />
               {errors.comentarios ? <span className="text-xs text-red-600">{errors.comentarios.message}</span> : null}
             </label>

@@ -13,6 +13,9 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   usuarios: "Usuarios",
   roles: "Roles del sistema",
   movimientos: "Movimientos",
+  Operaciones: "Operaciones",
+  Comisiones: "Comisiones",
+  CarteraClientes: "Cartera de Clientes",
 };
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
@@ -28,6 +31,9 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   usuarios: "/modulos/usuarios",
   roles: "/modulos/roles",
   movimientos: "/modulos/movimientos",
+  Operaciones: "/modulos/operaciones",
+  Comisiones: "/modulos/operaciones",
+  CarteraClientes: "/modulos/cartera-clientes",
 };
 
 const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
@@ -94,6 +100,8 @@ export function getAvailableModules(
     "usuarios",
     "roles",
     "movimientos",
+    "Operaciones",
+    "CarteraClientes",
   ];
 
   if (permissions.includes("*:*")) return allModules;

@@ -15,6 +15,22 @@ type StatusCount = {
   count: number;
 };
 
+type VisitCalendarDay = {
+  key: string;
+  date: Date;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  records: LeadRecord[];
+  statusCounts: Record<string, number>;
+};
+
+const MONTH_FORMATTER = new Intl.DateTimeFormat("es-MX", {
+  month: "long",
+  year: "numeric",
+});
+
+const WEEKDAY_LABELS = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
+
 const EMPTY_COUNTS = (statuses: readonly string[]) =>
   statuses.reduce<Record<string, number>>((accumulator, status) => {
     accumulator[status] = 0;
@@ -23,6 +39,59 @@ const EMPTY_COUNTS = (statuses: readonly string[]) =>
 
 function normalizeStatus(value?: string | null, fallback = "Sin estado") {
   return (value ?? "").trim() || fallback;
+}
+
+function toDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getRecordDateKey(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return toDateKey(date);
+}
+
+function getMonthGridDates(monthDate: Date) {
+  const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const mondayOffset = (firstDay.getDay() + 6) % 7;
+  const gridStart = new Date(firstDay);
+  gridStart.setDate(firstDay.getDate() - mondayOffset);
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+    return date;
+  });
+}
+
+function getVisitStatusTone(status: string, isDark: boolean) {
+  const normalizedStatus = status.toLowerCase();
+
+  if (normalizedStatus.includes("cancel")) {
+    return isDark
+      ? "bg-red-500/15 text-red-200 ring-red-400/30"
+      : "bg-red-50 text-red-700 ring-red-200";
+  }
+
+  if (normalizedStatus.includes("cerr")) {
+    return isDark
+      ? "bg-emerald-500/15 text-emerald-200 ring-emerald-400/30"
+      : "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  }
+
+  if (normalizedStatus.includes("agend")) {
+    return isDark
+      ? "bg-sky-500/15 text-sky-200 ring-sky-400/30"
+      : "bg-sky-50 text-sky-700 ring-sky-200";
+  }
+
+  return isDark
+    ? "bg-violet-500/15 text-violet-200 ring-violet-400/30"
+    : "bg-violet-50 text-violet-700 ring-violet-200";
 }
 
 function buildStatusSummary(records: LeadRecord[], knownStatuses: readonly string[]) {
@@ -423,6 +492,232 @@ function AdvisorVerticalBarChart({
   );
 }
 
+function VisitStatusCalendar({
+  records,
+  monthDate,
+  selectedStatus,
+  onMonthChange,
+  onStatusChange,
+  advisors,
+  selectedAdvisor,
+  onAdvisorChange,
+  isDark,
+}: {
+  records: LeadRecord[];
+  monthDate: Date;
+  selectedStatus: string;
+  onMonthChange: (date: Date) => void;
+  onStatusChange: (status: string) => void;
+  advisors: { key: string; name: string }[];
+  selectedAdvisor: string;
+  onAdvisorChange: (key: string) => void;
+  isDark: boolean;
+}) {
+  const calendarDays = useMemo<VisitCalendarDay[]>(() => {
+    const monthRecords = new Map<string, LeadRecord[]>();
+
+    records.forEach((record) => {
+      const status = normalizeStatus(record.estado);
+      if (selectedStatus !== "Todos los estados" && status !== selectedStatus) return;
+
+      const dateKey = getRecordDateKey(record.fecha_cita);
+      if (!dateKey) return;
+
+      const currentRecords = monthRecords.get(dateKey) ?? [];
+      currentRecords.push(record);
+      monthRecords.set(dateKey, currentRecords);
+    });
+
+    return getMonthGridDates(monthDate).map((date) => {
+      const key = toDateKey(date);
+      const dayRecords = monthRecords.get(key) ?? [];
+      const statusCounts = dayRecords.reduce<Record<string, number>>((accumulator, record) => {
+        const status = normalizeStatus(record.estado);
+        accumulator[status] = (accumulator[status] ?? 0) + 1;
+        return accumulator;
+      }, {});
+
+      return {
+        key,
+        date,
+        dayNumber: date.getDate(),
+        isCurrentMonth: date.getMonth() === monthDate.getMonth(),
+        records: dayRecords,
+        statusCounts,
+      };
+    });
+  }, [monthDate, records, selectedStatus]);
+
+  const monthVisibleRecords = calendarDays
+    .filter((day) => day.isCurrentMonth)
+    .flatMap((day) => day.records);
+  const monthStatusCounts = monthVisibleRecords.reduce<Record<string, number>>((accumulator, record) => {
+    const status = normalizeStatus(record.estado);
+    accumulator[status] = (accumulator[status] ?? 0) + 1;
+    return accumulator;
+  }, {});
+  const totalMonthRecords = monthVisibleRecords.length;
+
+  function goToPreviousMonth() {
+    onMonthChange(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1));
+  }
+
+  function goToNextMonth() {
+    onMonthChange(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1));
+  }
+
+  function goToCurrentMonth() {
+    const today = new Date();
+    onMonthChange(new Date(today.getFullYear(), today.getMonth(), 1));
+  }
+
+  return (
+    <section className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--crm-text-muted)]">
+            Calendario de visitas
+          </p>
+          <h2 className="mt-2 text-2xl font-black capitalize tracking-tight text-[var(--crm-text)]">
+            {MONTH_FORMATTER.format(monthDate)}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--crm-text-muted)]">
+            Visualiza los registros visitas por fecha de cita y estado. Usa el filtro para revisar un estado especifico.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={goToPreviousMonth}
+            className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-muted)] px-3 py-2 text-sm font-semibold text-[var(--crm-text)] transition hover:bg-[var(--crm-surface-soft)]"
+          >
+            Anterior
+          </button>
+          <button
+            type="button"
+            onClick={goToCurrentMonth}
+            className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm font-semibold text-[var(--crm-text)] transition hover:bg-[var(--crm-muted)]"
+          >
+            Hoy
+          </button>
+          <button
+            type="button"
+            onClick={goToNextMonth}
+            className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-muted)] px-3 py-2 text-sm font-semibold text-[var(--crm-text)] transition hover:bg-[var(--crm-surface-soft)]"
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="space-y-4 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-muted)] p-4">
+          <label className="block">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
+              Filtrar asesor
+            </span>
+            <select
+              value={selectedAdvisor}
+              onChange={(e) => onAdvisorChange(e.target.value)}
+              className="mt-3 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2.5 text-sm text-[var(--crm-text)] outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15"
+            >
+              <option value="">Todos los asesores</option>
+              {advisors.map(({ key, name }) => (
+                <option key={key} value={key}>{name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
+              Filtrar estado
+            </span>
+            <select
+              value={selectedStatus}
+              onChange={(event) => onStatusChange(event.target.value)}
+              className="mt-3 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2.5 text-sm text-[var(--crm-text)] outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15"
+            >
+              <option value="Todos los estados">Todos los estados</option>
+              {VISIT_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-4 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--crm-text-muted)]">
+              Total del mes
+            </p>
+            <p className="mt-2 text-3xl font-black text-[var(--crm-text)]">{totalMonthRecords}</p>
+          </div>
+
+          <div className="space-y-2">
+            {VISIT_STATUS_OPTIONS.map((status) => (
+              <div
+                key={status}
+                className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-semibold ring-1 ${getVisitStatusTone(status, isDark)}`}
+              >
+                <span>{status}</span>
+                <span>{monthStatusCounts[status] ?? 0}</span>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <div className="min-w-0 overflow-x-auto rounded-2xl border border-[var(--crm-border)]">
+          <div className="min-w-[760px]">
+            <div className="grid grid-cols-7 border-b border-[var(--crm-border)] bg-[var(--crm-muted)]">
+              {WEEKDAY_LABELS.map((label) => (
+                <div
+                  key={label}
+                  className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--crm-text-muted)]"
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7">
+              {calendarDays.map((day) => (
+                <div
+                  key={day.key}
+                  className={`min-h-[132px] border-b border-r border-[var(--crm-border)] p-2 ${
+                    day.isCurrentMonth ? "bg-[var(--crm-surface)]" : "bg-[var(--crm-muted)] opacity-60"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-black text-[var(--crm-text)]">{day.dayNumber}</span>
+                    {day.records.length > 0 ? (
+                      <span className="rounded-full bg-[var(--crm-primary-soft)] px-2 py-0.5 text-[11px] font-black text-[var(--crm-primary)]">
+                        {day.records.length}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-2 space-y-1.5">
+                    {Object.entries(day.statusCounts).map(([status, count]) => (
+                      <div
+                        key={`${day.key}-${status}`}
+                        className={`flex items-center justify-between rounded-lg px-2 py-1 text-[11px] font-semibold ring-1 ${getVisitStatusTone(status, isDark)}`}
+                      >
+                        <span className="truncate">{status}</span>
+                        <span>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function StatisticsPage() {
   const theme = useThemeStore((state) => state.theme);
   const isDark = theme === "dark";
@@ -432,6 +727,12 @@ export function StatisticsPage() {
   const [error, setError] = useState("");
   const [advisorSearch, setAdvisorSearch] = useState("");
   const [expandedAdvisorKey, setExpandedAdvisorKey] = useState<string | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+  const [calendarStatusFilter, setCalendarStatusFilter] = useState("Todos los estados");
+  const [calendarAdvisorFilter, setCalendarAdvisorFilter] = useState("");
 
   useEffect(() => {
     let isActive = true;
@@ -458,6 +759,24 @@ export function StatisticsPage() {
       isActive = false;
     };
   }, []);
+
+  const calendarAdvisors = useMemo(() => {
+    const seen = new Map<string, string>();
+    visitRecords.forEach((r) => {
+      const key = resolveAdvisorKey(r);
+      if (!seen.has(key)) seen.set(key, resolveAdvisorName(r));
+    });
+    return [...seen.entries()]
+      .map(([key, name]) => ({ key, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  }, [visitRecords]);
+
+  const calendarRecords = useMemo(
+    () => calendarAdvisorFilter
+      ? visitRecords.filter((r) => resolveAdvisorKey(r) === calendarAdvisorFilter)
+      : visitRecords,
+    [visitRecords, calendarAdvisorFilter],
+  );
 
   const visitStatusSummary = useMemo(
     () => buildStatusSummary(visitRecords, VISIT_STATUS_OPTIONS),
@@ -647,6 +966,18 @@ export function StatisticsPage() {
               accentClass={isDark ? "bg-sky-400" : "bg-sky-500"}
             />
           </section>
+
+          <VisitStatusCalendar
+            records={calendarRecords}
+            monthDate={calendarMonth}
+            selectedStatus={calendarStatusFilter}
+            onMonthChange={setCalendarMonth}
+            onStatusChange={setCalendarStatusFilter}
+            advisors={calendarAdvisors}
+            selectedAdvisor={calendarAdvisorFilter}
+            onAdvisorChange={setCalendarAdvisorFilter}
+            isDark={isDark}
+          />
 
           <section className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-5 shadow-sm">
             <div className="max-w-3xl">

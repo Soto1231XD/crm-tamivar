@@ -5,7 +5,7 @@ const NAME_REGEX = /^[A-Z\s]+$/;
 const LADA_REGEX = /^\+?[0-9]+$/;
 
 export const visitLeadFieldClassName =
-  'w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10';
+  'w-full rounded-xl border border-[var(--crm-border-strong)] bg-[var(--crm-surface-soft)] px-3.5 py-2.5 text-sm text-[var(--crm-text)] outline-none transition placeholder:text-[var(--crm-placeholder)] focus:border-[var(--crm-primary)] focus:bg-[var(--crm-surface)] focus:ring-2 focus:ring-[var(--crm-primary-soft)]';
 
 export const INITIAL_VISIT_FORM = {
   nombres: '',
@@ -93,9 +93,9 @@ export function VisitFieldLabel({
   required?: boolean;
 }) {
   return (
-    <span className="text-sm font-medium text-slate-700">
+    <span className="text-sm font-medium text-[var(--crm-text-muted)]">
       {children}
-      {required ? <span className="ml-1 font-semibold text-red-600">*</span> : null}
+      {required ? <span className="ml-1 font-semibold text-[var(--crm-danger-text)]">*</span> : null}
     </span>
   );
 }

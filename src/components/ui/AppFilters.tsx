@@ -17,7 +17,7 @@ type FilterSelectProps = SelectHTMLAttributes<HTMLSelectElement>;
 type FilterDateInputProps = InputHTMLAttributes<HTMLInputElement>;
 
 const baseControlClassName =
-  "w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10";
+  "w-full rounded-xl border border-[var(--crm-border-strong)] bg-[var(--crm-surface-soft)] px-3 py-2.5 text-sm text-[var(--crm-text)] outline-none transition placeholder:text-[var(--crm-text-soft)] focus:border-[var(--crm-primary)] focus:bg-[var(--crm-surface)] focus:ring-2 focus:ring-[var(--crm-primary-soft)]";
 
 export function FilterCard({
   title = "Filtros",
@@ -27,15 +27,15 @@ export function FilterCard({
 }: FilterCardProps) {
   return (
     <section
-      className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 ${className}`.trim()}
+      className={`rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4 shadow-sm sm:p-5 ${className}`.trim()}
     >
       <div className="space-y-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--crm-text-soft)]">
             {title}
           </p>
           {description ? (
-            <p className="mt-1 text-sm text-slate-600">{description}</p>
+            <p className="mt-1 text-sm text-[var(--crm-text-muted)]">{description}</p>
           ) : null}
         </div>
 
@@ -51,7 +51,7 @@ export function FilterSearchInput({
 }: FilterSearchInputProps) {
   return (
     <label className={`relative block ${className}`.trim()}>
-      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--crm-text-soft)]">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -110,7 +110,7 @@ export const FilterPriceInput = ({ value, onChange, className, ...props }: Filte
 
   return (
     <div className="relative flex items-center">
-      <span className="absolute left-3.5 font-bold text-slate-600">
+      <span className="absolute left-3.5 font-bold text-[var(--crm-text-muted)]">
         $
       </span>
       <input
@@ -118,7 +118,7 @@ export const FilterPriceInput = ({ value, onChange, className, ...props }: Filte
         value={displayValue}
         onChange={handleChange}
         {...props}
-        className={`w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-8 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-500 focus:border-[#312C85] focus:ring-1 focus:ring-[#312C85] ${
+        className={`w-full rounded-xl border border-[var(--crm-border-strong)] bg-[var(--crm-surface)] py-2.5 pl-8 pr-4 text-sm text-[var(--crm-text)] shadow-sm outline-none transition placeholder:text-[var(--crm-text-soft)] focus:border-[var(--crm-primary)] focus:ring-1 focus:ring-[var(--crm-primary)] ${
           className || ""
         }`}
       />
@@ -183,7 +183,7 @@ export function CollapsibleFilters({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4 shadow-sm sm:p-5">
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">{searchSlot}</div>
 
@@ -193,14 +193,14 @@ export function CollapsibleFilters({
           className={[
             "flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-[0.6rem] text-sm font-semibold transition",
             isOpen
-              ? "border-[#312C85] bg-[#312C85]/5 text-[#312C85]"
-              : "border-slate-300 bg-slate-50 text-slate-700 hover:border-slate-400 hover:bg-slate-100",
+              ? "border-[var(--crm-primary)] bg-[var(--crm-primary-soft)] text-[var(--crm-primary)]"
+              : "border-[var(--crm-border-strong)] bg-[var(--crm-surface-soft)] text-[var(--crm-text)] hover:bg-[var(--crm-muted)]",
           ].join(" ")}
         >
           <FilterListIcon className="h-4 w-4 shrink-0" />
           <span className="hidden sm:inline">Filtros</span>
           {activeCount > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#312C85] px-1 text-[10px] font-bold text-white">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--crm-primary)] px-1 text-[10px] font-bold text-white">
               {activeCount}
             </span>
           )}
@@ -213,7 +213,7 @@ export function CollapsibleFilters({
       </div>
 
       {isOpen && (
-        <div className="mt-4 border-t border-slate-100 pt-4">
+        <div className="mt-4 border-t border-[var(--crm-border)] pt-4">
           {children}
         </div>
       )}

@@ -100,8 +100,8 @@ export function CreateLeadRequestModal({
       maxWidthClassName="max-w-5xl"
       panelClassName="max-h-[88vh]"
     >
-      <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-slate-600">
-        <span className="font-semibold text-red-600">*</span> Campo obligatorio
+      <div className="mb-4 rounded-xl border border-[var(--crm-danger-border)] bg-[var(--crm-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--crm-danger-text)]">
+        <span className="font-semibold">*</span> Campo obligatorio
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -155,7 +155,7 @@ export function CreateLeadRequestModal({
                 })}
                 className={leadRequestFieldClassName}
                 maxLength={14}
-                placeholder="9981144249"
+                placeholder="Ej. 9981144249"
               />
               {errors.telefono ? <span className="text-xs text-red-600">{errors.telefono.message}</span> : null}
             </label>
@@ -179,7 +179,7 @@ export function CreateLeadRequestModal({
                 type="text"
                 {...register('solicitud')}
                 className={leadRequestFieldClassName}
-                placeholder="Compra, renta, casa vacacional, inversión..."
+                placeholder="Ej. Compra, renta, casa vacacional, inversión..."
               />
               {errors.solicitud ? <span className="text-xs text-red-600">{errors.solicitud.message}</span> : null}
             </label>
@@ -213,7 +213,7 @@ export function CreateLeadRequestModal({
                   },
                 })}
                 className={leadRequestFieldClassName}
-                placeholder="10,000,000"
+                placeholder="Ej. 10,000,000"
               />
             </label>
 
@@ -241,7 +241,7 @@ export function CreateLeadRequestModal({
                 {...register('ubicacion')}
                 rows={2}
                 className={`${leadRequestFieldClassName} resize-none`}
-                placeholder="Zona hotelera, Lagos del Sol, Villamagna..."
+                placeholder="Ej. Zona hotelera, Lagos del Sol, Villamagna..."
               />
               {errors.ubicacion ? <span className="text-xs text-red-600">{errors.ubicacion.message}</span> : null}
             </label>
@@ -252,7 +252,7 @@ export function CreateLeadRequestModal({
                 type="text"
                 {...register('numero_habitaciones')}
                 className={leadRequestFieldClassName}
-                placeholder="3 / Estudio / 300m2"
+                placeholder="Ej. 3 / Estudio / 300 m2"
               />
               {errors.numero_habitaciones ? <span className="text-xs text-red-600">{errors.numero_habitaciones.message}</span> : null}
             </label>

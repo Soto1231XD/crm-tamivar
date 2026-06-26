@@ -15,12 +15,22 @@
   --crm-surface: #ffffff;
   --crm-surface-soft: #f8fafc;
   --crm-surface-muted: #e2e8f0;
+  --crm-muted: #f1f5f9;
   --crm-border: #e2e8f0;
   --crm-border-strong: #cbd5e1;
   --crm-text: #0f172a;
   --crm-text-strong: #020617;
   --crm-text-muted: #475569;
   --crm-text-soft: #64748b;
+  --crm-placeholder: #94a3b8;
+  --crm-primary: #312c85;
+  --crm-primary-soft: rgba(49, 44, 133, 0.08);
+  --crm-primary-border: rgba(49, 44, 133, 0.22);
+  --crm-action: #0f172a;
+  --crm-action-hover: #1e293b;
+  --crm-danger-text: #b42318;
+  --crm-danger-soft: #fff1f1;
+  --crm-danger-border: #fecaca;
   --crm-overlay: rgba(15, 23, 42, 0.45);
   --crm-shadow-lg: 0 24px 64px rgba(15, 23, 42, 0.18);
   font-family: var(--font-sans-crm);
@@ -32,12 +42,22 @@ html.crm-theme-dark {
   --crm-surface: #0f172a;
   --crm-surface-soft: #111827;
   --crm-surface-muted: #1e293b;
+  --crm-muted: #162033;
   --crm-border: #233247;
   --crm-border-strong: #334155;
   --crm-text: #dbe7f5;
   --crm-text-strong: #f8fafc;
   --crm-text-muted: #a8b8cc;
   --crm-text-soft: #8aa0b8;
+  --crm-placeholder: #667892;
+  --crm-primary: #8ea3ff;
+  --crm-primary-soft: rgba(142, 163, 255, 0.12);
+  --crm-primary-border: rgba(142, 163, 255, 0.28);
+  --crm-action: #4f46e5;
+  --crm-action-hover: #6366f1;
+  --crm-danger-text: #fecaca;
+  --crm-danger-soft: rgba(127, 29, 29, 0.28);
+  --crm-danger-border: rgba(248, 113, 113, 0.42);
   --crm-overlay: rgba(2, 6, 23, 0.72);
   --crm-shadow-lg: 0 24px 64px rgba(2, 6, 23, 0.45);
 }
@@ -177,7 +197,13 @@ html.crm-theme-dark textarea {
 
 html.crm-theme-dark input::placeholder,
 html.crm-theme-dark textarea::placeholder {
-  color: var(--crm-text-soft);
+  color: var(--crm-placeholder);
+}
+
+html.crm-theme-dark .placeholder\:text-slate-400::placeholder,
+html.crm-theme-dark .placeholder\:text-slate-500::placeholder {
+  color: var(--crm-placeholder) !important;
+  opacity: 1;
 }
 
 html.crm-theme-dark .bg-white {
@@ -218,6 +244,29 @@ html.crm-theme-dark .text-slate-600,
 html.crm-theme-dark .text-slate-500,
 html.crm-theme-dark .text-slate-400 {
   color: var(--crm-text-muted) !important;
+}
+
+html.crm-theme-dark .text-red-600,
+html.crm-theme-dark .text-red-700 {
+  color: var(--crm-danger-text) !important;
+}
+
+html.crm-theme-dark .border-red-100,
+html.crm-theme-dark .border-red-200 {
+  border-color: var(--crm-danger-border) !important;
+}
+
+html.crm-theme-dark .bg-red-50 {
+  background-color: var(--crm-danger-soft) !important;
+}
+
+html.crm-theme-dark .bg-\[\#0F172A\] {
+  background-color: var(--crm-action) !important;
+  color: #ffffff !important;
+}
+
+html.crm-theme-dark .hover\:bg-slate-800:hover {
+  background-color: var(--crm-action-hover) !important;
 }
 
 html.crm-theme-dark .hover\:bg-slate-50:hover,
