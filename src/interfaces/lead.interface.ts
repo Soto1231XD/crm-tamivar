@@ -86,6 +86,7 @@ export interface CreateLeadPayload {
   metodo_pago?: string;
   caracteristicas?: string;
   origen_lead?: string;
+  fecha_registro?: string;
 }
 
 export interface UpdateLeadPayload {
@@ -111,4 +112,5 @@ export interface UpdateLeadPayload {
   metodo_pago?: string;
   caracteristicas?: string;
   origen_lead?: string;
+  fecha_registro?: string;
 }

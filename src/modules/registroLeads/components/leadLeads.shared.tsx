@@ -56,7 +56,7 @@ export const INITIAL_LEAD_LEAD_FORM = {
   telefono: '',
   lada: '+52',
   comentarios: '',
-  estado: 'En seguimiento',
+  estado: 'En espera',
   prioridad: 'Normal',
   vendedor_asignado_id: '',
   operacion: '',
@@ -67,6 +67,7 @@ export const INITIAL_LEAD_LEAD_FORM = {
   metodo_pago: [] as string[],
   caracteristicas: '',
   origen_lead: '',
+  fecha_registro: '',
 };
 
 export const leadLeadSchema = z.object({
@@ -99,6 +100,7 @@ export const leadLeadSchema = z.object({
   metodo_pago: z.array(z.string()).optional().default([]),
   caracteristicas: z.string().max(1000, 'Características no puede exceder 1000 caracteres.').optional(),
   origen_lead: z.string().trim().min(1, 'Origen del lead es obligatorio.'),
+  fecha_registro: z.string().optional(),
 });
 
 export type LeadLeadFormInput = z.input<typeof leadLeadSchema>;
@@ -193,6 +195,7 @@ export function toLeadLeadDefaultValues(lead: LeadRecord | null): LeadLeadFormIn
     metodo_pago: parseLeadPaymentMethods(lead.metodo_pago),
     caracteristicas: lead.caracteristicas ?? '',
     origen_lead: lead.origen_lead ?? '',
+    fecha_registro: lead.creado_en ? lead.creado_en.slice(0, 10) : '',
   };
 }
 
@@ -220,6 +223,7 @@ export function buildLeadLeadUpdatePayload(
     metodo_pago: (input) => input.metodo_pago.length > 0 ? input.metodo_pago.join(', ') : undefined,
     caracteristicas: (input) => input.caracteristicas?.trim() || undefined,
     origen_lead: (input) => input.origen_lead.trim(),
+    fecha_registro: (input) => input.fecha_registro || undefined,
   };
 
   for (const [field, mapper] of Object.entries(fieldMappers) as Array<

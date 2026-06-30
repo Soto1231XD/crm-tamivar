@@ -52,11 +52,11 @@ export function CreateLeadLeadModal({
     formState: { errors },
   } = useForm<LeadLeadFormInput, unknown, LeadLeadFormValues>({
     resolver: zodResolver(leadLeadSchema),
-    defaultValues: INITIAL_LEAD_LEAD_FORM,
+    defaultValues: { ...INITIAL_LEAD_LEAD_FORM, fecha_registro: new Date().toISOString().slice(0, 10) },
   });
 
   function resetAndClose() {
-    reset(INITIAL_LEAD_LEAD_FORM);
+    reset({ ...INITIAL_LEAD_LEAD_FORM, fecha_registro: new Date().toISOString().slice(0, 10) });
     setIsSubmitting(false);
     setSubmitError('');
     onClose();
@@ -88,6 +88,7 @@ export function CreateLeadLeadModal({
       metodo_pago: values.metodo_pago.length > 0 ? values.metodo_pago.join(', ') : undefined,
       caracteristicas: values.caracteristicas?.trim() || undefined,
       origen_lead: values.origen_lead.trim(),
+      fecha_registro: values.fecha_registro || undefined,
     };
 
     setIsSubmitting(true);
@@ -206,6 +207,16 @@ export function CreateLeadLeadModal({
                 ))}
               </select>
               {errors.vendedor_asignado_id ? <span className="text-xs text-red-600">{errors.vendedor_asignado_id.message}</span> : null}
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <LeadLeadFieldLabel>Fecha de registro</LeadLeadFieldLabel>
+              <input
+                type="date"
+                {...register('fecha_registro')}
+                className={leadLeadFieldClassName}
+                max={new Date().toISOString().slice(0, 10)}
+              />
             </label>
           </div>
         </div>

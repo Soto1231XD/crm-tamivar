@@ -17,6 +17,8 @@ import {
   type ClienteCartera,
 } from "../services/cartera-clientes.api";
 import { ClienteModal } from "../components/ClienteModal";
+import { WhatsappModal } from "../components/WhatsappModal";
+import { CampaignModal } from "../components/CampaignModal";
 
 const MESES: Record<number, string> = {
   1: "ENE", 2: "FEB", 3: "MAR", 4: "ABR", 5: "MAY", 6: "JUN",
@@ -32,18 +34,21 @@ function formatCumple(dia: number | null, mes: number | null) {
 
 export function CarteraClientesPage() {
   const { can } = useHasPermission();
-  const canCreate = can("CarteraClientes", "crear");
-  const canEdit   = can("CarteraClientes", "actualizar");
-  const canDelete = can("CarteraClientes", "eliminar");
+  const canCreate  = can("CarteraClientes", "crear");
+  const canEdit    = can("CarteraClientes", "actualizar");
+  const canDelete  = can("CarteraClientes", "eliminar");
+  const canMessage = can("CarteraClientes", "actualizar");
 
-  const [clientes, setClientes] = useState<ClienteCartera[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [modal, setModal] = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
+  const [clientes, setClientes]       = useState<ClienteCartera[]>([]);
+  const [isLoading, setIsLoading]     = useState(true);
+  const [modal, setModal]             = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
+  const [waModal, setWaModal]         = useState<{ open: boolean; item: ClienteCartera | null; defaultMsg?: string }>({ open: false, item: null });
+  const [campaignOpen, setCampaignOpen] = useState(false);
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch]       = useState("");
   const [filterTipo, setFilterTipo] = useState("");
-  const [filterMes, setFilterMes] = useState("");
+  const [filterMes, setFilterMes]   = useState("");
 
   const load = async () => {
     setIsLoading(true);
@@ -88,7 +93,7 @@ export function CarteraClientesPage() {
     }
   };
 
-  // Cumpleaños próximos (próximos 30 días)
+  // Cumpleaños próximos (30 días)
   const hoy = new Date();
   const cumplePróximos = useMemo(() => {
     return clientes
@@ -113,18 +118,35 @@ export function CarteraClientesPage() {
   }, [clientes]);
 
   const columns = [
-    { header: "Nombre", render: (c: ClienteCartera) => <span className="font-semibold">{c.nombre}</span> },
-    { header: "Cumpleaños", render: (c: ClienteCartera) => formatCumple(c.cumple_dia, c.cumple_mes) },
-    { header: "Teléfono", render: (c: ClienteCartera) => c.telefono ?? "—" },
-    { header: "Comprador / Vendedor", render: (c: ClienteCartera) => c.tipo ?? "—" },
-    { header: "Propiedad", render: (c: ClienteCartera) => c.propiedad ?? "—" },
-    { header: "Ubicación", render: (c: ClienteCartera) => c.ubicacion ?? "—" },
-    { header: "Referencia", render: (c: ClienteCartera) => c.referencia ?? "—" },
-    { header: "Tel. Referencia", render: (c: ClienteCartera) => c.telefono_referencia ?? "—" },
-    { header: "SMS Post venta", render: (c: ClienteCartera) => c.sms_post_venta
+    { header: "Nombre",              render: (c: ClienteCartera) => <span className="font-semibold">{c.nombre}</span> },
+    { header: "Cumpleaños",          render: (c: ClienteCartera) => formatCumple(c.cumple_dia, c.cumple_mes) },
+    { header: "Teléfono",            render: (c: ClienteCartera) => c.telefono ?? "—" },
+    { header: "Comprador / Vendedor",render: (c: ClienteCartera) => c.tipo ?? "—" },
+    { header: "Propiedad",           render: (c: ClienteCartera) => c.propiedad ?? "—" },
+    { header: "Ubicación",           render: (c: ClienteCartera) => c.ubicacion ?? "—" },
+    { header: "Referencia",          render: (c: ClienteCartera) => c.referencia ?? "—" },
+    { header: "Tel. Referencia",     render: (c: ClienteCartera) => c.telefono_referencia ?? "—" },
+    { header: "SMS Post venta",      render: (c: ClienteCartera) => c.sms_post_venta
       ? <span className="max-w-[200px] truncate block" title={c.sms_post_venta}>{c.sms_post_venta}</span>
       : "—"
     },
+    ...(canMessage
+      ? [{
+          header: "WhatsApp",
+          render: (c: ClienteCartera) =>
+            c.telefono ? (
+              <button
+                type="button"
+                onClick={() => setWaModal({ open: true, item: c })}
+                className="rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1da851]"
+              >
+                Enviar
+              </button>
+            ) : (
+              <span className="text-xs text-slate-400">Sin tel.</span>
+            ),
+        }]
+      : []),
   ];
 
   return (
@@ -142,16 +164,28 @@ export function CarteraClientesPage() {
             Directorio de compradores, vendedores e inquilinos con historial de operaciones.
           </p>
         </div>
-        {canCreate && (
-          <button
-            type="button"
-            onClick={() => setModal({ open: true, item: null })}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] sm:w-auto"
-          >
-            <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
-            <span className="whitespace-nowrap">Nuevo cliente</span>
-          </button>
-        )}
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          {canMessage && clientes.some((c) => c.telefono) && (
+            <button
+              type="button"
+              onClick={() => setCampaignOpen(true)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1da851] sm:w-auto"
+            >
+              <span>📣</span>
+              <span className="whitespace-nowrap">Campaña WhatsApp</span>
+            </button>
+          )}
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => setModal({ open: true, item: null })}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] sm:w-auto"
+            >
+              <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Nuevo cliente</span>
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Cumpleaños próximos */}
@@ -162,11 +196,18 @@ export function CarteraClientesPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             {cumplePróximos.map((c) => (
-              <a
+              <button
                 key={c.id}
-                href={`https://wa.me/52${(c.telefono ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`¡Feliz cumpleaños ${c.nombre}! 🎉 De parte de todo el equipo Tamivar, te deseamos un excelente día.`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                type="button"
+                onClick={() =>
+                  canMessage && c.telefono
+                    ? setWaModal({
+                        open: true,
+                        item: c,
+                        defaultMsg: `¡Feliz cumpleaños ${c.nombre}! 🎉 De parte de todo el equipo Tamivar, te deseamos un excelente día.`,
+                      })
+                    : undefined
+                }
                 className="flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-sm transition hover:shadow-md dark:border-amber-800 dark:bg-amber-900/30"
               >
                 <span className="text-lg">🎂</span>
@@ -174,10 +215,10 @@ export function CarteraClientesPage() {
                   <span className="font-semibold text-[var(--crm-text)]">{c.nombre}</span>
                   <span className="ml-1.5 text-xs text-amber-600">{formatCumple(c.cumple_dia, c.cumple_mes)}</span>
                 </span>
-                {c.telefono && (
-                  <span className="ml-1 text-xs font-medium text-green-600">WhatsApp →</span>
+                {c.telefono && canMessage && (
+                  <span className="ml-1 text-xs font-medium text-green-600">Enviar →</span>
                 )}
-              </a>
+              </button>
             ))}
           </div>
         </section>
@@ -187,7 +228,7 @@ export function CarteraClientesPage() {
       <CollapsibleFilters
         searchSlot={
           <FilterSearchInput
-            placeholder="Buscar por nombre, teléfono, asesor..."
+            placeholder="Buscar por nombre, teléfono, propiedad..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -228,6 +269,23 @@ export function CarteraClientesPage() {
           initial={modal.item}
           onSave={handleSave}
           onClose={() => setModal({ open: false, item: null })}
+        />
+      )}
+
+      {/* Modal WhatsApp individual */}
+      {waModal.open && waModal.item && (
+        <WhatsappModal
+          cliente={waModal.item}
+          defaultMessage={waModal.defaultMsg}
+          onClose={() => setWaModal({ open: false, item: null })}
+        />
+      )}
+
+      {/* Modal campaña masiva */}
+      {campaignOpen && (
+        <CampaignModal
+          clientes={filtrados}
+          onClose={() => setCampaignOpen(false)}
         />
       )}
 

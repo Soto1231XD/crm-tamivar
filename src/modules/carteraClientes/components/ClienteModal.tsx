@@ -27,7 +27,12 @@ export function ClienteModal({ initial, onSave, onClose }: Props) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setForm(initial ? { ...initial } : {});
+    if (initial) {
+      const { id: _id, creado_en: _c, actualizado_en: _a, ...editable } = initial;
+      setForm(editable);
+    } else {
+      setForm({});
+    }
   }, [initial]);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) =>

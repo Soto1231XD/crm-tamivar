@@ -202,6 +202,16 @@ export function EditLeadLeadModal({
               </select>
               {errors.vendedor_asignado_id ? <span className="text-xs text-red-600">{errors.vendedor_asignado_id.message}</span> : null}
             </label>
+
+            <label className="flex flex-col gap-1.5">
+              <LeadLeadFieldLabel>Fecha de registro</LeadLeadFieldLabel>
+              <input
+                type="date"
+                {...register('fecha_registro')}
+                className={leadLeadFieldClassName}
+                max={new Date().toISOString().slice(0, 10)}
+              />
+            </label>
           </div>
         </div>
 
