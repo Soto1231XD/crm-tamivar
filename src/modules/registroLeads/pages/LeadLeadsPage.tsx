@@ -18,12 +18,14 @@ export function LeadLeadsPage() {
   const isSalesCoordinator = extractUserRoles(user ?? { rol: null, roles: [] }).some(
     (role) => normalizeRoleName(role) === 'coordinador de ventas',
   );
-  const isSalesAdvisor = extractUserRoles(user ?? { rol: null, roles: [] }).some(
-    (role) => normalizeRoleName(role) === 'asesor de ventas',
-  );
 
   const canCreate = can('registros_leads', 'crear');
   const canEdit = can('registros_leads', 'actualizar');
+
+  const isSalesAdvisor =
+    extractUserRoles(user ?? { rol: null, roles: [] }).some(
+      (role) => normalizeRoleName(role) === 'asesor de ventas',
+    ) && !canEdit;
   const canDelete = isSuperAdmin && can('registros_leads', 'eliminar');
   const canQuickEditStatus = canEdit || isSalesAdvisor;
   const canQuickEditComments = canEdit || isSalesAdvisor;

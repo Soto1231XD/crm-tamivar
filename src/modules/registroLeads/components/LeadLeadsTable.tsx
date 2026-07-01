@@ -40,28 +40,6 @@ type LeadLeadsTableProps = {
   onDelete: (lead: LeadRecord) => void;
 };
 
-function formatCommentEntryDate(date = new Date()) {
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
-function appendDatedComment(
-  existingComment: string | null | undefined,
-  nextComment: string,
-) {
-  const trimmedComment = nextComment.trim();
-  const previousComment = (existingComment ?? "").trim();
-
-  if (!trimmedComment) {
-    return previousComment;
-  }
-
-  const datedComment = `${formatCommentEntryDate()}: ${trimmedComment}`;
-  return previousComment ? `${previousComment}\n${datedComment}` : datedComment;
-}
 
 export function LeadLeadsTable({
   leads,
@@ -80,7 +58,7 @@ export function LeadLeadsTable({
   onEdit,
   onDelete,
 }: LeadLeadsTableProps) {
-  const [commentDrafts, setCommentDrafts] = useState<Record<number, string>>({});
+  const [commentDrafts, setCommentDrafts] = useState<Record<number, string | null>>({} as Record<number, string | null>);
 
   useEffect(() => {
     setCommentDrafts((current) => {
@@ -303,27 +281,21 @@ export function LeadLeadsTable({
         }
 
         const currentComments = (lead.comentarios ?? "").trim();
-        const draft = commentDrafts[lead.id] ?? "";
-        const nextComments = appendDatedComment(lead.comentarios, draft);
-        const hasChanges = draft.trim().length > 0;
-        const exceedsLimit = nextComments.length > 1500;
+        const draft = commentDrafts[lead.id] ?? null;
+        const displayValue = draft !== null ? draft : currentComments;
+        const hasChanges = draft !== null && draft !== currentComments;
+        const exceedsLimit = displayValue.length > 1500;
 
         return (
           <div className="flex max-w-[280px] flex-col gap-2">
             <textarea
-              value={draft ? `${currentComments ? `${currentComments}\n` : ""}${draft}` : currentComments}
+              value={displayValue}
               rows={5}
-              maxLength={1500}
               disabled={updatingLeadId === lead.id}
               onChange={(event) => {
-                const value = event.target.value;
-                const nextDraft = currentComments && value.startsWith(currentComments)
-                  ? value.slice(currentComments.length).replace(/^\s*\n?/, "")
-                  : value;
-
                 setCommentDrafts((current) => ({
                   ...current,
-                  [lead.id]: nextDraft,
+                  [lead.id]: event.target.value,
                 }));
               }}
               className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm leading-5 text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-2 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
@@ -333,16 +305,16 @@ export function LeadLeadsTable({
               <span
                 className={`text-[11px] ${exceedsLimit ? "text-red-600" : "text-slate-400"}`}
               >
-                {nextComments.length}/1500
+                {displayValue.length}/1500
               </span>
               <button
                 type="button"
                 disabled={!hasChanges || exceedsLimit || updatingLeadId === lead.id}
                 onClick={() => {
-                  onQuickChange(lead.id, "comentarios", nextComments);
+                  onQuickChange(lead.id, "comentarios", displayValue);
                   setCommentDrafts((current) => ({
                     ...current,
-                    [lead.id]: "",
+                    [lead.id]: null,
                   }));
                 }}
                 className="inline-flex items-center rounded-lg bg-[#312C85] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-50"
