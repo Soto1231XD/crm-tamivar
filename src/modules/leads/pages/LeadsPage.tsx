@@ -30,6 +30,8 @@ export function LeadsPage() {
   const normalizedRoles = (user?.roles ?? []).map(normalizeRoleName);
   const isSalesAdvisor =
     normalizedRoles.includes('asesor de ventas') || normalizedRoles.includes('asesor ventas');
+  const canSeeInterno =
+    normalizedRoles.includes('super administrador') || normalizedRoles.includes('administrador');
 
   const {
     isLoading,
@@ -70,6 +72,7 @@ export function LeadsPage() {
   } = useLeadsPageState({
     userId: user?.id,
     accessToken,
+    canSeeInterno,
   });
 
   const canEditVisit = (lead: { creado_por_id?: number | null; creador?: { id?: number | null } | null }) => {

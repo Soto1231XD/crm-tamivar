@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import { AppModal } from '@/components/ui/AppModal';
@@ -52,6 +53,7 @@ export function EditLeadModal({
     reset,
     handleSubmit,
     watch,
+    control,
     formState: { errors, dirtyFields },
   } = useForm<VisitLeadFormInput, unknown, VisitLeadFormValues>({
     resolver: zodResolver(visitLeadSchema),
@@ -194,23 +196,33 @@ export function EditLeadModal({
                 {tipoObjetivo === 'desarrollo' ? 'Seleccionar desarrollo' : 'Seleccionar propiedad'}
               </VisitFieldLabel>
               {tipoObjetivo === 'desarrollo' ? (
-                <select {...register('desarrollo_id')} className={visitLeadFieldClassName}>
-                  <option value="">Selecciona un desarrollo</option>
-                  {developmentOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  name="desarrollo_id"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      options={developmentOptions}
+                      value={String(field.value ?? '')}
+                      onChange={field.onChange}
+                      placeholder="Buscar desarrollo..."
+                      className={visitLeadFieldClassName}
+                    />
+                  )}
+                />
               ) : (
-                <select {...register('propiedad_id')} className={visitLeadFieldClassName}>
-                  <option value="">Selecciona una propiedad</option>
-                  {propertyOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  name="propiedad_id"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      options={propertyOptions}
+                      value={String(field.value ?? '')}
+                      onChange={field.onChange}
+                      placeholder="Buscar propiedad..."
+                      className={visitLeadFieldClassName}
+                    />
+                  )}
+                />
               )}
               {tipoObjetivo === 'desarrollo' ? (
                 errors.desarrollo_id ? <span className="text-xs text-red-600">{errors.desarrollo_id.message}</span> : null

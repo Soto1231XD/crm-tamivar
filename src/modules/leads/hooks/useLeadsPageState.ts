@@ -16,9 +16,10 @@ import { downloadLeadsAsExcel, formatPhone, getComparableDate } from '../utils/l
 type UseLeadsPageStateParams = {
   userId?: number | null;
   accessToken?: string | null;
+  canSeeInterno?: boolean;
 };
 
-export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStateParams) {
+export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }: UseLeadsPageStateParams) {
   const { leads, isLoading, fetchLeads, addLead, editLead, removeLead } = useLeadsStore();
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [developments, setDevelopments] = useState<DevelopmentRecord[]>([]);
@@ -178,13 +179,15 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
     return filteredLeads.slice(start, start + PAGE_SIZE);
   }, [currentPage, filteredLeads]);
 
-  const availableProperties = useMemo(
-    () =>
-      properties.filter(
-        (property) => (property.estatus ?? '').trim().toLowerCase() === 'disponible',
-      ),
-    [properties],
-  );
+  const availableProperties = useMemo(() => {
+    return properties
+      .filter((property) => {
+        const estatus = (property.estatus ?? '').trim().toLowerCase();
+        if (estatus === 'disponible') return true;
+        if (estatus === 'interno' && canSeeInterno) return true;
+        return false;
+      });
+  }, [properties, canSeeInterno]);
 
   const availableDevelopments = useMemo(
     () =>
@@ -196,19 +199,23 @@ export function useLeadsPageState({ userId, accessToken }: UseLeadsPageStatePara
 
   const propertyChoices = useMemo(
     () =>
-      availableProperties.map((property) => ({
-        id: property.id,
-        label: property.titulo?.trim() || 'Sin titulo',
-      })),
+      availableProperties
+        .map((property) => ({
+          id: property.id,
+          label: property.titulo?.trim() || 'Sin titulo',
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es')),
     [availableProperties],
   );
 
   const developmentChoices = useMemo(
     () =>
-      availableDevelopments.map((development) => ({
-        id: development.id,
-        label: development.titulo?.trim() || 'Sin titulo',
-      })),
+      availableDevelopments
+        .map((development) => ({
+          id: development.id,
+          label: development.titulo?.trim() || 'Sin titulo',
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es')),
     [availableDevelopments],
   );
 
