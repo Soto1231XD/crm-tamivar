@@ -65,21 +65,50 @@ function buildSharedData(property: PropertyRecord) {
   return { titulo, tipo_inmueble, operaciones, precioStr, ubicacion, caract, amenidadesList, hashtags, descripcionTexto };
 }
 
+function buildCaractLine(caract: string[]): string {
+  const iconMap: Record<string, string> = {
+    'recámara': '🛏️',
+    'recámaras': '🛏️',
+    'baño': '🚿',
+    'baños': '🚿',
+    'cajón': '🚗',
+    'cajones': '🚗',
+    'm² construcción': '📐',
+    'm² terreno': '🌿',
+  };
+  return caract
+    .map((c) => {
+      const icon = Object.keys(iconMap).find((k) => c.toLowerCase().includes(k));
+      return icon ? `${iconMap[icon]} ${c}` : `• ${c}`;
+    })
+    .join('   ');
+}
+
 function buildPostText(property: PropertyRecord, platform: Platform): string {
   const { titulo, tipo_inmueble, operaciones, precioStr, ubicacion, caract, amenidadesList, hashtags, descripcionTexto } = buildSharedData(property);
 
+  const inmueble = tipo_inmueble ?? 'Inmueble';
+  const caractLine = buildCaractLine(caract);
+
   if (platform === 'facebook') {
     const lines: string[] = [];
-    lines.push(`🏠 ${tipo_inmueble ?? 'Inmueble'} en ${operaciones} — ${titulo}`);
+    lines.push(`🏡 ¡${inmueble} en ${operaciones} en ${ubicacion}!`);
     lines.push('');
+    if (descripcionTexto) {
+      lines.push(descripcionTexto);
+      lines.push('');
+    }
+    if (precioStr) lines.push(`💰 Precio: ${precioStr}`);
     lines.push(`📍 ${ubicacion}`);
-    if (precioStr) lines.push(`💰 ${precioStr}`);
-    if (descripcionTexto) { lines.push(''); lines.push(descripcionTexto); }
-    if (caract.length > 0) { lines.push(''); lines.push('✨ Características:'); caract.forEach((c) => lines.push(`   • ${c}`)); }
-    if (amenidadesList.length > 0) { lines.push(''); lines.push(`🌟 Amenidades: ${amenidadesList.join(' · ')}`); }
+    if (caractLine) {
+      lines.push('');
+      lines.push(`✨ ${caractLine}`);
+    }
+    if (amenidadesList.length > 0) {
+      lines.push(`🌟 ${amenidadesList.join(' · ')}`);
+    }
     lines.push('');
-    lines.push('¿Te interesa? ¡Contáctanos para más información o agenda tu visita!');
-    lines.push('');
+    lines.push('¿Te interesa? ¡Contáctanos hoy y agenda tu visita sin compromiso!');
     lines.push('📞 [número de contacto]');
     lines.push('');
     lines.push(hashtags);
@@ -88,15 +117,18 @@ function buildPostText(property: PropertyRecord, platform: Platform): string {
 
   if (platform === 'instagram') {
     const lines: string[] = [];
-    lines.push(`${tipo_inmueble ?? 'Inmueble'} en ${operaciones} 🏠✨`);
+    lines.push(`🏡 ${inmueble} en ${operaciones} — ${ubicacion}`);
     lines.push('');
+    if (descripcionTexto) {
+      lines.push(descripcionTexto);
+      lines.push('');
+    }
     if (precioStr) lines.push(`💰 ${precioStr}`);
-    lines.push(`📍 ${ubicacion}`);
-    if (descripcionTexto) { lines.push(''); lines.push(descripcionTexto); }
-    if (caract.length > 0) { lines.push(''); caract.forEach((c) => lines.push(`• ${c}`)); }
-    if (amenidadesList.length > 0) { lines.push(''); lines.push(`🌟 ${amenidadesList.join(' · ')}`); }
+    if (caractLine) lines.push(caractLine);
+    if (amenidadesList.length > 0) lines.push(`🌟 ${amenidadesList.join(' · ')}`);
     lines.push('');
-    lines.push('📩 Escríbenos para más info o agenda tu visita 👇');
+    lines.push('¡Escríbenos y agenda tu visita! 👇');
+    lines.push('📞 [número de contacto]');
     lines.push('');
     lines.push('—');
     lines.push(hashtags);
@@ -105,16 +137,22 @@ function buildPostText(property: PropertyRecord, platform: Platform): string {
 
   // WhatsApp
   const lines: string[] = [];
-  lines.push('Hola, te comparto esta propiedad que puede interesarte:');
+  lines.push(`¡Hola! Te comparto esta propiedad que puede interesarte 🏡`);
   lines.push('');
   lines.push(`*${titulo}*`);
   lines.push(`📍 ${ubicacion}`);
   if (precioStr) lines.push(`💰 *${precioStr}*`);
-  if (descripcionTexto) { lines.push(''); lines.push(descripcionTexto); }
-  if (caract.length > 0) { lines.push(''); caract.forEach((c) => lines.push(`• ${c}`)); }
-  if (amenidadesList.length > 0) { lines.push(''); lines.push(`Amenidades: ${amenidadesList.join(', ')}`); }
+  if (descripcionTexto) {
+    lines.push('');
+    lines.push(descripcionTexto);
+  }
+  if (caractLine) {
+    lines.push('');
+    lines.push(caractLine);
+  }
+  if (amenidadesList.length > 0) lines.push(`🌟 ${amenidadesList.join(' · ')}`);
   lines.push('');
-  lines.push('¿Te gustaría agendar una visita? 😊');
+  lines.push('¿Te gustaría conocerla? Con gusto te agendamos una visita 😊');
   return lines.join('\n');
 }
 
@@ -310,198 +348,209 @@ export function GeneratePostModal({ isOpen, onClose, property }: GeneratePostMod
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Generar post para redes sociales"
-      subtitle="Edita el texto por plataforma y compártelo o descárgalo junto con las imágenes."
+      title="Publicar en redes sociales"
+      subtitle={canShare ? 'Sigue los pasos para compartir la propiedad desde tu celular.' : 'Sigue los pasos para publicar la propiedad en tus redes.'}
       maxWidthClassName="max-w-2xl"
       panelClassName="max-h-[90vh]"
     >
-      {/* overflow-hidden evita que contenido ancho cause scroll horizontal en móvil */}
-      <div className="w-full overflow-hidden space-y-4">
+      <div className="w-full overflow-hidden space-y-5">
 
-        {/* ── Sección de imágenes / paquete ── */}
+        {/* ── PASO 1: Fotos ── */}
         {hasImages && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+              {canShareFiles ? 'Paso 1 de 2 — Fotos' : 'Paso 1 de 2 — Descarga fotos y textos'}
+            </p>
+
+            {canShareFiles ? (
+              <>
+                <p className="mb-3 text-sm text-slate-700 leading-snug">
+                  Toca el botón para abrir las fotos de la propiedad en tu celular. Desde ahí puedes guardarlas o subirlas directo a la red social.
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    {isBusy && <p className="text-xs text-slate-500">{progress}</p>}
+                    {imageError && (
+                      <>
+                        <p className="text-xs font-medium text-red-600 leading-snug">{imageError}</p>
+                        <button
+                          type="button"
+                          onClick={() => void handleDownloadZip()}
+                          disabled={isBusy}
+                          className="mt-1 text-xs text-slate-500 underline hover:text-slate-700"
+                        >
+                          Intentar descargar al equipo
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleShareImages()}
+                    disabled={isBusy}
+                    className="shrink-0 flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isBusy
+                      ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    }
+                    {isBusy ? 'Cargando fotos...' : 'Abrir fotos'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mb-3 text-sm text-slate-700 leading-snug">
+                  Descarga una carpeta con todas las fotos de la propiedad y los textos listos para cada red social. Solo abre la carpeta y copia lo que necesitas.
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    {isBusy && <p className="text-xs text-slate-500">{progress}</p>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleDownloadZip()}
+                    disabled={isBusy}
+                    className="shrink-0 flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isBusy
+                      ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    }
+                    {isBusy ? 'Descargando...' : 'Descargar fotos y textos'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Sin imágenes en escritorio → solo textos */}
+        {!hasImages && !canShare && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Paso 1 de 2 — Descarga los textos</p>
+            <p className="mb-3 text-sm text-slate-700 leading-snug">
+              Descarga los textos listos para Facebook, Instagram y WhatsApp. Esta propiedad no tiene fotos registradas.
+            </p>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-800">
-                  {canShareFiles ? 'Compartir imágenes' : 'Paquete completo'}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-500 leading-snug">
-                  {isBusy
-                    ? progress
-                    : canShareFiles
-                    ? 'Se abre el menú de tu dispositivo'
-                    : '3 archivos .txt + todas las imágenes'}
-                </p>
-                {imageError && (
-                  <p className="mt-1 text-xs font-medium text-red-600 leading-snug">{imageError}</p>
-                )}
+                {isBusy && <p className="text-xs text-slate-500">{progress}</p>}
               </div>
-
-              {canShareFiles ? (
-                <button
-                  type="button"
-                  onClick={() => void handleShareImages()}
-                  disabled={isBusy}
-                  className="shrink-0 flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isBusy
-                    ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                      </svg>
-                  }
-                  {isBusy ? 'Cargando...' : 'Compartir'}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void handleDownloadZip()}
-                  disabled={isBusy}
-                  className="shrink-0 flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isBusy
-                    ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                  }
-                  {isBusy ? 'Descargando...' : 'Descargar .zip'}
-                </button>
-              )}
-            </div>
-
-            {canShareFiles && imageError && (
               <button
                 type="button"
                 onClick={() => void handleDownloadZip()}
                 disabled={isBusy}
-                className="mt-2 text-xs text-slate-500 underline hover:text-slate-700"
+                className="shrink-0 flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Descargar .zip en su lugar
+                {isBusy
+                  ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                }
+                {isBusy ? 'Descargando...' : 'Descargar textos'}
               </button>
-            )}
-            {canShareFiles && !imageError && (
-              <p className="mt-2 text-xs leading-snug text-slate-400">
-                Texto e imágenes se comparten por separado — comparte primero el texto y luego las imágenes.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Sin imágenes en escritorio → solo .txt */}
-        {!hasImages && !canShare && (
-          <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-800">Archivos de texto</p>
-              <p className="text-xs text-slate-500">{isBusy ? progress : '3 archivos .txt listos para descargar'}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => void handleDownloadZip()}
-              disabled={isBusy}
-              className="shrink-0 flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isBusy
-                ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-              }
-              {isBusy ? 'Descargando...' : 'Descargar .zip'}
-            </button>
           </div>
         )}
 
-        <div className="relative flex items-center">
-          <div className="flex-1 border-t border-slate-200" />
-          <span className="mx-3 shrink-0 text-xs text-slate-400">texto por plataforma</span>
-          <div className="flex-1 border-t border-slate-200" />
-        </div>
+        {/* ── PASO 2: Texto ── */}
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+            Paso 2 de 2 — Texto del post
+          </p>
+          <p className="text-sm text-slate-700 leading-snug">
+            Elige la red social donde vas a publicar. El texto ya está listo — puedes editarlo si quieres cambiar algo antes de copiarlo.
+          </p>
 
-        {/* ── Selector de plataforma — scroll horizontal en pantallas muy pequeñas ── */}
-        <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
-          {(Object.keys(PLATFORM_LABELS) as Platform[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => handlePlatformChange(p)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                platform === p ? 'bg-[#312C85] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              <span>{PLATFORM_ICONS[p]}</span>
-              {PLATFORM_LABELS[p]}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Área de texto editable ── */}
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={12}
-          className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-800 sm:px-4 sm:font-mono focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-          spellCheck={false}
-        />
-
-        {/* ── Acciones del texto ── */}
-        <div className="flex flex-col gap-3 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="button"
-            onClick={() => { setText(buildPostText(property, platform)); setCopied(false); }}
-            className="text-left text-sm text-slate-500 underline hover:text-slate-700"
-          >
-            Restablecer texto
-          </button>
-
-          <div className="flex items-center justify-between gap-3 sm:justify-end">
-            {canShare && (
+          {/* Selector de plataforma */}
+          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+            {(Object.keys(PLATFORM_LABELS) as Platform[]).map((p) => (
               <button
+                key={p}
                 type="button"
-                onClick={handleCopyText}
-                className={`text-xs transition-colors ${copied ? 'font-medium text-emerald-600' : 'text-slate-400 underline hover:text-slate-600'}`}
-              >
-                {copied ? '¡Copiado!' : 'Copiar texto'}
-              </button>
-            )}
-
-            {canShare ? (
-              <button
-                type="button"
-                onClick={() => void handleShareText()}
-                className="flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#27226f]"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Compartir texto
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleCopyText}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
-                  copied ? 'bg-emerald-600 text-white' : 'bg-[#312C85] text-white hover:bg-[#27226f]'
+                onClick={() => handlePlatformChange(p)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  platform === p ? 'bg-[#312C85] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {copied ? (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    ¡Copiado!
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    Copiar texto
-                  </>
-                )}
+                <span>{PLATFORM_ICONS[p]}</span>
+                {PLATFORM_LABELS[p]}
               </button>
-            )}
+            ))}
+          </div>
+
+          {/* Área de texto editable */}
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={12}
+            className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800 sm:px-4 sm:font-mono focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+            spellCheck={false}
+          />
+
+          {/* Acciones */}
+          <div className="flex flex-col gap-3 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => { setText(buildPostText(property, platform)); setCopied(false); }}
+              className="text-left text-sm text-slate-400 underline hover:text-slate-600"
+            >
+              Recuperar texto original
+            </button>
+
+            <div className="flex items-center justify-between gap-3 sm:justify-end">
+              {canShare && (
+                <button
+                  type="button"
+                  onClick={handleCopyText}
+                  className={`text-sm transition-colors ${copied ? 'font-semibold text-emerald-600' : 'text-slate-400 underline hover:text-slate-600'}`}
+                >
+                  {copied ? '¡Copiado!' : 'Solo copiar'}
+                </button>
+              )}
+
+              {canShare ? (
+                <button
+                  type="button"
+                  onClick={() => void handleShareText()}
+                  className="flex items-center gap-2 rounded-lg bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#27226f]"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  Compartir texto
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleCopyText}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+                    copied ? 'bg-emerald-600 text-white' : 'bg-[#312C85] text-white hover:bg-[#27226f]'
+                  }`}
+                >
+                  {copied ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      ¡Texto copiado!
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copiar texto
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
