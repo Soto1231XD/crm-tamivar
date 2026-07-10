@@ -18,6 +18,7 @@ import {
 } from "../services/cartera-clientes.api";
 import { ClienteModal } from "../components/ClienteModal";
 import { WhatsappModal } from "../components/WhatsappModal";
+import { BirthdayWhatsappModal } from "../components/BirthdayWhatsappModal";
 import { CampaignModal } from "../components/CampaignModal";
 
 const MESES: Record<number, string> = {
@@ -44,6 +45,7 @@ export function CarteraClientesPage() {
   const [modal, setModal]             = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [waModal, setWaModal]         = useState<{ open: boolean; item: ClienteCartera | null; defaultMsg?: string }>({ open: false, item: null });
+  const [bdayModal, setBdayModal]     = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [campaignOpen, setCampaignOpen] = useState(false);
 
   const [search, setSearch]       = useState("");
@@ -201,11 +203,7 @@ export function CarteraClientesPage() {
                 type="button"
                 onClick={() =>
                   canMessage && c.telefono
-                    ? setWaModal({
-                        open: true,
-                        item: c,
-                        defaultMsg: `¡Feliz cumpleaños ${c.nombre}! 🎉 De parte de todo el equipo Tamivar, te deseamos un excelente día.`,
-                      })
+                    ? setBdayModal({ open: true, item: c })
                     : undefined
                 }
                 className="flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-sm transition hover:shadow-md dark:border-amber-800 dark:bg-amber-900/30"
@@ -278,6 +276,15 @@ export function CarteraClientesPage() {
           cliente={waModal.item}
           defaultMessage={waModal.defaultMsg}
           onClose={() => setWaModal({ open: false, item: null })}
+        />
+      )}
+
+      {/* Modal felicitación cumpleaños */}
+      {bdayModal.open && bdayModal.item && (
+        <BirthdayWhatsappModal
+          cliente={bdayModal.item}
+          defaultMessage={`¡Feliz cumpleaños ${bdayModal.item.nombre}! ${String.fromCodePoint(0x1F389)} De parte de todo el equipo Tamivar, te deseamos un excelente día.`}
+          onClose={() => setBdayModal({ open: false, item: null })}
         />
       )}
 
