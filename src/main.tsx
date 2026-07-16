@@ -7,7 +7,8 @@ import { registerSW } from 'virtual:pwa-register';
 import './styles/globals.css';
 
 registerSW({
-  immediate: true,
+  onNeedRefresh() {},
+  onOfflineReady() {},
 });
 
 ReactDOM.createRoot(document.getElementById('app')!).render(
