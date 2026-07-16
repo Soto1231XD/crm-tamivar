@@ -161,7 +161,7 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
 
   async function handleCreateLead(payload: Omit<CreateLeadPayload, 'creado_por_id'>): Promise<string | null> {
     if (!userId) {
-      return 'No hay una sesion valida para asociar el creador.';
+      return 'No hay una sesión valida para asociar el creador.';
     }
 
     try {
@@ -206,12 +206,12 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
   }
 
   function handleDownloadFilteredLeads() {
-    downloadLeadLeadsAsExcel(
+    void downloadLeadLeadsAsExcel(
       filteredLeads,
       filteredLeads.map((lead) =>
         lead.ubicacion_propiedad?.trim()
         || (lead.propiedad_id != null ? propertyAddressById.get(lead.propiedad_id) : '')
-        || 'Sin ubicacion',
+        || 'Sin ubicación',
       ),
       filteredLeads.map((lead) =>
         lead.vendedor_asignado
