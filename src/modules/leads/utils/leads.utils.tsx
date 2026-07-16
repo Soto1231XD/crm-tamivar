@@ -138,7 +138,7 @@ function extractBudgetFromText(text: string | null | undefined): string | null {
     if (m === 'k') amount = n * 1_000;
     else if (m === 'mil') amount = n * 1_000;
     else if (m.startsWith('mill') || m.startsWith('millón')) amount = n * 1_000_000;
-    else if (m === 'mdp' || m === 'mpd' || m === 'm') amount = n * 1_000_000;
+    else if (m === 'mdp' || m === 'mpd') amount = n * 1_000_000;
     return `$${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
   };
 
@@ -165,7 +165,7 @@ function extractBudgetFromText(text: string | null | undefined): string | null {
   // 6. Palabras clave + número:
   //    "presupuesto de $500k", "máximo 1millon", "cuento/cuenta con 800,000", "hasta 900,000"
   const m6 = t.match(
-    /(?:presupuesto|m[aá]xim[oa]|cuent[ao]\s+con|hasta|precio)\s*(?:de\s*|es\s*|:\s*)?\$?\s*([\d,.]+)\s*(k|mill?(?:[oó]n(?:es)?)?|m(?:dp|pd)?|mil)?/,
+    /(?:presupuesto|m[aá]xim[oa]|cuent[ao]\s+con|hasta|precio)\s*(?:de\s*|es\s*|:\s*)?\$?\s*([\d,.]+)\s*(k|mill?(?:[oó]n(?:es)?)?|m(?:dp|pd)|mil)?\b/,
   );
   if (m6) { const r = toAmount(m6[1], m6[2]); if (r) return r; }
 
