@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/AppFilters";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import agregarIcon from "@/assets/images/Agregar.png";
+import desArcIcon  from "@/assets/images/DesArc.png";
+import { downloadCarteraAsExcel } from "../utils/cartera.utils";
 import {
   getCarteraClientes,
   createCarteraCliente,
@@ -167,6 +169,16 @@ export function CarteraClientesPage() {
           </p>
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          {filtrados.length > 0 && (
+            <button
+              type="button"
+              onClick={() => downloadCarteraAsExcel(filtrados)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d] sm:w-auto"
+            >
+              <img src={desArcIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Descargar</span>
+            </button>
+          )}
           {canMessage && clientes.some((c) => c.telefono) && (
             <button
               type="button"
@@ -283,7 +295,7 @@ export function CarteraClientesPage() {
       {bdayModal.open && bdayModal.item && (
         <BirthdayWhatsappModal
           cliente={bdayModal.item}
-          defaultMessage={`¡Feliz cumpleaños ${bdayModal.item.nombre}! ${String.fromCodePoint(0x1F389)} De parte de todo el equipo Tamivar, te deseamos un excelente día.`}
+          defaultMessage={`🎂 ¡Feliz cumpleaños, ${bdayModal.item.nombre}! 🎉\n\nEn este día tan especial, todo el equipo de Tamivar Inmobiliaria queremos desearte lo mejor. Que este nuevo año de vida esté lleno de salud, felicidad y muchos logros.\n\nHa sido un placer acompañarte en tu camino inmobiliario. ¡Esperamos seguir siendo parte de tus proyectos y sueños!\n\nCon cariño,\n🏠 Equipo Tamivar Inmobiliaria`}
           onClose={() => setBdayModal({ open: false, item: null })}
         />
       )}
