@@ -408,6 +408,15 @@ export function OperacionesPage() {
             <span className="whitespace-nowrap">Nueva operación</span>
           </button>
         )}
+        {tab === "finiquitadas" && canCreateProceso && (
+          <button
+            onClick={() => setFinModal({ open: true, item: null })}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">Nueva finiquitada</span>
+          </button>
+        )}
         {tab === "comisiones" && canCreateComision && (
           <button
             onClick={() => setComisionModal({ open: true, item: null })}
