@@ -19,7 +19,7 @@ type Tab = "proceso" | "finiquitadas" | "comisiones";
 
 const fmtDate = (s: string | null) => {
   if (!s) return "—";
-  return new Date(s).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(s).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 };
 
 const fmtMoney = (s: string | null) => {
