@@ -40,7 +40,6 @@ type LeadLeadsTableProps = {
   onDelete: (lead: LeadRecord) => void;
 };
 
-
 export function LeadLeadsTable({
   leads,
   isLoading,
@@ -62,87 +61,73 @@ export function LeadLeadsTable({
 
   useEffect(() => {
     setCommentDrafts((current) => {
-      const visibleLeadIds = new Set(leads.map((lead) => lead.id));
-
+      const visibleIds = new Set(leads.map((l) => l.id));
       return Object.fromEntries(
-        Object.entries(current).filter(([leadId]) =>
-          visibleLeadIds.has(Number(leadId)),
-        ),
+        Object.entries(current).filter(([id]) => visibleIds.has(Number(id))),
       );
     });
   }, [leads]);
 
   const columns: ColumnDef<LeadRecord>[] = [
     {
-      header: "Fecha de lead",
-      cellClassName: "min-w-[130px]",
+      header: "Fecha",
+      cellClassName: "min-w-[100px]",
       render: (lead) => (
-        <span className="text-sm text-slate-700">
-          {formatDate(lead.creado_en)}
-        </span>
+        <span className="text-xs text-slate-600">{formatDate(lead.creado_en)}</span>
       ),
     },
     {
       header: "Estatus",
-      cellClassName: "min-w-[150px]",
-      render: (lead) => {
-        const currentValue = lead.estado || LEAD_LEADS_STATUS_OPTIONS[0];
-        return (
-          <BadgeSelect
-            value={currentValue}
-            options={LEAD_LEADS_STATUS_OPTIONS}
-            onChange={(value) => onQuickChange(lead.id, "estado", value)}
-            disabled={updatingLeadId === lead.id}
-            canEdit={canEditStatus}
-            getStyles={() => getStatusStyles(lead.estado ?? "")}
-            omitFirstOption={false}
-          />
-        );
-      },
+      cellClassName: "min-w-[130px]",
+      render: (lead) => (
+        <BadgeSelect
+          value={lead.estado || LEAD_LEADS_STATUS_OPTIONS[0]}
+          options={LEAD_LEADS_STATUS_OPTIONS}
+          onChange={(v) => onQuickChange(lead.id, "estado", v)}
+          disabled={updatingLeadId === lead.id}
+          canEdit={canEditStatus}
+          getStyles={() => getStatusStyles(lead.estado ?? "")}
+          omitFirstOption={false}
+        />
+      ),
     },
     {
       header: "Nombre",
-      cellClassName: "min-w-[220px]",
+      cellClassName: "min-w-[160px]",
       render: (lead) => (
-        <span className="font-semibold text-slate-900">
-          {`${lead.nombres ?? ""} ${lead.apellidos ?? ""}`.trim() ||
-            "Sin nombre"}
+        <span className="text-xs font-semibold text-slate-900">
+          {`${lead.nombres ?? ""} ${lead.apellidos ?? ""}`.trim() || "Sin nombre"}
         </span>
       ),
     },
     {
       header: "Celular",
-      cellClassName: "min-w-[150px]",
+      cellClassName: "min-w-[120px]",
       render: (lead) => (
-        <span className="text-sm text-slate-700">
-          {formatPhone(lead.lada, lead.telefono)}
-        </span>
+        <span className="text-xs text-slate-600">{formatPhone(lead.lada, lead.telefono)}</span>
       ),
     },
     {
       header: "Prioridad",
-      cellClassName: "min-w-[150px]",
-      render: (lead) => {
-        const currentValue = lead.prioridad || LEAD_LEADS_PRIORITY_OPTIONS[1];
-        return (
-          <BadgeSelect
-            value={currentValue}
-            options={LEAD_LEADS_PRIORITY_OPTIONS}
-            onChange={(value) => onQuickChange(lead.id, "prioridad", value)}
-            disabled={updatingLeadId === lead.id}
-            canEdit={canEditPriority}
-            getStyles={() => getPriorityStyles(lead.prioridad ?? "")}
-          />
-        );
-      },
+      cellClassName: "min-w-[120px]",
+      render: (lead) => (
+        <BadgeSelect
+          value={lead.prioridad || LEAD_LEADS_PRIORITY_OPTIONS[1]}
+          options={LEAD_LEADS_PRIORITY_OPTIONS}
+          onChange={(v) => onQuickChange(lead.id, "prioridad", v)}
+          disabled={updatingLeadId === lead.id}
+          canEdit={canEditPriority}
+          getStyles={() => getPriorityStyles(lead.prioridad ?? "")}
+        />
+      ),
     },
     {
-      header: "Vendedor asignado",
-      cellClassName: "min-w-[180px]",
+      header: "Vendedor",
+      cellClassName: "min-w-[150px]",
       render: (lead) => {
         if (!canEditAssignedSeller) {
           return (
-            <span className="text-sm text-slate-700">
+            <span className="text-xs text-slate-600">
               {lead.vendedor_asignado
                 ? `${lead.vendedor_asignado.nombres ?? ""} ${lead.vendedor_asignado.apellido_paterno ?? ""}`.trim()
                 : lead.vendedor_asignado_id
@@ -151,23 +136,16 @@ export function LeadLeadsTable({
             </span>
           );
         }
-
         return (
           <select
             value={lead.vendedor_asignado_id ?? ""}
-            onChange={(event) =>
-              onQuickChange(lead.id, "vendedor_asignado_id", Number(event.target.value))
-            }
+            onChange={(e) => onQuickChange(lead.id, "vendedor_asignado_id", Number(e.target.value))}
             disabled={updatingLeadId === lead.id}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-2 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-1 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <option value="" disabled>
-              Seleccionar vendedor
-            </option>
-            {userChoices.map((choice) => (
-              <option key={choice.id} value={choice.id}>
-                {choice.label}
-              </option>
+            <option value="" disabled>Seleccionar</option>
+            {userChoices.map((c) => (
+              <option key={c.id} value={c.id}>{c.label}</option>
             ))}
           </select>
         );
@@ -175,10 +153,10 @@ export function LeadLeadsTable({
     },
     {
       header: "Operación",
-      cellClassName: "min-w-[140px]",
+      cellClassName: "min-w-[100px]",
       render: (lead) => (
         <span
-          className="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+          className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
           style={getOperationStyles(lead.operacion ?? "")}
         >
           {lead.operacion || "Sin operación"}
@@ -187,10 +165,10 @@ export function LeadLeadsTable({
     },
     {
       header: "Canal",
-      cellClassName: "min-w-[130px]",
+      cellClassName: "min-w-[100px]",
       render: (lead) => (
         <span
-          className="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+          className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
           style={getChannelStyles(lead.canal ?? "")}
         >
           {lead.canal || "Sin canal"}
@@ -199,60 +177,61 @@ export function LeadLeadsTable({
     },
     {
       header: "Solicitud",
-      cellClassName: "min-w-[240px] whitespace-normal",
+      cellClassName: "min-w-[160px]",
       render: (lead) => (
-        <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">
+        <div
+          className="line-clamp-2 max-w-[200px] text-xs leading-5 text-slate-600"
+          title={lead.solicitud ?? ""}
+        >
           {lead.solicitud || "Sin solicitud"}
         </div>
       ),
     },
     {
       header: "Presupuesto",
-      cellClassName: "min-w-[150px]",
+      cellClassName: "min-w-[120px]",
       render: (lead) =>
         lead.presupuesto == null || Number.isNaN(Number(lead.presupuesto)) ? (
-          <span className="text-sm text-slate-700">Sin presupuesto</span>
+          <span className="text-xs text-slate-400">—</span>
         ) : (
-          <span className="whitespace-nowrap font-semibold text-[#4F5EF8]">
+          <span className="whitespace-nowrap text-xs font-semibold text-[#4F5EF8]">
             {formatCurrency(lead.presupuesto)}
           </span>
         ),
     },
     {
-      header: "Zona de preferencia",
-      cellClassName: "min-w-[240px] whitespace-normal",
-      render: (lead) => (
-        <div className="max-w-[280px] break-words text-sm leading-6 text-slate-700">
-          {lead.ubicacion_propiedad?.trim() ||
-            (lead.propiedad_id != null
-              ? propertyAddressById.get(lead.propiedad_id)
-              : "") ||
-            "Sin ubicación"}
-        </div>
-      ),
+      header: "Zona",
+      cellClassName: "min-w-[150px]",
+      render: (lead) => {
+        const text =
+          lead.ubicacion_propiedad?.trim() ||
+          (lead.propiedad_id != null ? propertyAddressById.get(lead.propiedad_id) : "") ||
+          "Sin ubicación";
+        return (
+          <div className="line-clamp-2 max-w-[180px] text-xs leading-5 text-slate-600" title={text}>
+            {text}
+          </div>
+        );
+      },
     },
     {
       header: "Método de pago",
-      cellClassName: "min-w-[220px]",
+      cellClassName: "min-w-[160px]",
       render: (lead) => {
-        const paymentMethods = (lead.metodo_pago ?? "")
+        const methods = (lead.metodo_pago ?? "")
           .split(",")
-          .map((item) => item.trim())
+          .map((m) => m.trim())
           .filter(Boolean);
-
-        if (paymentMethods.length === 0) {
-          return <span className="text-sm text-slate-700">Sin método</span>;
-        }
-
+        if (methods.length === 0) return <span className="text-xs text-slate-400">—</span>;
         return (
-          <div className="flex flex-wrap gap-2">
-            {paymentMethods.map((method) => (
+          <div className="flex flex-wrap gap-1">
+            {methods.map((m) => (
               <span
-                key={method}
-                className="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
-                style={getPaymentMethodStyles(method)}
+                key={m}
+                className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                style={getPaymentMethodStyles(m)}
               >
-                {method}
+                {m}
               </span>
             ))}
           </div>
@@ -261,63 +240,61 @@ export function LeadLeadsTable({
     },
     {
       header: "Características",
-      cellClassName: "min-w-[240px] whitespace-normal",
+      cellClassName: "min-w-[150px]",
       render: (lead) => (
-        <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">
-          {lead.caracteristicas || "Sin caracteristicas"}
+        <div
+          className="line-clamp-2 max-w-[180px] text-xs leading-5 text-slate-600"
+          title={lead.caracteristicas ?? ""}
+        >
+          {lead.caracteristicas || "Sin características"}
         </div>
       ),
     },
     {
       header: "Comentarios",
-      cellClassName: "min-w-[240px] whitespace-normal",
+      cellClassName: "min-w-[200px] whitespace-normal",
       render: (lead) => {
         if (!canEditComments) {
           return (
-            <div className="max-w-[260px] break-words text-sm leading-6 text-slate-700">
+            <div
+              className="line-clamp-2 max-w-[220px] text-xs leading-5 text-slate-600"
+              title={lead.comentarios ?? ""}
+            >
               {lead.comentarios || "Sin comentarios"}
             </div>
           );
         }
 
-        const currentComments = (lead.comentarios ?? "").trim();
+        const saved = (lead.comentarios ?? "").trim();
         const draft = commentDrafts[lead.id] ?? null;
-        const displayValue = draft !== null ? draft : currentComments;
-        const hasChanges = draft !== null && draft !== currentComments;
-        const exceedsLimit = displayValue.length > 1500;
+        const value = draft !== null ? draft : saved;
+        const hasChanges = draft !== null && draft !== saved;
+        const overLimit = value.length > 1500;
 
         return (
-          <div className="flex max-w-[280px] flex-col gap-2">
+          <div className="flex max-w-[240px] flex-col gap-1.5">
             <textarea
-              value={displayValue}
-              rows={5}
+              value={value}
+              rows={3}
               disabled={updatingLeadId === lead.id}
-              onChange={(event) => {
-                setCommentDrafts((current) => ({
-                  ...current,
-                  [lead.id]: event.target.value,
-                }));
-              }}
-              className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm leading-5 text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-2 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
-              placeholder="Ej. El cliente comento que le interesa la casa"
+              onChange={(e) =>
+                setCommentDrafts((cur) => ({ ...cur, [lead.id]: e.target.value }))
+              }
+              className="w-full resize-none rounded-md border border-slate-300 px-2 py-1 text-xs leading-5 text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-1 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
+              placeholder="Escribe un comentario..."
             />
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className={`text-[11px] ${exceedsLimit ? "text-red-600" : "text-slate-400"}`}
-              >
-                {displayValue.length}/1500
+            <div className="flex items-center justify-between gap-1">
+              <span className={`text-[10px] ${overLimit ? "text-red-600" : "text-slate-400"}`}>
+                {value.length}/1500
               </span>
               <button
                 type="button"
-                disabled={!hasChanges || exceedsLimit || updatingLeadId === lead.id}
+                disabled={!hasChanges || overLimit || updatingLeadId === lead.id}
                 onClick={() => {
-                  onQuickChange(lead.id, "comentarios", displayValue);
-                  setCommentDrafts((current) => ({
-                    ...current,
-                    [lead.id]: null,
-                  }));
+                  onQuickChange(lead.id, "comentarios", value);
+                  setCommentDrafts((cur) => ({ ...cur, [lead.id]: null }));
                 }}
-                className="inline-flex items-center rounded-lg bg-[#312C85] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center rounded-md bg-[#312C85] px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Guardar
               </button>
@@ -327,11 +304,11 @@ export function LeadLeadsTable({
       },
     },
     {
-      header: "Origen de lead",
-      cellClassName: "min-w-[150px]",
+      header: "Origen",
+      cellClassName: "min-w-[110px]",
       render: (lead) => (
         <span
-          className="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+          className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
           style={getLeadSourceStyles(lead.origen_lead ?? "")}
         >
           {lead.origen_lead || "Sin origen"}
@@ -346,9 +323,9 @@ export function LeadLeadsTable({
       columns={columns}
       isLoading={isLoading}
       emptyMessage="No se encontraron registros leads"
-      wrapperClassName="rounded-none border-0 bg-transparent shadow-none"
-      tableClassName="w-max min-w-[2580px] text-left"
-      actionsClassName="flex items-center gap-2"
+      wrapperClassName="rounded-none border-0 bg-transparent shadow-none [&_td]:px-2 [&_td]:py-1.5 [&_th]:px-2 [&_th]:py-2"
+      tableClassName="w-max min-w-[2090px] text-left"
+      actionsClassName="flex items-center gap-1.5"
       onEdit={canEdit ? onEdit : undefined}
       onDelete={canDelete ? onDelete : undefined}
     />
