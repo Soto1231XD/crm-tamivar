@@ -3,7 +3,8 @@ import { usePDF } from "@react-pdf/renderer";
 import { PropertyPdfDocument } from "../components/PropertyPdfDocument";
 import type { PropertyRecord } from "@/interfaces/property.interface";
 import { getPdfCompatibleImage } from "@/shared/utils/imageProcessor";
-import { getFullImageUrl } from "./formatters";
+import { generateMapImage } from "@/shared/utils/mapImageGenerator";
+import { getFullImageUrl, formatFullDireccion } from "./formatters";
 
 interface Props {
   property: PropertyRecord;
@@ -45,8 +46,25 @@ export const DownloadPdfButton = ({ property, className, children }: Props) => {
         );
       }
 
+      // Generamos imagen estática de la zona (sin pin, para no revelar dirección exacta)
+      let mapsImageBase64: string | undefined;
+      if (property.enlace_direccion) {
+        const img = await generateMapImage(
+          property.enlace_direccion,
+          property.direccion.municipio,
+          property.direccion.estado,
+          formatFullDireccion(property.direccion),
+        );
+        if (img) mapsImageBase64 = img;
+      }
+
       // 3. Disparamos la creación del documento con las imágenes en Base64
-      updateInstance(<PropertyPdfDocument property={propertyForPdf} />);
+      updateInstance(
+        <PropertyPdfDocument
+          property={propertyForPdf}
+          mapsImageBase64={mapsImageBase64}
+        />,
+      );
     } catch (error) {
       console.error("Error al preparar el PDF:", error);
       setIsGenerating(false);

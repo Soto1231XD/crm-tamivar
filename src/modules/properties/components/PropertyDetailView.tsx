@@ -30,8 +30,16 @@ function buildMapsPreviewUrl(mapsLink: string | undefined, addressLabel: string)
       : null;
   }
 
+  // 1. Extraer coordenadas @lat,lon — presentes en casi todos los links de Google Maps
+  const coordMatch = mapsLink.match(/@(-?\d+\.?\d+),(-?\d+\.?\d+)/);
+  if (coordMatch) {
+    return `https://www.google.com/maps?output=embed&q=${coordMatch[1]},${coordMatch[2]}`;
+  }
+
   try {
     const parsedUrl = new URL(mapsLink);
+
+    // 2. Parámetro ?q= (puede ser texto o coordenadas)
     const queryCandidate =
       parsedUrl.searchParams.get("q") ||
       parsedUrl.searchParams.get("query") ||
@@ -42,12 +50,13 @@ function buildMapsPreviewUrl(mapsLink: string | undefined, addressLabel: string)
       return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(queryCandidate.trim())}`;
     }
 
+    // 3. Nombre del lugar en la ruta /place/Nombre/ (último recurso antes del fallback)
     const placeMatch = decodeURIComponent(parsedUrl.pathname).match(/\/place\/([^/]+)/i);
     if (placeMatch?.[1]) {
       return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(placeMatch[1].replace(/\+/g, " "))}`;
     }
   } catch {
-    // If the provided link is malformed, we silently fall back to the address text.
+    // URL malformada, cae al fallback de dirección
   }
 
   return fallbackQuery
@@ -70,6 +79,7 @@ export const PropertyDetailView = () => {
   const [activeTab, setActiveTab] = useState<"info" | "visitas">("info");
   const [isDownloadingImages, setIsDownloadingImages] = useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [mapsPreviewUrl, setMapsPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -77,6 +87,35 @@ export const PropertyDetailView = () => {
     }
     return () => clearCurrentProperty();
   }, [id, fetchProperty, clearCurrentProperty]);
+
+  // Resuelve el link de Google Maps (incluyendo URLs cortas maps.app.goo.gl)
+  useEffect(() => {
+    if (!currentProperty) return;
+
+    const enlace = currentProperty.enlace_direccion;
+    const fallback = formatFullDireccion(currentProperty.direccion);
+
+    const isShortUrl =
+      enlace && /maps\.app\.goo\.gl|goo\.gl\/maps/i.test(enlace);
+
+    if (!isShortUrl) {
+      setMapsPreviewUrl(buildMapsPreviewUrl(enlace, fallback));
+      return;
+    }
+
+    // URL corta: el API la resuelve server-side (sin CORS)
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    fetch(
+      `${apiBase}/utils/expand-maps-url?url=${encodeURIComponent(enlace)}`,
+    )
+      .then((r) => r.json())
+      .then((data: { url: string }) => {
+        setMapsPreviewUrl(buildMapsPreviewUrl(data.url, fallback));
+      })
+      .catch(() => {
+        setMapsPreviewUrl(buildMapsPreviewUrl(undefined, fallback));
+      });
+  }, [currentProperty]);
 
   if (isLoading) {
     return (
@@ -171,10 +210,6 @@ export const PropertyDetailView = () => {
 
   const statusStyle = getPropertyStatusStyles(currentProperty.estatus);
   const fullAddress = formatFullDireccion(currentProperty.direccion);
-  const mapsPreviewUrl = buildMapsPreviewUrl(
-    currentProperty.enlace_direccion,
-    fullAddress,
-  );
 
   return (
     <div className="mx-auto p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-screen">

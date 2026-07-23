@@ -185,6 +185,22 @@ const styles = StyleSheet.create({
     borderColor: "#e2e8f0",
   },
 
+  // Sección Ubicación - mapa de zona
+  mapsImage: {
+    width: "100%",
+    height: 190,
+    objectFit: "cover",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  mapsCaption: {
+    fontSize: 8,
+    color: "#64748b",
+    marginTop: 5,
+    fontStyle: "italic",
+  },
+
   // Footer
   footer: {
     position: "absolute",
@@ -203,8 +219,10 @@ const styles = StyleSheet.create({
 
 export const PropertyPdfDocument = ({
   property,
+  mapsImageBase64,
 }: {
   property: PropertyRecord;
+  mapsImageBase64?: string;
 }) => {
   // Obtener estilos dinámicos del estatus
   const statusStyle = getPropertyStatusStyles(property.estatus);
@@ -476,6 +494,14 @@ export const PropertyPdfDocument = ({
           </View>
         )}
 
+
+        {/* Ubicación - Vista de la zona */}
+        {mapsImageBase64 && (
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Ubicación - Vista de la Zona</Text>
+            <Image src={mapsImageBase64} style={styles.mapsImage} />
+          </View>
+        )}
 
         {/* Galería de imágenes */}
         {property.imagenes && property.imagenes.length > 0 && (
