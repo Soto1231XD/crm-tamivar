@@ -7,7 +7,9 @@ import fondoLogin1 from "@/assets/images/Fondo_login1.jpg";
 import fondoLogin2 from "@/assets/images/Fondo_login2.jpg";
 import fondoLogin3 from "@/assets/images/Fondo_login3.jpg";
 import logoCompleto from "@/assets/images/LOGO_COMPLETO.png";
+import logoCompletoBlanco from "@/assets/images/LOGO_COMPLETAMENTE_BLANCO.png";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { useThemeStore } from "@/shared/theme/useThemeStore";
 import { resetPwaApplication } from "@/shared/pwa/pwaRecovery";
 
 const loginBackgrounds = [fondoLogin, fondoLogin1, fondoLogin2, fondoLogin3];
@@ -26,6 +28,7 @@ function detectStandaloneMode() {
 
 export function LoginPage() {
   const { login, confirmTwoFa, isLoading } = useAuthStore();
+  const isDark = useThemeStore((state) => state.theme === "dark");
   const navigate = useNavigate();
 
   const [correoElectronico, setCorreoElectronico] = useState("");
@@ -227,7 +230,7 @@ export function LoginPage() {
         <div className="absolute inset-x-0 top-3 z-10 flex justify-center px-5 sm:top-4 sm:px-7 lg:top-8">
           <div className="flex w-full max-w-sm justify-center">
             <img
-              src={logoCompleto}
+              src={isDark ? logoCompletoBlanco : logoCompleto}
               alt="Logo Tamivar Inmobiliaria"
               className="h-14 w-auto sm:h-16 lg:h-20"
             />
