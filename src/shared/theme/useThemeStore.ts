@@ -11,20 +11,10 @@ interface ThemeState {
   toggleTheme: () => void;
 }
 
-function resolveInitialTheme(): AppTheme {
-  if (typeof window === "undefined") {
-    return "light";
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme: resolveInitialTheme(),
+      theme: "light" as AppTheme,
       setTheme: (theme) => set({ theme }),
       toggleTheme: () =>
         set({ theme: get().theme === "dark" ? "light" : "dark" }),
