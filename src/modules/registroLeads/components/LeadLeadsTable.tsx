@@ -57,7 +57,8 @@ export function LeadLeadsTable({
   onEdit,
   onDelete,
 }: LeadLeadsTableProps) {
-  const [commentDrafts, setCommentDrafts] = useState<Record<number, string | null>>({} as Record<number, string | null>);
+  const [commentDrafts, setCommentDrafts] = useState<Record<number, string>>({});
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
 
   useEffect(() => {
     setCommentDrafts((current) => {
@@ -67,6 +68,20 @@ export function LeadLeadsTable({
       );
     });
   }, [leads]);
+
+  function openCommentEdit(lead: LeadRecord) {
+    setEditingCommentId(lead.id);
+    setCommentDrafts((cur) => ({ ...cur, [lead.id]: (lead.comentarios ?? "").trim() }));
+  }
+
+  function closeCommentEdit(leadId: number) {
+    setEditingCommentId(null);
+    setCommentDrafts((cur) => {
+      const next = { ...cur };
+      delete next[leadId];
+      return next;
+    });
+  }
 
   const columns: ColumnDef<LeadRecord>[] = [
     {
@@ -93,7 +108,7 @@ export function LeadLeadsTable({
     },
     {
       header: "Nombre",
-      cellClassName: "min-w-[160px]",
+      cellClassName: "min-w-[130px]",
       render: (lead) => (
         <span className="text-xs font-semibold text-slate-900">
           {`${lead.nombres ?? ""} ${lead.apellidos ?? ""}`.trim() || "Sin nombre"}
@@ -102,7 +117,7 @@ export function LeadLeadsTable({
     },
     {
       header: "Celular",
-      cellClassName: "min-w-[120px]",
+      cellClassName: "min-w-[105px]",
       render: (lead) => (
         <span className="text-xs text-slate-600">{formatPhone(lead.lada, lead.telefono)}</span>
       ),
@@ -252,52 +267,78 @@ export function LeadLeadsTable({
     },
     {
       header: "Comentarios",
-      cellClassName: "min-w-[200px] whitespace-normal",
+      cellClassName: "min-w-[180px]",
       render: (lead) => {
-        if (!canEditComments) {
+        const saved = (lead.comentarios ?? "").trim();
+        const isEditing = editingCommentId === lead.id;
+
+        if (!canEditComments || !isEditing) {
           return (
-            <div
-              className="line-clamp-2 max-w-[220px] text-xs leading-5 text-slate-600"
-              title={lead.comentarios ?? ""}
-            >
-              {lead.comentarios || "Sin comentarios"}
+            <div className="flex max-w-[200px] items-start gap-1">
+              <div
+                className="line-clamp-2 flex-1 text-xs leading-5 text-slate-600"
+                title={saved}
+              >
+                {saved || <span className="italic text-slate-400">Sin comentarios</span>}
+              </div>
+              {canEditComments && (
+                <button
+                  type="button"
+                  title="Editar comentario"
+                  onClick={() => openCommentEdit(lead)}
+                  disabled={updatingLeadId === lead.id}
+                  className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              )}
             </div>
           );
         }
 
-        const saved = (lead.comentarios ?? "").trim();
-        const draft = commentDrafts[lead.id] ?? null;
-        const value = draft !== null ? draft : saved;
-        const hasChanges = draft !== null && draft !== saved;
-        const overLimit = value.length > 1500;
+        const draft = commentDrafts[lead.id] ?? saved;
+        const hasChanges = draft !== saved;
+        const overLimit = draft.length > 1500;
 
         return (
-          <div className="flex max-w-[240px] flex-col gap-1.5">
+          <div className="flex w-[240px] flex-col gap-1.5">
             <textarea
-              value={value}
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              value={draft}
               rows={3}
               disabled={updatingLeadId === lead.id}
-              onChange={(e) =>
-                setCommentDrafts((cur) => ({ ...cur, [lead.id]: e.target.value }))
-              }
+              onChange={(e) => setCommentDrafts((cur) => ({ ...cur, [lead.id]: e.target.value }))}
               className="w-full resize-none rounded-md border border-slate-300 px-2 py-1 text-xs leading-5 text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-1 focus:ring-[#312C85]/20 disabled:cursor-not-allowed disabled:opacity-60"
               placeholder="Escribe un comentario..."
             />
             <div className="flex items-center justify-between gap-1">
               <span className={`text-[10px] ${overLimit ? "text-red-600" : "text-slate-400"}`}>
-                {value.length}/1500
+                {draft.length}/1500
               </span>
-              <button
-                type="button"
-                disabled={!hasChanges || overLimit || updatingLeadId === lead.id}
-                onClick={() => {
-                  onQuickChange(lead.id, "comentarios", value);
-                  setCommentDrafts((cur) => ({ ...cur, [lead.id]: null }));
-                }}
-                className="inline-flex items-center rounded-md bg-[#312C85] px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Guardar
-              </button>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => closeCommentEdit(lead.id)}
+                  className="rounded-md px-2 py-1 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={!hasChanges || overLimit || updatingLeadId === lead.id}
+                  onClick={() => {
+                    onQuickChange(lead.id, "comentarios", draft);
+                    closeCommentEdit(lead.id);
+                  }}
+                  className="inline-flex items-center rounded-md bg-[#312C85] px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Guardar
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -323,7 +364,7 @@ export function LeadLeadsTable({
       columns={columns}
       isLoading={isLoading}
       emptyMessage="No se encontraron registros leads"
-      wrapperClassName="rounded-none border-0 bg-transparent shadow-none [&_td]:px-2 [&_td]:py-1.5 [&_th]:px-2 [&_th]:py-2"
+      wrapperClassName="rounded-none border-0 bg-transparent shadow-none [&_td]:px-1.5 [&_td]:py-1.5 [&_th]:px-1.5 [&_th]:py-2"
       tableClassName="w-max min-w-[2090px] text-left"
       actionsClassName="flex items-center gap-1.5"
       onEdit={canEdit ? onEdit : undefined}

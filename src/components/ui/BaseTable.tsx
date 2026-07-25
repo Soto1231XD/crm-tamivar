@@ -133,7 +133,7 @@ export const BaseTable = <T extends { id: number | string }>({
                       <td
                         key={colIndex}
                         className={[
-                          'px-4 py-3 text-sm text-[var(--crm-text)] align-top',
+                          'px-4 py-3 text-sm text-[var(--crm-text)] align-middle',
                           col.cellClassName ?? '',
                         ].join(' ').trim()}
                       >
