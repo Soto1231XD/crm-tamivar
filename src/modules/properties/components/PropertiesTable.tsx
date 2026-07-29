@@ -180,7 +180,7 @@ export function PropertiesTable({
       totalPages={totalPages}
       onPageChange={onPageChange}
       wrapperClassName="rounded-2xl"
-      tableClassName="w-max min-w-[1240px] text-left"
+      tableClassName="w-full min-w-[1240px] text-left"
       actionsClassName="mx-auto flex w-max items-center justify-center gap-2"
       canEdit={canEdit}
       canDelete={canDelete}
