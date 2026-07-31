@@ -13,7 +13,8 @@ export type ModuleKey =
   | 'movimientos'
   | 'Operaciones'
   | 'Comisiones'
-  | 'CarteraClientes';
+  | 'CarteraClientes'
+  | 'evaluacion';
 
 export type ModulePermissions = {
   ver: boolean;

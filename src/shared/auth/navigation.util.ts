@@ -16,6 +16,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   Operaciones: "Operaciones",
   Comisiones: "Comisiones",
   CarteraClientes: "Cartera de Clientes",
+  evaluacion: "Evaluación de Asesores",
 };
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
@@ -34,6 +35,7 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   Operaciones: "/modulos/operaciones",
   Comisiones: "/modulos/operaciones",
   CarteraClientes: "/modulos/cartera-clientes",
+  evaluacion: "/modulos/evaluacion",
 };
 
 const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
@@ -102,6 +104,7 @@ export function getAvailableModules(
     "movimientos",
     "Operaciones",
     "CarteraClientes",
+    "evaluacion",
   ];
 
   if (permissions.includes("*:*")) return allModules;

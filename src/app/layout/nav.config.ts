@@ -25,6 +25,7 @@ export const MODULE_ICONS: Record<ModuleKey, string> = {
   Operaciones: logsIcon,
   Comisiones: logsIcon,
   CarteraClientes: usuariosIcon,
+  evaluacion: usuariosIcon,
 };
 
 export type NavGroupConfig = {
@@ -43,6 +44,11 @@ export const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
     label: "Contenido",
     icon: contenidoIcon,
     modules: ["blogs", "material"],
+  },
+  {
+    label: "Evaluación",
+    icon: usuariosIcon,
+    modules: ["evaluacion"],
   },
   {
     label: "Administración",
