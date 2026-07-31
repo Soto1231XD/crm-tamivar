@@ -160,6 +160,11 @@ export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }
         matchesAppointmentDateFrom &&
         matchesAppointmentDateTo
       );
+    }).sort((a, b) => {
+      const aCancel = (a.estado ?? '').trim().toLowerCase() === 'cancelado';
+      const bCancel = (b.estado ?? '').trim().toLowerCase() === 'cancelado';
+      if (aCancel === bCancel) return 0;
+      return aCancel ? 1 : -1;
     });
   }, [
     appointmentDateFromFilter,
