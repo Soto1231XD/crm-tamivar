@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { setCalificacion, type AdvisorScoreRow } from "../services/evaluacion.api";
+import { setCalificacion, getRegistrosAsesor, type AdvisorScoreRow, type RegistroVisita } from "../services/evaluacion.api";
 import { MONTHS, fullName, API_URL, META_PUBLICACIONES, MIN_VISITAS, MAX_VISITAS } from "../utils/evaluacion.helpers";
 import { FilterCard, FilterSelect } from "@/components/ui/AppFilters";
+import { AppModal } from "@/components/ui/AppModal";
+import { getStatusStyles } from "@/shared/ui/statusStyles";
 
 export function ScoreboardTab({
   rows,
@@ -27,6 +29,27 @@ export function ScoreboardTab({
 }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editVal, setEditVal] = useState("");
+
+  const [detalleRow, setDetalleRow] = useState<AdvisorScoreRow | null>(null);
+  const [detalleMes, setDetalleMes] = useState(mes);
+  const [detalleAnio, setDetalleAnio] = useState(anio);
+  const [registros, setRegistros] = useState<RegistroVisita[]>([]);
+  const [loadingRegistros, setLoadingRegistros] = useState(false);
+
+  useEffect(() => {
+    if (!detalleRow) return;
+    setLoadingRegistros(true);
+    getRegistrosAsesor(detalleRow.usuario.id, detalleMes, detalleAnio)
+      .then(setRegistros)
+      .catch(() => toast.error("Error al cargar registros."))
+      .finally(() => setLoadingRegistros(false));
+  }, [detalleRow, detalleMes, detalleAnio]);
+
+  const openDetalle = (row: AdvisorScoreRow) => {
+    setDetalleRow(row);
+    setDetalleMes(mes);
+    setDetalleAnio(anio);
+  };
 
   const startEdit = (userId: number, current: number | null) => {
     setEditingId(userId);
@@ -151,12 +174,13 @@ export function ScoreboardTab({
                 <th className="px-3 py-3 text-center font-semibold text-[var(--crm-text)]">Juntas</th>
                 <th className="px-3 py-3 text-center font-semibold text-[var(--crm-text)]">Publicaciones</th>
                 <th className="px-3 py-3 text-center font-semibold text-[var(--crm-text)]">Calificación</th>
+                <th className="px-3 py-3 text-center font-semibold text-[var(--crm-text)]">Detalles</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--crm-border)]">
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center text-sm text-[var(--crm-text-soft)]">
+                  <td colSpan={8} className="py-10 text-center text-sm text-[var(--crm-text-soft)]">
                     No hay datos para este período.
                   </td>
                 </tr>
@@ -265,12 +289,102 @@ export function ScoreboardTab({
                       <span className="text-xs text-[var(--crm-text-soft)]">—</span>
                     )}
                   </td>
+                  <td className="px-3 py-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() => openDetalle(row)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--crm-border)] px-2.5 py-1 text-xs font-medium text-[var(--crm-text-soft)] hover:border-[var(--crm-primary)] hover:text-[var(--crm-primary)] transition-colors"
+                    >
+                      Ver
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {/* Modal de detalle de registros */}
+      <AppModal
+        isOpen={!!detalleRow}
+        onClose={() => setDetalleRow(null)}
+        title={detalleRow ? `Registros de ${fullName(detalleRow.usuario)}` : ""}
+      >
+        {detalleRow && (
+          <div className="space-y-4">
+            {/* Selector de mes/año */}
+            <div className="flex flex-wrap gap-2">
+              <select
+                value={detalleMes}
+                onChange={(e) => setDetalleMes(Number(e.target.value))}
+                className="rounded-lg border border-[var(--crm-border-strong)] bg-[var(--crm-surface-soft)] px-3 py-1.5 text-sm text-[var(--crm-text)] outline-none focus:border-[var(--crm-primary)]"
+              >
+                {MONTHS.map((m, i) => (
+                  <option key={i} value={i + 1}>{m}</option>
+                ))}
+              </select>
+              <select
+                value={detalleAnio}
+                onChange={(e) => setDetalleAnio(Number(e.target.value))}
+                className="rounded-lg border border-[var(--crm-border-strong)] bg-[var(--crm-surface-soft)] px-3 py-1.5 text-sm text-[var(--crm-text)] outline-none focus:border-[var(--crm-primary)]"
+              >
+                {years.map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+
+            {/* Contenido */}
+            {loadingRegistros ? (
+              <div className="flex justify-center py-8">
+                <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-[var(--crm-primary)]" />
+              </div>
+            ) : registros.length === 0 ? (
+              <p className="py-8 text-center text-sm text-[var(--crm-text-soft)]">
+                Sin registros de visitas en este período.
+              </p>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-[var(--crm-border)]">
+                <table className="w-full min-w-[520px] text-left text-sm">
+                  <thead className="border-b border-[var(--crm-border)] bg-[var(--crm-surface-soft)]">
+                    <tr>
+                      <th className="px-3 py-2.5 font-semibold text-[var(--crm-text)]">Cliente</th>
+                      <th className="px-3 py-2.5 font-semibold text-[var(--crm-text)]">Estado</th>
+                      <th className="px-3 py-2.5 font-semibold text-[var(--crm-text)]">Propiedad / Desarrollo</th>
+                      <th className="px-3 py-2.5 font-semibold text-[var(--crm-text)]">Fecha cita</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--crm-border)]">
+                    {registros.map((r) => {
+                      const badge = getStatusStyles(r.estado);
+                      const referencia = r.propiedad?.titulo ?? r.desarrollo?.titulo ?? "—";
+                      const fechaCita = r.fecha_cita
+                        ? new Date(r.fecha_cita).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })
+                        : "—";
+                      return (
+                        <tr key={r.id} className="hover:bg-[var(--crm-surface-soft)] transition-colors">
+                          <td className="px-3 py-2.5 font-medium text-[var(--crm-text)]">
+                            {r.nombres} {r.apellidos}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span
+                              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
+                              style={{ backgroundColor: badge.backgroundColor, color: badge.color }}
+                            >
+                              {r.estado}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-[var(--crm-text-soft)]">{referencia}</td>
+                          <td className="px-3 py-2.5 text-[var(--crm-text-soft)]">{fechaCita}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </AppModal>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export interface JuntaConAsistencia {
   asistencias: Array<{
     junta_id: number;
     usuario_id: number;
-    presente: boolean;
+    presente: boolean | null;
     usuario: Pick<UsuarioResumen, 'id' | 'nombres' | 'apellido_paterno' | 'foto_url'>;
   }>;
   creador: Pick<UsuarioResumen, 'id' | 'nombres' | 'apellido_paterno'>;
@@ -88,8 +88,19 @@ export interface Examen {
   asignaciones: ExamenAsignacion[];
 }
 
+export interface RegistroVisita {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  estado: string;
+  fecha_cita: string | null;
+  creado_en: string;
+  propiedad: { id: number; titulo: string } | null;
+  desarrollo: { id: number; titulo: string } | null;
+}
+
 export interface AdvisorDetalle extends Omit<AdvisorScoreRow, 'publicaciones'> {
-  juntas_detalle: Array<JuntaConAsistencia & { presente: boolean }>;
+  juntas_detalle: Array<JuntaConAsistencia & { presente: boolean | null }>;
   publicaciones_count: number;
   publicaciones: Publicacion[];
   examenes: ExamenAsignacion[];
@@ -211,6 +222,14 @@ export function calificarRespuestaLibre(
     method: 'PATCH',
     data: { pregunta_id: preguntaId, correcto },
   });
+}
+
+export function getRegistrosAsesor(
+  userId: number,
+  mes: number,
+  anio: number,
+): Promise<RegistroVisita[]> {
+  return apiRequest(`${BASE}/registros/${userId}`, { params: { mes, anio } });
 }
 
 export function setCalificacion(

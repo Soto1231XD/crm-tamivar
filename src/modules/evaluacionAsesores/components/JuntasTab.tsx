@@ -8,6 +8,7 @@ import {
 } from "../services/evaluacion.api";
 import { fmtDate, fullName, API_URL } from "../utils/evaluacion.helpers";
 import { AppModal } from "@/components/ui/AppModal";
+import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 
 export function JuntasTab({
   juntas,
@@ -30,6 +31,7 @@ export function JuntasTab({
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [marcandoTodos, setMarcandoTodos] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const handleCreate = async () => {
     if (!form.titulo || !form.fecha) {
@@ -55,13 +57,14 @@ export function JuntasTab({
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number): Promise<string | null> => {
     try {
       await deleteJunta(id);
       onDeleted(id);
       toast.success("Junta eliminada.");
+      return null;
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Error al eliminar junta.");
+      return e instanceof Error ? e.message : "Error al eliminar junta.";
     }
   };
 
@@ -83,6 +86,22 @@ export function JuntasTab({
       );
       onAsistenciaUpdated(updated);
       toast.success("Todos marcados como presentes.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error al actualizar asistencias.");
+    } finally {
+      setMarcandoTodos(false);
+    }
+  };
+
+  const marcarTodosAusentes = async (junta: JuntaConAsistencia) => {
+    setMarcandoTodos(true);
+    try {
+      const updated = await updateAsistencia(
+        junta.id,
+        junta.asistencias.map((a) => ({ usuario_id: a.usuario_id, presente: false })),
+      );
+      onAsistenciaUpdated(updated);
+      toast.success("Todos marcados como ausentes.");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Error al actualizar asistencias.");
     } finally {
@@ -138,7 +157,7 @@ export function JuntasTab({
                     </span>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); handleDelete(junta.id); }}
+                      onClick={(e) => { e.stopPropagation(); setPendingDeleteId(junta.id); }}
                       className="text-xs text-red-500 hover:text-red-700"
                     >
                       Eliminar
@@ -175,6 +194,14 @@ export function JuntasTab({
                       className="shrink-0 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
                     >
                       {marcandoTodos ? "Guardando..." : "✓ Todos presentes"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={marcandoTodos}
+                      onClick={() => marcarTodosAusentes(junta)}
+                      className="shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    >
+                      {marcandoTodos ? "Guardando..." : "✗ Todos ausentes"}
                     </button>
                   </div>
                 )}
@@ -222,8 +249,8 @@ export function JuntasTab({
                         </label>
                       </div>
                     ) : (
-                      <span className={`text-xs font-medium ${a.presente ? "text-green-600" : "text-red-400"}`}>
-                        {a.presente ? "Presente" : "Ausente"}
+                      <span className={`text-xs font-medium ${a.presente === true ? "text-green-600" : a.presente === false ? "text-red-400" : "text-[var(--crm-text-soft)]"}`}>
+                        {a.presente === true ? "Presente" : a.presente === false ? "Ausente" : "—"}
                       </span>
                     )}
                   </div>
@@ -234,6 +261,18 @@ export function JuntasTab({
           </div>
         );
       })}
+
+      <DeleteConfirmModal
+        isOpen={pendingDeleteId !== null}
+        entityId={pendingDeleteId}
+        entityLabel={juntas.find((j) => j.id === pendingDeleteId)?.titulo ?? ""}
+        title="Eliminar junta"
+        subtitle="Esta acción es permanente"
+        descriptionPrefix="¿Estás seguro que deseas eliminar la junta"
+        fallbackLabel="esta junta"
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={handleDelete}
+      />
 
       <AppModal isOpen={showModal} onClose={() => setShowModal(false)} title="Nueva junta">
         <div className="space-y-4">
