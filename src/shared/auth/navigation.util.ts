@@ -103,6 +103,7 @@ export function getAvailableModules(
     "roles",
     "movimientos",
     "Operaciones",
+    "Comisiones",
     "CarteraClientes",
     "evaluacion",
   ];

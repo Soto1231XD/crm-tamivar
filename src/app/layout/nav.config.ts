@@ -38,7 +38,7 @@ export const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
   {
     label: "Clientes",
     icon: registrosIcon,
-    modules: ["registros", "registros_leads", "solicitudes_leads", "Operaciones", "CarteraClientes"],
+    modules: ["registros", "registros_leads", "solicitudes_leads", "Operaciones", "Comisiones", "CarteraClientes"],
   },
   {
     label: "Contenido",
