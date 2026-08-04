@@ -15,6 +15,7 @@ export const TYPE_OPTIONS = [
   "Terreno",
   "Local comercial",
   "Edificio comercial",
+  "Remate bancario",
 ] as const;
 
 export const OPERATION_OPTIONS = ["Venta", "Renta", "Preventa"] as const;
