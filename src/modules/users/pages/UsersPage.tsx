@@ -65,19 +65,26 @@ export function UsersPage() {
   const filteredUsers = useMemo(() => {
     const query = normalizeRoleName(search);
 
-    return users.filter((user) => {
-      const matchesSearch =
-        query.length === 0 ||
-        normalizeRoleName(user.nombres).includes(query) ||
-        normalizeRoleName(user.apellido_paterno).includes(query) ||
-        normalizeRoleName(user.apellido_materno).includes(query) ||
-        normalizeRoleName(user.codigo_usuario).includes(query);
-      const matchesStatus =
-        statusFilter === ALL_USER_STATES ||
-        getUserStatusLabel(user.activo) === statusFilter;
+    return users
+      .filter((user) => {
+        const matchesSearch =
+          query.length === 0 ||
+          normalizeRoleName(user.nombres).includes(query) ||
+          normalizeRoleName(user.apellido_paterno).includes(query) ||
+          normalizeRoleName(user.apellido_materno).includes(query) ||
+          normalizeRoleName(user.codigo_usuario).includes(query);
+        const matchesStatus =
+          statusFilter === ALL_USER_STATES ||
+          getUserStatusLabel(user.activo) === statusFilter;
 
-      return matchesSearch && matchesStatus;
-    });
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => {
+        const aBaja = a.activo === false;
+        const bBaja = b.activo === false;
+        if (aBaja === bBaja) return 0;
+        return aBaja ? 1 : -1;
+      });
   }, [search, statusFilter, users]);
 
   return (
