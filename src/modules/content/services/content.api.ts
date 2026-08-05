@@ -19,10 +19,12 @@ export async function getBlog(id: number): Promise<BlogRecord> {
 export async function createBlog(
   payload: CreateBlogPayload,
   files: File[] = [],
+  archivo?: File | null,
 ): Promise<BlogRecord> {
   const formData = new FormData();
 
   files.forEach((file) => formData.append("files", file));
+  if (archivo) formData.append("archivo", archivo);
   formData.append("datos", JSON.stringify(payload));
 
   return apiRequest<BlogRecord>(PATH, {
@@ -35,6 +37,7 @@ export async function updateBlog(
   id: number,
   payload: UpdateBlogPayload,
   files: File[] = [],
+  archivo?: File | null,
 ): Promise<BlogRecord> {
   const formData = new FormData();
 
@@ -42,12 +45,12 @@ export async function updateBlog(
     formData.append("carpeta_id", payload.carpeta_id);
   }
 
-  // Empaquetamos el resto de los datos
   formData.append("datos", JSON.stringify(payload));
 
   if (files && files.length > 0) {
     files.forEach((file) => formData.append("files", file));
   }
+  if (archivo) formData.append("archivo", archivo);
 
   return apiRequest<BlogRecord>(`${PATH}/${id}`, {
     method: "PATCH",

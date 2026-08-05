@@ -15,8 +15,8 @@ type ContentState = {
   error: string | null;
   fetchBlogs: () => Promise<void>;
   fetchBlog: (id: number) => Promise<void>;
-  addBlog: (payload: CreateBlogPayload, files?: File[]) => Promise<BlogRecord>;
-  editBlog: (id: number, payload: UpdateBlogPayload, files?: File[]) => Promise<BlogRecord>;
+  addBlog: (payload: CreateBlogPayload, files?: File[], archivo?: File | null) => Promise<BlogRecord>;
+  editBlog: (id: number, payload: UpdateBlogPayload, files?: File[], archivo?: File | null) => Promise<BlogRecord>;
   removeBlog: (id: number) => Promise<void>;
   clearCurrentBlog: () => void;
 };
@@ -53,10 +53,10 @@ export const useContentStore = create<ContentState>((set) => ({
     }
   },
 
-  addBlog: async (payload: CreateBlogPayload, files: File[] = []) => {
+  addBlog: async (payload: CreateBlogPayload, files: File[] = [], archivo?: File | null) => {
     set({ isLoading: true, error: null });
     try {
-      const createdBlog = await createBlog(payload, files);
+      const createdBlog = await createBlog(payload, files, archivo);
       set((state) => ({
         blogs: [createdBlog, ...state.blogs],
         isLoading: false,
@@ -69,10 +69,10 @@ export const useContentStore = create<ContentState>((set) => ({
     }
   },
 
-  editBlog: async (id: number, payload: UpdateBlogPayload, files: File[] = []) => {
+  editBlog: async (id: number, payload: UpdateBlogPayload, files: File[] = [], archivo?: File | null) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedBlog = await updateBlog(id, payload, files);
+      const updatedBlog = await updateBlog(id, payload, files, archivo);
       set((state) => ({
         blogs: state.blogs.map((blog) => (blog.id === id ? updatedBlog : blog)),
         currentBlog: updatedBlog,

@@ -19,6 +19,8 @@ export interface BlogRecord {
   titulo: string;
   subtitulo: string;
   slug: string;
+  tipo?: string | null;
+  archivo_url?: string | null;
   resumen?: string | null;
   contenido: string;
   etiquetas?: string[] | null;
@@ -34,6 +36,8 @@ export interface BlogRecord {
 export interface CreateBlogPayload {
   titulo: string;
   subtitulo: string;
+  tipo?: string;
+  archivo_url?: string;
   resumen?: string;
   contenido: string;
   etiquetas?: string[];

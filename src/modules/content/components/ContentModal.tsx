@@ -14,6 +14,7 @@ type ContentModalMode = "create" | "edit";
 type FormState = {
   titulo: string;
   subtitulo: string;
+  tipo: string;
   resumen: string;
   contenido: string;
   etiquetas: string;
@@ -30,12 +31,14 @@ type ContentModalProps = {
   onSubmit: (
     payload: CreateBlogPayload | UpdateBlogPayload,
     files: File[],
+    archivo?: File | null,
   ) => Promise<string | null>;
 };
 
 const INITIAL_FORM: FormState = {
   titulo: "",
   subtitulo: "",
+  tipo: "Blog",
   resumen: "",
   contenido: "",
   etiquetas: "",
@@ -131,6 +134,7 @@ export function ContentModal({
 }: ContentModalProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedArchivo, setSelectedArchivo] = useState<File | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -139,6 +143,7 @@ export function ContentModal({
 
     setForm(getInitialForm(blog));
     setSelectedFiles([]);
+    setSelectedArchivo(null);
     setSubmitError("");
     setIsSubmitting(false);
   }, [isOpen, blog]);
@@ -193,6 +198,7 @@ export function ContentModal({
         ? {
             titulo: form.titulo.trim(),
             subtitulo: form.subtitulo.trim(),
+            tipo: form.tipo,
             resumen: form.resumen.trim() || undefined,
             contenido: form.contenido.trim(),
             etiquetas: parseTags(form.etiquetas),
@@ -218,7 +224,7 @@ export function ContentModal({
     }
 
     setIsSubmitting(true);
-    const error = await onSubmit(payload, selectedFiles);
+    const error = await onSubmit(payload, selectedFiles, selectedArchivo);
     setIsSubmitting(false);
 
     if (error) {
@@ -271,6 +277,19 @@ export function ContentModal({
               value={form.subtitulo}
               onChange={(value) => updateField("subtitulo", value)}
             />
+
+            <label className="flex flex-col gap-1.5">
+              <FieldLabel required>Tipo de contenido</FieldLabel>
+              <select
+                value={form.tipo}
+                onChange={(e) => updateField("tipo", e.target.value)}
+                className={fieldClassName}
+              >
+                <option value="Blog">Blog</option>
+                <option value="Capacitación">Capacitación</option>
+              </select>
+            </label>
+
             <Field
               label="Resumen"
               value={form.resumen}
@@ -321,13 +340,54 @@ export function ContentModal({
 
           <div className="space-y-4">
             <TextArea
-              label="Contenido"
-              required
-              rows={8}
+              label={form.tipo === "Capacitación" ? "Descripción (opcional)" : "Contenido"}
+              required={form.tipo !== "Capacitación"}
+              rows={form.tipo === "Capacitación" ? 4 : 8}
               value={form.contenido}
               onChange={(value) => updateField("contenido", value)}
-              placeholder="Desarrolla aquí el contenido del articulo."
+              placeholder={
+                form.tipo === "Capacitación"
+                  ? "Descripción breve de la capacitación (opcional)."
+                  : "Desarrolla aquí el contenido del articulo."
+              }
             />
+
+            {form.tipo === "Capacitación" && (
+              <label className="flex flex-col gap-1.5">
+                <FieldLabel required={!blog?.archivo_url}>
+                  Archivo de presentación (PDF o PPTX)
+                </FieldLabel>
+                <div className="flex items-center gap-3">
+                  <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600 transition hover:border-[#312C85] hover:bg-slate-100">
+                    <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                    <span>{selectedArchivo ? selectedArchivo.name : "Seleccionar archivo"}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                      className="hidden"
+                      onChange={(e) => setSelectedArchivo(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  {selectedArchivo && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedArchivo(null)}
+                      className="text-sm text-red-500 hover:text-red-700"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+                {blog?.archivo_url && !selectedArchivo && (
+                  <p className="text-xs text-slate-500">
+                    Archivo actual: <span className="font-medium text-[#312C85]">{blog.archivo_url.split("/").pop()}</span>
+                    {" "}— sube uno nuevo para reemplazarlo.
+                  </p>
+                )}
+              </label>
+            )}
 
             <ImageGridUploader
               label="Imágenes del articulo"
@@ -378,6 +438,7 @@ function getInitialForm(blog?: BlogRecord | null): FormState {
   return {
     titulo: blog.titulo?.trim() || "",
     subtitulo: blog.subtitulo?.trim() || "",
+    tipo: blog.tipo ?? "Blog",
     resumen: blog.resumen?.trim() || "",
     contenido: blog.contenido?.trim() || "",
     etiquetas: Array.isArray(blog.etiquetas) ? blog.etiquetas.join(", ") : "",
@@ -414,6 +475,9 @@ function buildUpdatePayload(
   if (form.subtitulo.trim() !== initial.subtitulo.trim()) {
     payload.subtitulo = form.subtitulo.trim();
   }
+  if (form.tipo !== initial.tipo) {
+    payload.tipo = form.tipo;
+  }
   if ((form.resumen.trim() || "") !== (initial.resumen.trim() || "")) {
     payload.resumen = form.resumen.trim() || undefined;
   }
@@ -439,7 +503,8 @@ function buildUpdatePayload(
 function validateForm(form: FormState): string | null {
   if (!form.titulo.trim()) return "Titulo es obligatorio.";
   if (!form.subtitulo.trim()) return "Subtitulo es obligatorio.";
-  if (!form.contenido.trim()) return "Contenido es obligatorio.";
+  if (form.tipo !== "Capacitación" && !form.contenido.trim())
+    return "Contenido es obligatorio.";
   if (form.resumen.trim().length > 300)
     return "Resumen no puede exceder 300 caracteres.";
 
