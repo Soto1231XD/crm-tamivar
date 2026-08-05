@@ -274,29 +274,27 @@ export function GeneratePostModal({ isOpen, onClose, property }: GeneratePostMod
     setImageError('');
     setProgress('Cargando imágenes...');
 
+    let shouldFallback = false;
     try {
       const files = await fetchImageFiles(property, (current, total) => {
         setProgress(`Cargando imagen ${current} de ${total}...`);
       });
 
-      if (files.length === 0) {
-        setImageError('No se pudieron cargar las imágenes. Intenta descargar el .zip.');
-        return;
+      if (files.length === 0 || !navigator.canShare({ files })) {
+        shouldFallback = true;
+      } else {
+        await navigator.share({ files });
       }
-
-      // Verificación final antes de compartir — algunos navegadores son estrictos
-      if (!navigator.canShare({ files })) {
-        setImageError('Tu navegador no puede compartir estas imágenes. Descarga el .zip.');
-        return;
-      }
-
-      await navigator.share({ files });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
-      setImageError('No fue posible compartir las imágenes. Intenta descargar el .zip.');
+      shouldFallback = true;
     } finally {
       setIsBusy(false);
       setProgress('');
+    }
+
+    if (shouldFallback) {
+      void handleDownloadZip();
     }
   }
 
