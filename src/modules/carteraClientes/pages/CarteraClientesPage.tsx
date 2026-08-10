@@ -21,7 +21,7 @@ import {
 import { ClienteModal } from "../components/ClienteModal";
 import { WhatsappModal } from "../components/WhatsappModal";
 import { BirthdayWhatsappModal } from "../components/BirthdayWhatsappModal";
-import { CampaignModal } from "../components/CampaignModal";
+import { FestividadWhatsappModal } from "../components/FestividadWhatsappModal";
 
 const MESES: Record<number, string> = {
   1: "ENE", 2: "FEB", 3: "MAR", 4: "ABR", 5: "MAY", 6: "JUN",
@@ -48,7 +48,7 @@ export function CarteraClientesPage() {
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [waModal, setWaModal]         = useState<{ open: boolean; item: ClienteCartera | null; defaultMsg?: string }>({ open: false, item: null });
   const [bdayModal, setBdayModal]     = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
-  const [campaignOpen, setCampaignOpen] = useState(false);
+  const [festividadOpen, setFestividadOpen] = useState(false);
 
   const [search, setSearch]       = useState("");
   const [filterTipo, setFilterTipo] = useState("");
@@ -182,11 +182,11 @@ export function CarteraClientesPage() {
           {canMessage && clientes.some((c) => c.telefono) && (
             <button
               type="button"
-              onClick={() => setCampaignOpen(true)}
+              onClick={() => setFestividadOpen(true)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1da851] sm:w-auto"
             >
-              <span>📣</span>
-              <span className="whitespace-nowrap">Campaña WhatsApp</span>
+              <span>🎉</span>
+              <span className="whitespace-nowrap">Festividad WhatsApp</span>
             </button>
           )}
           {canCreate && (
@@ -295,16 +295,15 @@ export function CarteraClientesPage() {
       {bdayModal.open && bdayModal.item && (
         <BirthdayWhatsappModal
           cliente={bdayModal.item}
-          defaultMessage={`🎂 ¡Feliz cumpleaños, ${bdayModal.item.nombre}! 🎉\n\nEn este día tan especial, todo el equipo de Tamivar Inmobiliaria queremos desearte lo mejor. Que este nuevo año de vida esté lleno de salud, felicidad y muchos logros.\n\nHa sido un placer acompañarte en tu camino inmobiliario. ¡Esperamos seguir siendo parte de tus proyectos y sueños!\n\nCon cariño,\n🏠 Equipo Tamivar Inmobiliaria`}
           onClose={() => setBdayModal({ open: false, item: null })}
         />
       )}
 
-      {/* Modal campaña masiva */}
-      {campaignOpen && (
-        <CampaignModal
+      {/* Modal festividad */}
+      {festividadOpen && (
+        <FestividadWhatsappModal
           clientes={filtrados}
-          onClose={() => setCampaignOpen(false)}
+          onClose={() => setFestividadOpen(false)}
         />
       )}
 

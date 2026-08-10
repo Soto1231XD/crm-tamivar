@@ -563,43 +563,58 @@ export const PropertyDetailView = () => {
                     <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">
                       Estado Legal
                     </p>
-                    {currentProperty.tiene_gravamen ? (
-                      <span className="inline-flex items-center gap-2 bg-red-50 text-red-800 px-4 py-2 rounded-md text-xs sm:text-sm font-bold border border-red-300">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 sm:h-5 sm:w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                          />
-                        </svg>
-                        Tiene Gravamen
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-2 bg-green-50 text-green-800 px-4 py-2 rounded-md text-xs sm:text-sm font-bold border border-green-300">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 sm:h-5 sm:w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        Libre de Gravamen
-                      </span>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {currentProperty.tiene_gravamen ? (
+                        <span className="inline-flex items-center gap-2 bg-red-50 text-red-800 px-4 py-2 rounded-md text-xs sm:text-sm font-bold border border-red-300">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 sm:h-5 sm:w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                            />
+                          </svg>
+                          Tiene Gravamen
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 bg-green-50 text-green-800 px-4 py-2 rounded-md text-xs sm:text-sm font-bold border border-green-300">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 sm:h-5 sm:w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Libre de Gravamen
+                        </span>
+                      )}
+                      {currentProperty.esquema_comercial.some(
+                        (e) => e.tipo_operacion.toLowerCase() === "renta"
+                      ) && (
+                        currentProperty.pet_friendly ? (
+                          <span className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 px-4 py-2 rounded-md text-xs sm:text-sm font-bold border border-emerald-300">
+                            🐾 Pet Friendly
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-2 bg-slate-50 text-slate-600 px-4 py-2 rounded-md text-xs sm:text-sm font-bold border border-slate-300">
+                            🚫 No acepta mascotas
+                          </span>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

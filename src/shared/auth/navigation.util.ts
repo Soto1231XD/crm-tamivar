@@ -33,7 +33,7 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   roles: "/modulos/roles",
   movimientos: "/modulos/movimientos",
   Operaciones: "/modulos/operaciones",
-  Comisiones: "/modulos/operaciones",
+  Comisiones: "/modulos/comisiones",
   CarteraClientes: "/modulos/cartera-clientes",
   evaluacion: "/modulos/evaluacion",
 };

@@ -11,6 +11,7 @@ export interface PropertyRecord {
   etiquetas: string[];
   exclusiva: boolean;
   tiene_gravamen: boolean;
+  pet_friendly: boolean;
   cuota_mantenimiento?: number;
   comentarios?: string;
   pisos_tiene?: number;

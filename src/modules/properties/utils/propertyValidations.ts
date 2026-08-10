@@ -56,6 +56,7 @@ export type FormState = {
   boiler: boolean;
   tiene_gravamen: boolean;
   exclusiva: boolean;
+  pet_friendly: boolean;
   cuota_mantenimiento: string;
   comentarios: string;
   pisos_tiene: string;

@@ -231,6 +231,11 @@ export const PropertyPdfDocument = ({
         ["Venta", "Preventa"].includes(esquema.tipo_operacion),
       )
     : false;
+  const showPetFriendly = Array.isArray(property.esquema_comercial)
+    ? property.esquema_comercial.some(
+        (esquema) => esquema.tipo_operacion === "Renta",
+      )
+    : false;
 
   return (
     <Document>
@@ -292,23 +297,31 @@ export const PropertyPdfDocument = ({
               </Text>
             </View>
 
-            {/* Fila Única: Operación, Tipo y Estado Legal */}
-            <View style={showLegalStatus ? styles.col4 : styles.col6}>
-              <Text style={styles.label}>Operación</Text>
-              <Text style={[styles.value, { textTransform: "capitalize" }]}>
-                {property.esquema_comercial
-                  .map((e) => e.tipo_operacion.toLowerCase())
-                  .join(" / ")}
-              </Text>
-            </View>
-            <View style={showLegalStatus ? styles.col4 : styles.col6}>
-              <Text style={styles.label}>Tipo de Inmueble</Text>
-              <Text style={[styles.value, { textTransform: "capitalize" }]}>
-                {property.tipo_inmueble}
-              </Text>
-            </View>
+            {/* Fila Única: Operación, Tipo, Estado Legal y Pet Friendly */}
+            {(() => {
+              const extraCols = (showLegalStatus ? 1 : 0) + (showPetFriendly ? 1 : 0);
+              const colStyle = extraCols === 0 ? styles.col6 : extraCols === 1 ? styles.col4 : styles.col3;
+              return (
+                <>
+                  <View style={colStyle}>
+                    <Text style={styles.label}>Operación</Text>
+                    <Text style={[styles.value, { textTransform: "capitalize" }]}>
+                      {property.esquema_comercial
+                        .map((e) => e.tipo_operacion.toLowerCase())
+                        .join(" / ")}
+                    </Text>
+                  </View>
+                  <View style={colStyle}>
+                    <Text style={styles.label}>Tipo de Inmueble</Text>
+                    <Text style={[styles.value, { textTransform: "capitalize" }]}>
+                      {property.tipo_inmueble}
+                    </Text>
+                  </View>
+                </>
+              );
+            })()}
             {showLegalStatus ? (
-              <View style={styles.col4}>
+              <View style={showPetFriendly ? styles.col3 : styles.col4}>
                 <Text style={styles.label}>Estado Legal</Text>
                 <Text
                   style={[
@@ -319,6 +332,20 @@ export const PropertyPdfDocument = ({
                   {property.tiene_gravamen
                     ? "Con Gravamen"
                     : "Libre de Gravamen"}
+                </Text>
+              </View>
+            ) : null}
+
+            {showPetFriendly ? (
+              <View style={showLegalStatus ? styles.col3 : styles.col4}>
+                <Text style={styles.label}>Mascotas</Text>
+                <Text
+                  style={[
+                    styles.valueBold,
+                    { color: property.pet_friendly ? "#10b981" : "#ef4444" },
+                  ]}
+                >
+                  {property.pet_friendly ? "Pet Friendly" : "No acepta mascotas"}
                 </Text>
               </View>
             ) : null}

@@ -168,6 +168,7 @@ const INITIAL_FORM_STATE: FormState = {
   boiler: false,
   exclusiva: false,
   tiene_gravamen: false,
+  pet_friendly: false,
   cuota_mantenimiento: "",
   comentarios: "",
   pisos_tiene: "",
@@ -293,6 +294,7 @@ function toFormState(property?: PropertyRecord | null): FormState {
     boiler: Boolean(property.caracteristicas?.boiler),
     exclusiva: Boolean(property.exclusiva),
     tiene_gravamen: Boolean(property.tiene_gravamen),
+    pet_friendly: Boolean(property.pet_friendly),
     cuota_mantenimiento:
       property.cuota_mantenimiento != null
         ? String(property.cuota_mantenimiento)
@@ -329,6 +331,7 @@ function buildInitialPayload(
     tipos_pago: Array.isArray(property.tipos_pago) ? property.tipos_pago : [],
     estatus: property.estatus,
     tiene_gravamen: Boolean(property.tiene_gravamen),
+    pet_friendly: Boolean(property.pet_friendly),
     etiquetas: Array.isArray(property.etiquetas) ? property.etiquetas : [],
     cuota_mantenimiento: property.cuota_mantenimiento ?? undefined,
     comentarios: property.comentarios || undefined,
@@ -528,6 +531,9 @@ export function usePropertyForm(
         tiene_gravamen: operaciones.includes("Venta")
           ? prev.tiene_gravamen
           : false,
+        pet_friendly: operaciones.includes("Renta")
+          ? prev.pet_friendly
+          : false,
       };
     });
   }
@@ -723,6 +729,9 @@ export function usePropertyForm(
       exclusiva: form.exclusiva,
       tiene_gravamen: selectedOperations.includes("Venta")
         ? form.tiene_gravamen
+        : false,
+      pet_friendly: selectedOperations.includes("Renta")
+        ? form.pet_friendly
         : false,
       etiquetas: form.etiquetas
         .split(",")

@@ -116,6 +116,7 @@ export function PropertyForm({
 
   const isTerreno = form.tipo_inmueble.trim().toLowerCase() === "terreno";
   const shouldShowLienToggle = form.operaciones.includes("Venta");
+  const shouldShowPetToggle = form.operaciones.includes("Renta");
   const selectedOperationBlocks = OPERATION_BLOCKS.filter((operation) =>
     form.operaciones.includes(operation.key),
   );
@@ -211,13 +212,20 @@ export function PropertyForm({
               <label className="invisible text-sm font-medium mb-1.5 sm:mb-2 block select-none pointer-events-none">
                 Espacio
               </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full items-end pb-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 h-full items-end pb-1">
               <Toggle
                 name="tiene_gravamen"
                 checked={form.tiene_gravamen}
                 onChange={handleInputChange}
                 label="¿Tiene gravamen?"
                 className={shouldShowLienToggle ? "!min-h-[48px] h-[48px]" : "hidden"}
+              />
+              <Toggle
+                name="pet_friendly"
+                checked={form.pet_friendly}
+                onChange={handleInputChange}
+                label="¿Es Pet Friendly?"
+                className={shouldShowPetToggle ? "!min-h-[48px] h-[48px]" : "hidden"}
               />
               <Toggle
                 name="exclusiva"
