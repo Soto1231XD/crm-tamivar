@@ -329,6 +329,7 @@ function buildInitialPayload(
     tipos_pago: Array.isArray(property.tipos_pago) ? property.tipos_pago : [],
     estatus: property.estatus,
     tiene_gravamen: Boolean(property.tiene_gravamen),
+    pet_friendly: false,
     etiquetas: Array.isArray(property.etiquetas) ? property.etiquetas : [],
     cuota_mantenimiento: property.cuota_mantenimiento ?? undefined,
     comentarios: property.comentarios || undefined,
@@ -724,6 +725,7 @@ export function usePropertyForm(
       tiene_gravamen: selectedOperations.includes("Venta")
         ? form.tiene_gravamen
         : false,
+      pet_friendly: false,
       etiquetas: form.etiquetas
         .split(",")
         .map((item) => item.trim())

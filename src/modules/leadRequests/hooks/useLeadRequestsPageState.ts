@@ -35,6 +35,9 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
   const [statusFilter, setStatusFilter] = useState(ALL_STATES);
   const [leadDateFromFilter, setLeadDateFromFilter] = useState('');
   const [leadDateToFilter, setLeadDateToFilter] = useState('');
+  const [budgetMinFilter, setBudgetMinFilter] = useState('');
+  const [budgetMaxFilter, setBudgetMaxFilter] = useState('');
+  const [operationTypeFilter, setOperationTypeFilter] = useState(ALL_STATES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingLeadRequest, setEditingLeadRequest] = useState<LeadRequestRecord | null>(null);
   const [deletingLeadRequest, setDeletingLeadRequest] = useState<LeadRequestRecord | null>(null);
@@ -69,18 +72,32 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
 
   const filteredLeadRequests = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const budgetMin = budgetMinFilter.length > 0 ? Number(budgetMinFilter) : null;
+    const budgetMax = budgetMaxFilter.length > 0 ? Number(budgetMaxFilter) : null;
+
     return leadRequests
       .filter((leadRequest) => {
         const fullName = (leadRequest.nombre ?? '').trim().toLowerCase();
         const phone = String(leadRequest.telefono ?? '').toLowerCase();
         const leadDate = getComparableLeadRequestDate(leadRequest.fecha_alta);
+        const solicitudText = (leadRequest.solicitud ?? '').toLowerCase();
+        const budget = leadRequest.presupuesto != null && !Number.isNaN(Number(leadRequest.presupuesto)) ? Number(leadRequest.presupuesto) : null;
 
         const matchesSearch = query.length === 0 || fullName.includes(query) || phone.includes(query);
         const matchesStatus = statusFilter === ALL_STATES || (leadRequest.estado ?? '').trim() === statusFilter;
         const matchesLeadDateFrom = leadDateFromFilter.length === 0 || (leadDate.length > 0 && leadDate >= leadDateFromFilter);
         const matchesLeadDateTo = leadDateToFilter.length === 0 || (leadDate.length > 0 && leadDate <= leadDateToFilter);
+        const matchesBudgetMin = budgetMin === null || (budget !== null && budget >= budgetMin);
+        const matchesBudgetMax = budgetMax === null || (budget !== null && budget <= budgetMax);
 
-        return matchesSearch && matchesStatus && matchesLeadDateFrom && matchesLeadDateTo;
+        let matchesOperationType = true;
+        if (operationTypeFilter === 'Renta') {
+          matchesOperationType = solicitudText.includes('renta');
+        } else if (operationTypeFilter === 'Compra') {
+          matchesOperationType = solicitudText.includes('compra') || (solicitudText.includes('venta') && !solicitudText.includes('renta'));
+        }
+
+        return matchesSearch && matchesStatus && matchesLeadDateFrom && matchesLeadDateTo && matchesBudgetMin && matchesBudgetMax && matchesOperationType;
       })
       .sort((left, right) => {
         const statusRankDiff = getLeadRequestStatusRank(left.estado) - getLeadRequestStatusRank(right.estado);
@@ -99,7 +116,7 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
 
         return getComparableLeadRequestDate(right.fecha_alta).localeCompare(getComparableLeadRequestDate(left.fecha_alta));
       });
-  }, [leadDateFromFilter, leadDateToFilter, leadRequests, search, statusFilter]);
+  }, [budgetMaxFilter, budgetMinFilter, leadDateFromFilter, leadDateToFilter, leadRequests, operationTypeFilter, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeadRequests.length / PAGE_SIZE));
 
@@ -110,7 +127,7 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [leadDateFromFilter, leadDateToFilter, search, statusFilter]);
+  }, [budgetMaxFilter, budgetMinFilter, leadDateFromFilter, leadDateToFilter, operationTypeFilter, search, statusFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -208,6 +225,9 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
     statusFilter,
     leadDateFromFilter,
     leadDateToFilter,
+    budgetMinFilter,
+    budgetMaxFilter,
+    operationTypeFilter,
     isCreateModalOpen,
     editingLeadRequest,
     deletingLeadRequest,
@@ -222,6 +242,9 @@ export function useLeadRequestsPageState({ userId }: UseLeadRequestsPageStatePar
     setStatusFilter,
     setLeadDateFromFilter,
     setLeadDateToFilter,
+    setBudgetMinFilter,
+    setBudgetMaxFilter,
+    setOperationTypeFilter,
     setIsCreateModalOpen,
     setEditingLeadRequest,
     setDeletingLeadRequest,

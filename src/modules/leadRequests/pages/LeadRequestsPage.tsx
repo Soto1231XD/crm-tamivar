@@ -24,6 +24,9 @@ export function LeadRequestsPage() {
     statusFilter,
     leadDateFromFilter,
     leadDateToFilter,
+    budgetMinFilter,
+    budgetMaxFilter,
+    operationTypeFilter,
     isCreateModalOpen,
     editingLeadRequest,
     deletingLeadRequest,
@@ -38,6 +41,9 @@ export function LeadRequestsPage() {
     setStatusFilter,
     setLeadDateFromFilter,
     setLeadDateToFilter,
+    setBudgetMinFilter,
+    setBudgetMaxFilter,
+    setOperationTypeFilter,
     setIsCreateModalOpen,
     setEditingLeadRequest,
     setDeletingLeadRequest,
@@ -78,12 +84,18 @@ export function LeadRequestsPage() {
         statusFilter={statusFilter}
         leadDateFromFilter={leadDateFromFilter}
         leadDateToFilter={leadDateToFilter}
+        budgetMinFilter={budgetMinFilter}
+        budgetMaxFilter={budgetMaxFilter}
+        operationTypeFilter={operationTypeFilter}
         statusOptions={statusOptions}
         hasResults={filteredLeadRequests.length > 0}
         onSearchChange={setSearch}
         onStatusChange={setStatusFilter}
         onLeadDateFromChange={setLeadDateFromFilter}
         onLeadDateToChange={setLeadDateToFilter}
+        onBudgetMinChange={setBudgetMinFilter}
+        onBudgetMaxChange={setBudgetMaxFilter}
+        onOperationTypeChange={setOperationTypeFilter}
         onDownload={handleDownloadFilteredLeadRequests}
       />
 
