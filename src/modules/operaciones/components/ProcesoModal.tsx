@@ -23,7 +23,7 @@ export function parseEtapa(raw: string | null | undefined): EtapaValue {
 
 export function encodeEtapa(s: string, n: string): string | null {
   if (!s && !n.trim()) return null;
-  return JSON.stringify({ s, n: n.trim() });
+  return JSON.stringify({ s, n });
 }
 
 const ETAPAS: { key: keyof OperacionProceso; label: string }[] = [
