@@ -67,12 +67,30 @@ export function CarteraClientesPage() {
 
   const filtrados = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return clientes.filter((c) => {
-      if (q && !`${c.nombre} ${c.telefono ?? ""} ${c.propiedad ?? ""} ${c.referencia ?? ""}`.toLowerCase().includes(q)) return false;
-      if (filterTipo && c.tipo !== filterTipo) return false;
-      if (filterMes && String(c.cumple_mes) !== filterMes) return false;
-      return true;
-    });
+    const hoyRef = new Date();
+    hoyRef.setHours(0, 0, 0, 0);
+
+    function diasHastaCumple(c: ClienteCartera): number {
+      if (!c.cumple_mes || !c.cumple_dia) return Infinity;
+      const cumple = new Date(hoyRef.getFullYear(), c.cumple_mes - 1, c.cumple_dia);
+      cumple.setHours(0, 0, 0, 0);
+      if (cumple < hoyRef) cumple.setFullYear(hoyRef.getFullYear() + 1);
+      return cumple.getTime() - hoyRef.getTime();
+    }
+
+    return clientes
+      .filter((c) => {
+        if (q && !`${c.nombre} ${c.telefono ?? ""} ${c.propiedad ?? ""} ${c.referencia ?? ""}`.toLowerCase().includes(q)) return false;
+        if (filterTipo && c.tipo !== filterTipo) return false;
+        if (filterMes && String(c.cumple_mes) !== filterMes) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const dA = diasHastaCumple(a);
+        const dB = diasHastaCumple(b);
+        if (dA !== dB) return dA - dB;
+        return a.nombre.localeCompare(b.nombre, "es");
+      });
   }, [clientes, search, filterTipo, filterMes]);
 
   const handleSave = async (data: Partial<ClienteCartera>) => {
