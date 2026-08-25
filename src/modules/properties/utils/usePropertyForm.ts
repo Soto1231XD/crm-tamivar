@@ -622,26 +622,50 @@ export function usePropertyForm(
     }));
   }
 
-  function handleSetPrimaryImage(type: "new" | "existing", index: number) {
+  function handleSetPrimaryImage(type: "new" | "existing", targetIndex: number) {
     setForm((prev) => {
-      const nextNewImages = prev.imagenes.map((image, currentIndex) => ({
-        ...image,
-        principal: type === "new" && currentIndex === index,
-      }));
+      type UnifiedEntry =
+        | { kind: "existing"; origIdx: number; img: Imagen }
+        | { kind: "new"; origIdx: number; img: NuevaImagen };
 
-      const nextExistingImages = prev.imagenes_existentes.map(
-        (image, currentIndex) => ({
-          ...image,
-          principal: type === "existing" && currentIndex === index,
-        }),
+      const unified: UnifiedEntry[] = [
+        ...prev.imagenes_existentes.map((img, i) => ({ kind: "existing" as const, origIdx: i, img })),
+        ...prev.imagenes.map((img, i) => ({ kind: "new" as const, origIdx: i, img })),
+      ];
+
+      const selectedIdx = unified.findIndex(
+        (item) => item.kind === type && item.origIdx === targetIndex,
       );
 
-      return {
-        ...prev,
-        imagenes: nextNewImages,
-        imagenes_existentes: nextExistingImages,
-      };
+      if (selectedIdx > 0) {
+        const [selected] = unified.splice(selectedIdx, 1);
+        unified.unshift(selected);
+      }
+
+      let principalSet = false;
+      const nextExisting: Imagen[] = [];
+      const nextNew: NuevaImagen[] = [];
+
+      for (const item of unified) {
+        const isPrincipal = !principalSet;
+        principalSet = true;
+        if (item.kind === "existing") {
+          nextExisting.push({ ...item.img, principal: isPrincipal });
+        } else {
+          nextNew.push({ ...item.img, principal: isPrincipal });
+        }
+      }
+
+      return { ...prev, imagenes_existentes: nextExisting, imagenes: nextNew };
     });
+  }
+
+  function handleReorderImages(newExisting: Imagen[], newImages: NuevaImagen[]) {
+    setForm((prev) => ({
+      ...prev,
+      imagenes_existentes: newExisting,
+      imagenes: newImages,
+    }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -847,6 +871,7 @@ export function usePropertyForm(
     handleImageTitleChange,
     handleExistingImageTitleChange,
     handleSetPrimaryImage,
+    handleReorderImages,
     handleSubmit,
   };
 }
