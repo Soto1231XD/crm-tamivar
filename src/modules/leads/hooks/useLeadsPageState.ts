@@ -143,8 +143,7 @@ export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }
       const matchesSearch =
         query.length === 0 ||
         fullName.includes(query) ||
-        phone.includes(query) ||
-        targetTitle.toLowerCase().includes(query);
+        phone.includes(query);
       const matchesResponsible =
         responsibleQuery.length === 0 || responsibleName.includes(responsibleQuery);
       const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;
@@ -263,7 +262,7 @@ export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }
 
   async function handleCreateLead(payload: Omit<CreateLeadPayload, 'creado_por_id'>): Promise<string | null> {
     if (!userId) {
-      return 'No hay una sesion valida para asociar el creador.';
+      return 'No hay una sesión valida para asociar el creador.';
     }
 
     try {
@@ -271,7 +270,7 @@ export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }
         ...payload,
         creado_por_id: userId,
       });
-      toast.success('El registro se creo con exito.');
+      toast.success('El registro se creo con éxito.');
       return null;
     } catch (error) {
       return getReadableErrorMessage(
@@ -284,7 +283,7 @@ export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }
   async function handleEditLead(leadId: number, payload: UpdateLeadPayload): Promise<string | null> {
     try {
       await editLead(leadId, payload);
-      toast.success('El registro se actualizo con exito.');
+      toast.success('El registro se actualizo con éxito.');
       return null;
     } catch (error) {
       return getReadableErrorMessage(
@@ -297,7 +296,7 @@ export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }
   async function handleDeleteLead(leadId: number): Promise<string | null> {
     try {
       await removeLead(leadId);
-      toast.success('El registro se elimino con exito.');
+      toast.success('El registro se elimino con éxito.');
       return null;
     } catch (error) {
       return getReadableErrorMessage(

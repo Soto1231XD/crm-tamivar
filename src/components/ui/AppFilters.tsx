@@ -3,7 +3,7 @@ import type {
   ReactNode,
   SelectHTMLAttributes
 } from "react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 type FilterCardProps = {
   title?: string;
@@ -132,6 +132,83 @@ export function FilterSelect({ className = "", ...props }: FilterSelectProps) {
       {...props}
       className={`${baseControlClassName} ${className}`.trim()}
     />
+  );
+}
+
+type FilterComboboxProps = {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  className?: string;
+};
+
+export function FilterCombobox({ value, onChange, options, className = "" }: FilterComboboxProps) {
+  const allOption = options[0] ?? "";
+  const [inputText, setInputText] = useState(value === allOption ? "" : value);
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setInputText(value === allOption ? "" : value);
+  }, [value, allOption]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        const match = options.find((o) => o.toLowerCase() === inputText.toLowerCase());
+        if (!match) {
+          onChange(allOption);
+          setInputText("");
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [inputText, onChange, options, allOption]);
+
+  const filtered = inputText
+    ? options.filter((o) => o.toLowerCase().includes(inputText.toLowerCase()))
+    : options;
+
+  return (
+    <div ref={containerRef} className={`relative ${className}`.trim()}>
+      <input
+        type="text"
+        value={inputText}
+        placeholder={allOption}
+        onChange={(e) => {
+          setInputText(e.target.value);
+          setIsOpen(true);
+          if (!e.target.value) onChange(allOption);
+        }}
+        onFocus={() => setIsOpen(true)}
+        className={baseControlClassName}
+      />
+      {isOpen && filtered.length > 0 && (
+        <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-[var(--crm-border-strong)] bg-[var(--crm-surface)] py-1 shadow-lg">
+          {filtered.map((option) => (
+            <li
+              key={option}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(option);
+                setInputText(option === allOption ? "" : option);
+                setIsOpen(false);
+              }}
+              className={[
+                "cursor-pointer px-3 py-2 text-sm transition hover:bg-[var(--crm-primary-soft)] hover:text-[var(--crm-primary)]",
+                value === option
+                  ? "bg-[var(--crm-primary-soft)] font-medium text-[var(--crm-primary)]"
+                  : "text-[var(--crm-text)]",
+              ].join(" ")}
+            >
+              {option}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

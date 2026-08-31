@@ -1,5 +1,5 @@
 import desArcIcon from '../../../assets/images/DesArc.png';
-import { CollapsibleFilters, FilterDateInput, FilterSearchInput, FilterSelect } from '@/components/ui/AppFilters';
+import { CollapsibleFilters, FilterCombobox, FilterDateInput, FilterSearchInput, FilterSelect } from '@/components/ui/AppFilters';
 import { ALL_PROPERTIES, ALL_STATES } from '../utils/leads.constants';
 
 type LeadFiltersProps = {
@@ -53,7 +53,7 @@ export function LeadFilters({
       searchSlot={
         <FilterSearchInput
           type="text"
-          placeholder="Buscar por nombre, teléfono o propiedad"
+          placeholder="Buscar por nombre o teléfono"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
         />
@@ -84,11 +84,11 @@ export function LeadFilters({
           ))}
         </FilterSelect>
 
-        <FilterSelect value={propertyFilter} onChange={(event) => onPropertyChange(event.target.value)}>
-          {propertyFilterOptions.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </FilterSelect>
+        <FilterCombobox
+          value={propertyFilter}
+          onChange={onPropertyChange}
+          options={propertyFilterOptions}
+        />
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
