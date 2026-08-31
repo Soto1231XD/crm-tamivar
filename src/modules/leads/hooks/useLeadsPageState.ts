@@ -119,13 +119,14 @@ export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }
     () => [
       ALL_PROPERTIES,
       ...Array.from(
-        new Set([
-          ...properties.map((property) => property.titulo?.trim() || 'Sin titulo'),
-          ...developments.map((development) => development.titulo?.trim() || 'Sin titulo'),
-        ]),
-      ),
+        new Set(
+          leads
+            .map((lead) => targetTitleByLeadId.get(lead.id))
+            .filter((title): title is string => !!title && title !== 'Sin referencia'),
+        ),
+      ).sort((a, b) => a.localeCompare(b, 'es')),
     ],
-    [developments, properties],
+    [leads, targetTitleByLeadId],
   );
 
   const filteredLeads = useMemo(() => {
@@ -140,7 +141,10 @@ export function useLeadsPageState({ userId, accessToken, canSeeInterno = false }
       const appointmentDate = getComparableDate(lead.fecha_cita);
 
       const matchesSearch =
-        query.length === 0 || fullName.includes(query) || phone.includes(query);
+        query.length === 0 ||
+        fullName.includes(query) ||
+        phone.includes(query) ||
+        targetTitle.toLowerCase().includes(query);
       const matchesResponsible =
         responsibleQuery.length === 0 || responsibleName.includes(responsibleQuery);
       const matchesStatus = statusFilter === ALL_STATES || (lead.estado ?? '').trim() === statusFilter;

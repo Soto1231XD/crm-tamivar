@@ -53,7 +53,7 @@ export function LeadFilters({
       searchSlot={
         <FilterSearchInput
           type="text"
-          placeholder="Buscar por nombre o teléfono"
+          placeholder="Buscar por nombre, teléfono o propiedad"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
         />
