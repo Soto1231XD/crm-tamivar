@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import type {
   BlogImageRecord,
   BlogRecord,
@@ -96,34 +96,6 @@ function Field({
   );
 }
 
-function TextArea({
-  label,
-  value,
-  onChange,
-  rows,
-  required = false,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  rows: number;
-  required?: boolean;
-  placeholder?: string;
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <FieldLabel required={required}>{label}</FieldLabel>
-      <textarea
-        value={value}
-        rows={rows}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className={`${fieldClassName} resize-none`}
-      />
-    </label>
-  );
-}
 
 export function ContentModal({
   isOpen,
@@ -133,16 +105,18 @@ export function ContentModal({
   onSubmit,
 }: ContentModalProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [pendingImages, setPendingImages] = useState<{ file: File; titulo: string }[]>([]);
   const [selectedArchivo, setSelectedArchivo] = useState<File | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const contenidoRef = useRef<HTMLTextAreaElement>(null);
+  const cursorPos = useRef<number>(0);
 
   useEffect(() => {
     if (!isOpen) return;
 
     setForm(getInitialForm(blog));
-    setSelectedFiles([]);
+    setPendingImages([]);
     setSelectedArchivo(null);
     setSubmitError("");
     setIsSubmitting(false);
@@ -158,23 +132,76 @@ export function ContentModal({
   function handleAddImages(event: ChangeEvent<HTMLInputElement>) {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
-      setSelectedFiles((current) => [...current, ...newFiles]);
+      setPendingImages((current) => [
+        ...current,
+        ...newFiles.map((f) => ({ file: f, titulo: f.name.replace(/\.[^/.]+$/, '') })),
+      ]);
     }
-
     event.target.value = "";
   }
 
   function handleRemoveImage(indexToRemove: number) {
-    setSelectedFiles((current) =>
+    setPendingImages((current) =>
       current.filter((_, index) => index !== indexToRemove),
     );
   }
 
-  const uploaderImages: NuevaImagen[] = selectedFiles.map((file, index) => ({
-    file,
-    titulo: file.name.replace(/\.[^/.]+$/, ''),
-    principal: index === 0,
+  function handleUpdateImageTitle(index: number, titulo: string) {
+    setPendingImages((current) =>
+      current.map((img, i) => (i === index ? { ...img, titulo } : img)),
+    );
+  }
+
+  function handleUpdateExistingImageTitle(index: number, titulo: string) {
+    setForm((current) => ({
+      ...current,
+      imagenes: current.imagenes.map((img, i) =>
+        i === index ? { ...img, titulo } : img,
+      ),
+    }));
+  }
+
+  const uploaderImages: NuevaImagen[] = pendingImages.map((img, index) => ({
+    file: img.file,
+    titulo: img.titulo,
+    principal: form.imagenes.length === 0 && index === 0,
   }));
+
+  // All images in display order: existing first, then new pending
+  const allImages = [
+    ...form.imagenes.map((img) => ({ titulo: img.titulo })),
+    ...pendingImages.map((img) => ({ titulo: img.titulo })),
+  ];
+  // Content images = all except the first one (hero), with their 1-based index
+  const contentImages = allImages.slice(1).map((img, i) => ({
+    titulo: img.titulo,
+    markerIndex: i + 2, // [imagen:2], [imagen:3], etc.
+  }));
+
+  function trackCursor() {
+    if (contenidoRef.current) {
+      cursorPos.current = contenidoRef.current.selectionStart;
+    }
+  }
+
+  function insertImageMarker(markerIndex: number) {
+    const marker = `[imagen:${markerIndex}]`;
+    const content = form.contenido;
+    const pos = cursorPos.current;
+    const before = content.slice(0, pos);
+    const after = content.slice(pos);
+    const sep = (s: string) => (s.length > 0 && !s.endsWith("\n\n") ? "\n\n" : "");
+    const newContent = before + sep(before) + marker + "\n\n" + after;
+    updateField("contenido", newContent);
+    const newPos = before.length + sep(before).length + marker.length + 2;
+    cursorPos.current = newPos;
+    setTimeout(() => {
+      if (contenidoRef.current) {
+        contenidoRef.current.focus();
+        contenidoRef.current.setSelectionRange(newPos, newPos);
+      }
+    }, 0);
+  }
 
   function removeExistingImage(indexToRemove: number) {
     setForm((current) => ({
@@ -217,14 +244,14 @@ export function ContentModal({
     if (
       mode === "edit" &&
       Object.keys(payload).length === 0 &&
-      selectedFiles.length === 0
+      pendingImages.length === 0
     ) {
       onClose();
       return;
     }
 
     setIsSubmitting(true);
-    const error = await onSubmit(payload, selectedFiles, selectedArchivo);
+    const error = await onSubmit(payload, pendingImages.map((p) => p.file), selectedArchivo);
     setIsSubmitting(false);
 
     if (error) {
@@ -339,18 +366,34 @@ export function ContentModal({
           </div>
 
           <div className="space-y-4">
-            <TextArea
-              label={form.tipo === "Capacitación" ? "Descripción (opcional)" : "Contenido"}
-              required={form.tipo !== "Capacitación"}
-              rows={form.tipo === "Capacitación" ? 4 : 8}
-              value={form.contenido}
-              onChange={(value) => updateField("contenido", value)}
-              placeholder={
-                form.tipo === "Capacitación"
-                  ? "Descripción breve de la capacitación (opcional)."
-                  : "Desarrolla aquí el contenido del articulo."
-              }
-            />
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-slate-700">
+                {form.tipo === "Capacitación" ? "Descripción (opcional)" : "Contenido"}
+                {form.tipo !== "Capacitación" && (
+                  <span className="ml-1 font-semibold text-red-600">*</span>
+                )}
+              </span>
+              <textarea
+                ref={contenidoRef}
+                value={form.contenido}
+                rows={form.tipo === "Capacitación" ? 4 : 14}
+                placeholder={
+                  form.tipo === "Capacitación"
+                    ? "Descripción breve de la capacitación (opcional)."
+                    : "Desarrolla aquí el contenido del articulo.\n\nUsa ## para subtítulos y **texto** para negritas."
+                }
+                onChange={(e) => updateField("contenido", e.target.value)}
+                onClick={trackCursor}
+                onKeyUp={trackCursor}
+                onSelect={trackCursor}
+                className={`${fieldClassName} resize-none`}
+              />
+              {form.tipo !== "Capacitación" && (
+                <p className="text-[11px] text-slate-400">
+                  Formato: <code className="rounded bg-slate-100 px-1">## Título</code> subtítulo · <code className="rounded bg-slate-100 px-1">**texto**</code> negrita · línea vacía = nuevo párrafo
+                </p>
+              )}
+            </label>
 
             {form.tipo === "Capacitación" && (
               <label className="flex flex-col gap-1.5">
@@ -389,17 +432,57 @@ export function ContentModal({
               </label>
             )}
 
-            <ImageGridUploader
-              label="Imágenes del articulo"
-              images={uploaderImages}
-              existingImages={form.imagenes as BlogImageRecord[]}
-              onAddImages={handleAddImages}
-              onRemoveImage={handleRemoveImage}
-              onRemoveExistingImage={removeExistingImage}
-              onUpdateImageTitle={() => undefined}
-              onUpdateExistingImageTitle={() => undefined}
-              onSetPrimaryImage={() => undefined}
-            />
+            <div className="space-y-3">
+              <ImageGridUploader
+                label="Imágenes del articulo"
+                images={uploaderImages}
+                existingImages={form.imagenes as BlogImageRecord[]}
+                onAddImages={handleAddImages}
+                onRemoveImage={handleRemoveImage}
+                onRemoveExistingImage={removeExistingImage}
+                onUpdateImageTitle={handleUpdateImageTitle}
+                onUpdateExistingImageTitle={handleUpdateExistingImageTitle}
+                onSetPrimaryImage={() => undefined}
+              />
+              <p className="text-[11px] text-slate-400">
+                El título de cada imagen se usa como texto alternativo (ALT) para SEO. La primera imagen es siempre la portada del artículo.
+              </p>
+
+              {form.tipo !== "Capacitación" && contentImages.length > 0 && (
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
+                  <p className="mb-1 text-xs font-semibold text-slate-700">
+                    Insertar imagen en el contenido
+                  </p>
+                  <p className="mb-3 text-[11px] text-slate-500">
+                    Haz clic en el área de texto donde quieras que aparezca la imagen y luego presiona el botón correspondiente.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {contentImages.map(({ titulo, markerIndex }) => (
+                      <div
+                        key={markerIndex}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                      >
+                        <div className="min-w-0 flex items-center gap-2">
+                          <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                            Imagen {markerIndex}
+                          </span>
+                          <span className="truncate text-[11px] text-slate-500">
+                            {titulo || "Sin título"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => insertImageMarker(markerIndex)}
+                          className="shrink-0 rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-[11px] font-semibold text-indigo-600 transition hover:bg-indigo-50"
+                        >
+                          Insertar aquí ↑
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
