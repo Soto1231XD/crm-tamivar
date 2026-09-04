@@ -31,7 +31,9 @@ export function LeadsPage() {
   const isSalesAdvisor =
     normalizedRoles.includes('asesor de ventas') || normalizedRoles.includes('asesor ventas');
   const canSeeInterno =
-    normalizedRoles.includes('super administrador') || normalizedRoles.includes('administrador');
+    normalizedRoles.includes('super administrador') ||
+    normalizedRoles.includes('administrador') ||
+    normalizedRoles.includes('coordinador de ventas');
 
   const {
     isLoading,
