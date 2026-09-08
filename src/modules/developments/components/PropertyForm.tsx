@@ -108,6 +108,7 @@ export function PropertyForm({
     handleImageTitleChange,
     handleExistingImageTitleChange,
     handleSetPrimaryImage,
+    handleReorderImages,
     handleSubmit,
   } = usePropertyForm(property, onSubmit);
 
@@ -641,6 +642,7 @@ export function PropertyForm({
               onRemoveExistingImage={handleRemoveExistingImage}
               onUpdateExistingImageTitle={handleExistingImageTitleChange}
               onSetPrimaryImage={handleSetPrimaryImage}
+              onReorderImages={handleReorderImages}
               error={errors.imagenes}
             />
             <FieldTextarea

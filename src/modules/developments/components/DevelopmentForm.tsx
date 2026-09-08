@@ -765,6 +765,29 @@ export function DevelopmentForm({
     });
   }
 
+  function handleReorderImages(newExisting: DevelopmentImage[], newImages: NewDevelopmentImage[]) {
+    setForm((prev) => ({
+      ...prev,
+      imagenes_existentes: newExisting,
+      imagenes: newImages,
+    }));
+  }
+
+  function handleReorderModelImages(
+    modelId: string,
+    newExisting: DevelopmentImage[],
+    newImages: NewDevelopmentImage[],
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      modelos: prev.modelos.map((model) =>
+        model.id !== modelId
+          ? model
+          : { ...model, imagenes_existentes: newExisting, imagenes: newImages },
+      ),
+    }));
+  }
+
   function handleModelInputChange(
     modelId: string,
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -1425,6 +1448,7 @@ export function DevelopmentForm({
               onUpdateImageTitle={handleImageTitleChange}
               onUpdateExistingImageTitle={handleExistingImageTitleChange}
               onSetPrimaryImage={handleSetPrimaryImage}
+              onReorderImages={handleReorderImages}
               error={errors.imagenes}
               label="Imágenes del desarrollo"
             />
@@ -1631,6 +1655,9 @@ export function DevelopmentForm({
                           handleSetPrimaryExistingModelImage(model.id, imageIndex);
                         }
                       }}
+                      onReorderImages={(newExisting, newImages) =>
+                        handleReorderModelImages(model.id, newExisting, newImages)
+                      }
                       error={errors[`modelo_${model.id}_imagenes`]}
                       label={`Imágenes del modelo ${index + 1}`}
                     />

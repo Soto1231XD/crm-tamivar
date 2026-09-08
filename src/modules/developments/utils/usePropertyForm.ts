@@ -639,6 +639,14 @@ export function usePropertyForm(
     });
   }
 
+  function handleReorderImages(newExisting: Imagen[], newImages: NuevaImagen[]) {
+    setForm((prev) => ({
+      ...prev,
+      imagenes_existentes: newExisting,
+      imagenes: newImages,
+    }));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError("");
@@ -840,6 +848,7 @@ export function usePropertyForm(
     handleImageTitleChange,
     handleExistingImageTitleChange,
     handleSetPrimaryImage,
+    handleReorderImages,
     handleSubmit,
   };
 }

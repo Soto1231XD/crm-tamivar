@@ -490,26 +490,29 @@ export const PropertyPdfDocument = ({
           )}
         </View>
 
-        {/* Descripción */}
-        <View style={styles.section} wrap={false}>
-          <Text style={styles.sectionTitle}>Descripción General</Text>
-          <Text style={styles.textParagraph}>
-            {stripEmojis(property.descripcion || "") ||
-              "Sin descripción proporcionada."}
-          </Text>
-        </View>
-
-        {/* Amenidades de la Zona */}
-        {property.amenidades && (
-          <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>
-              Amenidades de la Zona/Complejo
-            </Text>
+        {/* Descripción + Amenidades en 2 columnas */}
+        <View style={{ flexDirection: "row", gap: 12, marginBottom: 20 }} wrap={false}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionTitle}>Descripción General</Text>
             <Text style={styles.textParagraph}>
-              {stripEmojis(property.amenidades)}
+              {stripEmojis(property.descripcion || "") ||
+                "Sin descripción proporcionada."}
             </Text>
           </View>
-        )}
+          {property.amenidades ? (
+            <>
+              <View style={{ width: 1, backgroundColor: "#e2e8f0", alignSelf: "stretch" }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sectionTitle}>
+                  Amenidades de la Zona/Complejo
+                </Text>
+                <Text style={styles.textParagraph}>
+                  {stripEmojis(property.amenidades)}
+                </Text>
+              </View>
+            </>
+          ) : null}
+        </View>
 
         {/* Servicios e Instalaciones */}
         {property.servicios_instalaciones && (
