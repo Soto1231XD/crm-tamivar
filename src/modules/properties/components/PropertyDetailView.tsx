@@ -36,10 +36,16 @@ function buildMapsPreviewUrl(mapsLink: string | undefined, addressLabel: string)
     return `https://www.google.com/maps?output=embed&q=${coordMatch[1]},${coordMatch[2]}`;
   }
 
+  // 2. Formato /search/lat,+lon generado por URLs cortas expandidas (maps.app.goo.gl)
+  const searchCoordMatch = mapsLink.match(/\/search\/(-?\d+\.?\d+),\+?(-?\d+\.?\d+)/);
+  if (searchCoordMatch) {
+    return `https://www.google.com/maps?output=embed&q=${searchCoordMatch[1]},${searchCoordMatch[2]}`;
+  }
+
   try {
     const parsedUrl = new URL(mapsLink);
 
-    // 2. Parámetro ?q= (puede ser texto o coordenadas)
+    // 3. Parámetro ?q= (puede ser texto o coordenadas)
     const queryCandidate =
       parsedUrl.searchParams.get("q") ||
       parsedUrl.searchParams.get("query") ||
@@ -50,7 +56,7 @@ function buildMapsPreviewUrl(mapsLink: string | undefined, addressLabel: string)
       return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(queryCandidate.trim())}`;
     }
 
-    // 3. Nombre del lugar en la ruta /place/Nombre/ (último recurso antes del fallback)
+    // 4. Nombre del lugar en la ruta /place/Nombre/ (último recurso antes del fallback)
     const placeMatch = decodeURIComponent(parsedUrl.pathname).match(/\/place\/([^/]+)/i);
     if (placeMatch?.[1]) {
       return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(placeMatch[1].replace(/\+/g, " "))}`;
