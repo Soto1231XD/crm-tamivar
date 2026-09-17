@@ -173,6 +173,7 @@ const INITIAL_FORM_STATE: FormState = {
   pisos_tiene: "",
   servicios_instalaciones: "",
   amenidades: "",
+  recorrido_url: "",
   imagenes: [],
   imagenes_existentes: [],
 };
@@ -302,6 +303,7 @@ function toFormState(property?: PropertyRecord | null): FormState {
       property.pisos_tiene != null ? String(property.pisos_tiene) : "",
     servicios_instalaciones: property.servicios_instalaciones ?? "",
     amenidades: property.amenidades ?? "",
+    recorrido_url: property.recorrido_url ?? "",
     imagenes: [],
     imagenes_existentes: Array.isArray(property.imagenes)
       ? property.imagenes
@@ -336,6 +338,7 @@ function buildInitialPayload(
     pisos_tiene: property.pisos_tiene ?? undefined,
     servicios_instalaciones: property.servicios_instalaciones || undefined,
     amenidades: property.amenidades || undefined,
+    recorrido_url: property.recorrido_url || undefined,
     medidas: {
       terreno_m2: property.medidas?.terreno_m2,
       construccion_m2: isTerreno
@@ -745,6 +748,7 @@ export function usePropertyForm(
       pisos_tiene: form.pisos_tiene ? Number(form.pisos_tiene) : undefined,
       servicios_instalaciones: form.servicios_instalaciones.trim() || undefined,
       amenidades: form.amenidades.trim() || undefined,
+      recorrido_url: form.recorrido_url.trim() || undefined,
       medidas: {
         terreno_m2: parsedNumbers.terreno,
         construccion_m2: isTerreno ? 0 : parsedNumbers.construccion,

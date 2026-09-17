@@ -126,6 +126,7 @@ type DevelopmentFormState = {
   cuota_mantenimiento_tipo: "Fijo" | "Por metro cuadrado";
   servicios_instalaciones: string;
   amenidades: string;
+  recorrido_url: string;
   comentarios: string;
   imagenes_existentes: DevelopmentImage[];
   imagenes: NewDevelopmentImage[];
@@ -221,6 +222,7 @@ const INITIAL_FORM: DevelopmentFormState = {
   cuota_mantenimiento_tipo: "Fijo",
   servicios_instalaciones: "",
   amenidades: "",
+  recorrido_url: "",
   comentarios: "",
   imagenes_existentes: [],
   imagenes: [],
@@ -370,6 +372,7 @@ function mapDevelopmentToForm(
       development.caracteristicas?.cuota_mantenimiento_tipo ?? "Fijo",
     servicios_instalaciones: development.servicios_instalaciones ?? "",
     amenidades: development.amenidades ?? "",
+    recorrido_url: development.recorrido_url ?? "",
     comentarios: development.comentarios ?? "",
     imagenes_existentes: development.imagenes ?? [],
     imagenes: [],
@@ -1157,6 +1160,7 @@ export function DevelopmentForm({
       pisos_tiene: undefined,
       servicios_instalaciones: form.servicios_instalaciones.trim() || undefined,
       amenidades: form.amenidades.trim() || undefined,
+      recorrido_url: form.recorrido_url.trim() || undefined,
       enlace_direccion: form.enlace_direccion.trim() || undefined,
       medidas: {},
       direccion: {
@@ -1429,6 +1433,13 @@ export function DevelopmentForm({
               label="Servicios e instalaciones"
               name="servicios_instalaciones"
               value={form.servicios_instalaciones}
+              onChange={handleInputChange}
+              className="md:col-span-2"
+            />
+            <FieldInput
+              label="URL de recorrido virtual 360°"
+              name="recorrido_url"
+              value={form.recorrido_url}
               onChange={handleInputChange}
               className="md:col-span-2"
             />

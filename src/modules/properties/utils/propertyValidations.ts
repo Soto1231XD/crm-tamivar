@@ -62,6 +62,7 @@ export type FormState = {
   pisos_tiene: string;
   servicios_instalaciones: string;
   amenidades: string;
+  recorrido_url: string;
   imagenes: NuevaImagen[];
   imagenes_existentes: Imagen[];
 };

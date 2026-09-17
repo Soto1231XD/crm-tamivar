@@ -18,6 +18,7 @@ export interface PropertyRecord {
   servicios_instalaciones?: string;
   enlace_direccion: string;
   amenidades?: string;
+  recorrido_url?: string;
   medidas: Medidas;
   direccion: Direccion;
   caracteristicas?: Caracteristicas;

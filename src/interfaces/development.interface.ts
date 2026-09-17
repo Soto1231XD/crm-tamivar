@@ -19,6 +19,7 @@ export interface DevelopmentRecord {
   servicios_instalaciones?: string;
   enlace_direccion?: string;
   amenidades?: string;
+  recorrido_url?: string;
   medidas: DevelopmentMeasures;
   direccion: DevelopmentAddress;
   caracteristicas?: DevelopmentFeatures;

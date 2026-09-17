@@ -648,6 +648,13 @@ export function PropertyForm({
               onChange={handleInputChange}
               className="md:col-span-2"
             />
+            <FieldInput
+              label="URL de recorrido virtual 360°"
+              name="recorrido_url"
+              value={form.recorrido_url}
+              onChange={handleInputChange}
+              className="md:col-span-2"
+            />
             <ImageGridUploader
               images={form.imagenes}
               onAddImages={handleAddImages}
