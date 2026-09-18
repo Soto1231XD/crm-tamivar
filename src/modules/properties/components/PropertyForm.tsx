@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ChangeEvent, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import type {
   PropertyRecord,
@@ -12,6 +12,7 @@ import {
   PaymentMultiSelect,
   Toggle,
 } from "./FormFields";
+import { TourUploadField } from "@/components/ui/TourUploadField";
 import { usePropertyForm } from "../utils/usePropertyForm";
 import {
   OPERATION_OPTIONS,
@@ -648,11 +649,13 @@ export function PropertyForm({
               onChange={handleInputChange}
               className="md:col-span-2"
             />
-            <FieldInput
-              label="URL de recorrido virtual 360°"
-              name="recorrido_url"
+            <TourUploadField
               value={form.recorrido_url}
-              onChange={handleInputChange}
+              onChange={(url) =>
+                handleInputChange({
+                  target: { name: "recorrido_url", value: url },
+                } as ChangeEvent<HTMLInputElement>)
+              }
               className="md:col-span-2"
             />
             <ImageGridUploader

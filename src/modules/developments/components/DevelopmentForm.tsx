@@ -32,6 +32,7 @@ import {
   STATUS_OPTIONS,
 } from "../utils/property-constants";
 import { validatePropertyImageSelection } from "../utils/propertyValidations";
+import { TourUploadField } from "@/components/ui/TourUploadField";
 
 type DevelopmentFormProps = {
   development?: DevelopmentRecord | null;
@@ -1436,11 +1437,13 @@ export function DevelopmentForm({
               onChange={handleInputChange}
               className="md:col-span-2"
             />
-            <FieldInput
-              label="URL de recorrido virtual 360°"
-              name="recorrido_url"
+            <TourUploadField
               value={form.recorrido_url}
-              onChange={handleInputChange}
+              onChange={(url) =>
+                handleInputChange({
+                  target: { name: "recorrido_url", value: url },
+                } as ChangeEvent<HTMLInputElement>)
+              }
               className="md:col-span-2"
             />
             <FieldTextarea

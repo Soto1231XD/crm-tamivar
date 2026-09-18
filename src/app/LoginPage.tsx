@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent, KeyboardEvent, ClipboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDefaultDashboardPath } from "@/shared/auth/navigation.util";
 import fondoLogin from "@/assets/images/Fondo_login.jpg";
@@ -34,6 +34,8 @@ export function LoginPage() {
   const [correoElectronico, setCorreoElectronico] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [codigo, setCodigo] = useState("");
+  const [digits, setDigits] = useState<string[]>(Array(6).fill(""));
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [info, setInfo] = useState("");
   const [error, setError] = useState("");
@@ -168,6 +170,32 @@ export function LoginPage() {
     }
   };
 
+  function handleOtpChange(index: number, value: string) {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[index] = digit;
+    setDigits(next);
+    setCodigo(next.join(""));
+    setError("");
+    if (digit && index < 5) otpRefs.current[index + 1]?.focus();
+  }
+
+  function handleOtpKeyDown(index: number, e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace" && !digits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handleOtpPaste(e: ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const next = Array.from({ length: 6 }, (_, i) => pasted[i] ?? "");
+    setDigits(next);
+    setCodigo(next.join(""));
+    const focusIdx = Math.min(pasted.length, 5);
+    otpRefs.current[focusIdx]?.focus();
+  }
+
   return (
     <div
       className={[
@@ -238,12 +266,16 @@ export function LoginPage() {
         </div>
 
         <div className="relative mt-16 w-full max-w-sm text-center sm:mt-18 lg:mt-0 lg:pt-12 lg:text-left">
-          <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">
-            Iniciar sesión
-          </h1>
-          <p className="mt-1.5 text-sm text-slate-600">
-            Ingresa para acceder al CRM TAMIVAR.
-          </p>
+          {!challengeId && (
+            <>
+              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">
+                Iniciar sesión
+              </h1>
+              <p className="mt-1.5 text-sm text-slate-600">
+                Ingresa para acceder al CRM TAMIVAR.
+              </p>
+            </>
+          )}
 
           {!challengeId ? (
             <form className="mt-6 space-y-4" onSubmit={handleLogin}>
@@ -282,30 +314,67 @@ export function LoginPage() {
               </button>
             </form>
           ) : (
-            <form className="mt-6 space-y-4" onSubmit={handleVerifyTwoFa}>
-              <label className="block text-left">
-                <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Código 2FA
-                </span>
-                <input
-                  type="text"
-                  required
-                  minLength={6}
-                  maxLength={6}
-                  value={codigo}
-                  onChange={(event) =>
-                    setCodigo(event.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
-                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none ring-brand-700 transition focus:ring"
-                />
-              </label>
+            <form className="mt-8" onSubmit={handleVerifyTwoFa}>
+              {/* Título centrado */}
+              <div className="mb-7 text-center">
+                <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">
+                  Verificación en dos pasos
+                </h2>
+                <p className="mt-2 text-sm text-slate-500">
+                  {info || "Ingresa el código de 6 dígitos enviado a tu correo."}
+                </p>
+              </div>
+
+              {/* Cajas OTP */}
+              <div className="flex items-center justify-center gap-2.5 lg:justify-start">
+                {digits.map((digit, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => { otpRefs.current[i] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={1}
+                    value={digit}
+                    autoFocus={i === 0}
+                    autoComplete="one-time-code"
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    onPaste={i === 0 ? handleOtpPaste : undefined}
+                    className={[
+                      "h-14 w-11 rounded-2xl border-2 text-center text-xl font-black outline-none transition-all duration-150 select-none sm:w-12",
+                      error
+                        ? "border-red-400 bg-red-50 text-red-700"
+                        : digit
+                          ? "border-brand-500 bg-white text-slate-900 shadow-sm"
+                          : "border-slate-200 bg-slate-50 text-slate-900 focus:border-brand-500 focus:bg-white focus:shadow-sm focus:ring-2 focus:ring-brand-200",
+                    ].join(" ")}
+                  />
+                ))}
+              </div>
 
               <button
                 type="submit"
-                disabled={isLoading || isResettingApp}
-                className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isLoading || isResettingApp || codigo.length < 6}
+                className="mt-7 w-full rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isLoading ? "Validando..." : "Validar codigo"}
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Validando...
+                  </span>
+                ) : "Verificar código"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setChallengeId(null); setDigits(Array(6).fill("")); setCodigo(""); setError(""); setInfo(""); }}
+                className="mt-3 w-full text-center text-sm text-slate-400 transition hover:text-slate-700"
+              >
+                ← Volver al inicio de sesión
               </button>
             </form>
           )}
@@ -331,7 +400,7 @@ export function LoginPage() {
             </div>
           ) : null}
 
-          {info ? (
+          {info && !challengeId ? (
             <p className="mt-4 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
               {info}
             </p>
