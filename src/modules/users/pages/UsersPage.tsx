@@ -155,8 +155,9 @@ export function UsersPage() {
               const isSuperAdmin = roles.some((role) => isSuperAdminRole(role));
 
               const isCurrentUser = sessionUser?.id === user.id;
+              const sessionUserIsSuperAdmin = (sessionUser?.roles ?? []).some((role) => isSuperAdminRole(role));
               const canEditThisUser =
-                canEdit && (!isSuperAdmin || isCurrentUser);
+                canEdit && (!isSuperAdmin || isCurrentUser || sessionUserIsSuperAdmin);
               const canToggleThisUser =
                 canDelete && !isSuperAdmin && !isCurrentUser;
 
