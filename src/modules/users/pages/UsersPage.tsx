@@ -159,7 +159,7 @@ export function UsersPage() {
               const canEditThisUser =
                 canEdit && (!isSuperAdmin || isCurrentUser || sessionUserIsSuperAdmin);
               const canToggleThisUser =
-                canDelete && !isSuperAdmin && !isCurrentUser;
+                canDelete && (!isSuperAdmin || sessionUserIsSuperAdmin) && !isCurrentUser;
 
               return (
                 <article
