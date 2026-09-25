@@ -497,6 +497,7 @@ export function getActionLabel(action?: string | null): string {
   if (normalized === "editar") return "Edición";
   if (normalized === "actualizar") return "Actualización";
   if (normalized === "eliminar") return "Eliminación";
+  if (normalized === "login") return "Inicio de sesión";
 
   return normalizeMovementText(action);
 }

@@ -25,6 +25,7 @@ export function MovementsPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const [selectedModule, setSelectedModule] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -33,7 +34,7 @@ export function MovementsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedDate]);
+  }, [search, selectedDate, selectedModule]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -47,6 +48,7 @@ export function MovementsPage() {
           const dateRange = buildDateRange(selectedDate);
           const response = await getMovements({
             search: search.trim() || undefined,
+            modulo: selectedModule || undefined,
             ...dateRange,
             page: currentPage,
             limit: PAGE_SIZE,
@@ -82,13 +84,14 @@ export function MovementsPage() {
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [currentPage, search, selectedDate]);
+  }, [currentPage, search, selectedDate, selectedModule]);
 
   async function handleDownloadMovements() {
     try {
       const dateRange = buildDateRange(selectedDate);
       const response = await getMovements({
         search: search.trim() || undefined,
+        modulo: selectedModule || undefined,
         ...dateRange,
         page: 1,
         limit: Math.max(totalItems, PAGE_SIZE),
@@ -215,9 +218,11 @@ export function MovementsPage() {
       <MovementsFilters
         search={search}
         selectedDate={selectedDate}
+        selectedModule={selectedModule}
         hasResults={totalItems > 0}
         onSearchChange={setSearch}
         onDateChange={setSelectedDate}
+        onModuleChange={setSelectedModule}
         onDownload={handleDownloadMovements}
       />
 
