@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useState, useRef, type ChangeEvent, type DragEvent } from "react";
 import type { Imagen, NuevaImagen } from "@/interfaces/property.interface";
 import {
   MAX_PROPERTY_IMAGES,
@@ -43,7 +43,7 @@ const TITLE_INPUT =
 type CardDragProps = {
   isDragging: boolean;
   isDropTarget: boolean;
-  onDragStart: () => void;
+  onDragStart: (e: DragEvent<HTMLDivElement>) => void;
   onDragOver: (e: DragEvent<HTMLDivElement>) => void;
   onDrop: (e: DragEvent<HTMLDivElement>) => void;
   onDragEnd: () => void;
@@ -246,29 +246,68 @@ export function ImageGridUploader({
   label = "Imágenes de la propiedad",
   error,
 }: ImageGridUploaderProps) {
-  // useRef for the actual drag source — avoids stale-closure in drop handler
-  // and prevents the synchronous setState from cancelling the browser drag gesture
-  const dragIndexRef = useRef<number | null>(null);
+  // dropTargetRef avoids triggering a re-render on every dragover pixel
   const dropTargetRef = useRef<number | null>(null);
   const [visualDragIndex, setVisualDragIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
-  const unified = useMemo<UnifiedItem[]>(
-    () => [
-      ...existingImages.map((img, idx) => ({ kind: "existing" as const, origIdx: idx, img })),
-      ...images.map((img, idx) => ({ kind: "new" as const, origIdx: idx, img })),
-    ],
-    [existingImages, images],
-  );
+  // unifiedItems is the source of truth for display order — stored as state so
+  // cross-type ordering (existing interleaved with new) survives parent re-renders.
+  const [unifiedItems, setUnifiedItems] = useState<UnifiedItem[]>(() => [
+    ...existingImages.map((img, idx) => ({ kind: "existing" as const, origIdx: idx, img })),
+    ...images.map((img, idx) => ({ kind: "new" as const, origIdx: idx, img })),
+  ]);
 
-  function handleDragStart(index: number) {
-    dragIndexRef.current = index;
-    // Defer visual update so the browser can capture the drag snapshot first
+  // Reconcile when the parent adds or removes images (keeps current display order).
+  useEffect(() => {
+    setUnifiedItems((prev) => {
+      const existingByUrl = new Map(
+        existingImages.map((img, idx) => [img.url ?? `__idx_${idx}`, { img, idx }]),
+      );
+      const newByKey = new Map(
+        images.map((img, idx) => [`${img.file.name}__${img.file.size}`, { img, idx }]),
+      );
+
+      const kept: UnifiedItem[] = [];
+      for (const item of prev) {
+        if (item.kind === "existing") {
+          const key = item.img.url ?? `__idx_${item.origIdx}`;
+          const entry = existingByUrl.get(key);
+          if (entry) {
+            kept.push({ kind: "existing", origIdx: entry.idx, img: entry.img });
+            existingByUrl.delete(key);
+          }
+        } else {
+          const key = `${item.img.file.name}__${item.img.file.size}`;
+          const entry = newByKey.get(key);
+          if (entry) {
+            kept.push({ kind: "new", origIdx: entry.idx, img: entry.img });
+            newByKey.delete(key);
+          }
+        }
+      }
+      // Append images that are new to props (just added by the user)
+      for (const [, entry] of existingByUrl) {
+        kept.push({ kind: "existing", origIdx: entry.idx, img: entry.img });
+      }
+      for (const [, entry] of newByKey) {
+        kept.push({ kind: "new", origIdx: entry.idx, img: entry.img });
+      }
+
+      return kept;
+    });
+  }, [existingImages, images]);
+
+  function handleDragStart(e: DragEvent<HTMLDivElement>, index: number) {
+    e.dataTransfer.setData("text/plain", String(index));
+    e.dataTransfer.effectAllowed = "move";
+    // Defer visual update so the browser captures the drag snapshot before opacity changes
     setTimeout(() => setVisualDragIndex(index), 0);
   }
 
   function handleDragOver(e: DragEvent<HTMLDivElement>, index: number) {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
     if (index !== dropTargetRef.current) {
       dropTargetRef.current = index;
       setDropTargetIndex(index);
@@ -277,15 +316,15 @@ export function ImageGridUploader({
 
   function handleDrop(e: DragEvent<HTMLDivElement>, toIndex: number) {
     e.preventDefault();
-    const fromIndex = dragIndexRef.current;
-    dragIndexRef.current = null;
+    const raw = e.dataTransfer.getData("text/plain");
+    const fromIndex = raw !== "" ? parseInt(raw, 10) : null;
     dropTargetRef.current = null;
     setVisualDragIndex(null);
     setDropTargetIndex(null);
 
-    if (fromIndex === null || fromIndex === toIndex) return;
+    if (fromIndex === null || isNaN(fromIndex) || fromIndex === toIndex) return;
 
-    const next = [...unified];
+    const next = [...unifiedItems];
     const [dragged] = next.splice(fromIndex, 1);
     next.splice(toIndex, 0, dragged);
 
@@ -296,11 +335,11 @@ export function ImageGridUploader({
       .filter((item): item is Extract<UnifiedItem, { kind: "new" }> => item.kind === "new")
       .map((item) => item.img);
 
+    setUnifiedItems(next);
     onReorderImages?.(newExisting, newImages);
   }
 
   function handleDragEnd() {
-    dragIndexRef.current = null;
     dropTargetRef.current = null;
     setVisualDragIndex(null);
     setDropTargetIndex(null);
@@ -359,7 +398,7 @@ export function ImageGridUploader({
         </label>
       </div>
 
-      {unified.length > 0 && (
+      {unifiedItems.length > 0 && (
         <>
           {onReorderImages && (
             <p className="text-center text-xs text-slate-400">
@@ -367,7 +406,7 @@ export function ImageGridUploader({
             </p>
           )}
           <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {unified.map((item, unifiedIndex) => {
+            {unifiedItems.map((item, unifiedIndex) => {
               const position = unifiedIndex + 1;
               const isDragging = visualDragIndex === unifiedIndex;
               const isDropTarget =
@@ -387,7 +426,7 @@ export function ImageGridUploader({
                     onSetPrimary={onSetPrimaryImage}
                     isDragging={isDragging}
                     isDropTarget={isDropTarget}
-                    onDragStart={() => handleDragStart(unifiedIndex)}
+                    onDragStart={(e) => handleDragStart(e, unifiedIndex)}
                     onDragOver={(e) => handleDragOver(e, unifiedIndex)}
                     onDrop={(e) => handleDrop(e, unifiedIndex)}
                     onDragEnd={handleDragEnd}
@@ -406,7 +445,7 @@ export function ImageGridUploader({
                   onSetPrimary={onSetPrimaryImage}
                   isDragging={isDragging}
                   isDropTarget={isDropTarget}
-                  onDragStart={() => handleDragStart(unifiedIndex)}
+                  onDragStart={(e) => handleDragStart(e, unifiedIndex)}
                   onDragOver={(e) => handleDragOver(e, unifiedIndex)}
                   onDrop={(e) => handleDrop(e, unifiedIndex)}
                   onDragEnd={handleDragEnd}
