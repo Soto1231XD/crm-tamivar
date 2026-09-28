@@ -19,9 +19,12 @@ import { LEAD_LEADS_STATUS_OPTIONS } from '../components/leadLeads.shared';
 type UseLeadLeadsPageStateParams = {
   userId?: number | null;
   accessToken?: string | null;
+  restrictToUserId?: number | null;
+  leadsType?: 'internos' | 'externos';
+  myLeadsOnly?: boolean;
 };
 
-export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageStateParams) {
+export function useLeadLeadsPageState({ userId, accessToken, restrictToUserId, leadsType, myLeadsOnly = false }: UseLeadLeadsPageStateParams) {
   const {
     leads,
     isLoading,
@@ -104,8 +107,20 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
           sellerFilter.length === 0 || String(lead.vendedor_asignado_id ?? '') === sellerFilter;
         const matchesLeadDateFrom = leadDateFromFilter.length === 0 || (leadDate.length > 0 && leadDate >= leadDateFromFilter);
         const matchesLeadDateTo = leadDateToFilter.length === 0 || (leadDate.length > 0 && leadDate <= leadDateToFilter);
+        const matchesRestriction =
+          restrictToUserId == null || lead.vendedor_asignado_id === restrictToUserId;
+        const isExterno =
+          lead.creado_por_id != null && lead.creado_por_id === lead.vendedor_asignado_id;
+        const matchesType =
+          leadsType == null
+            ? true
+            : leadsType === 'externos'
+              ? isExterno
+              : !isExterno;
+        const matchesMyLeads =
+          !myLeadsOnly || lead.vendedor_asignado_id === userId;
 
-        return matchesSearch && matchesStatus && matchesSeller && matchesLeadDateFrom && matchesLeadDateTo;
+        return matchesSearch && matchesStatus && matchesSeller && matchesLeadDateFrom && matchesLeadDateTo && matchesRestriction && matchesType && matchesMyLeads;
       })
       .sort((left, right) => {
         const leftIsCancelled = (left.estado ?? '').trim().toLowerCase() === 'cancelado';
@@ -117,7 +132,7 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
 
         return new Date(right.creado_en ?? 0).getTime() - new Date(left.creado_en ?? 0).getTime();
       });
-  }, [leadDateFromFilter, leadDateToFilter, leads, search, sellerFilter, statusFilter]);
+  }, [leadDateFromFilter, leadDateToFilter, leads, leadsType, myLeadsOnly, restrictToUserId, search, sellerFilter, statusFilter, userId]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 
@@ -285,6 +300,32 @@ export function useLeadLeadsPageState({ userId, accessToken }: UseLeadLeadsPageS
 
     try {
       await editLeadLead(leadId, { [field]: normalizedValue });
+
+      // editLeadLead replaces the lead with the server response, which may not
+      // include the vendedor_asignado relation. Re-apply it from the local users list.
+      if (field === 'vendedor_asignado_id') {
+        const assignedId = Number(normalizedValue);
+        const assignedUser = users.find((user) => user.id === assignedId);
+        useLeadLeadsStore.setState((state) => ({
+          leads: state.leads.map((lead) => {
+            if (lead.id !== leadId) return lead;
+            return {
+              ...lead,
+              vendedor_asignado: assignedUser
+                ? {
+                    id: assignedUser.id,
+                    nombres: assignedUser.nombres,
+                    apellido_paterno: assignedUser.apellido_paterno,
+                    apellido_materno: assignedUser.apellido_materno,
+                    correo_electronico: assignedUser.correo_electronico,
+                    foto_url: assignedUser.foto_url,
+                  }
+                : null,
+            };
+          }),
+        }));
+      }
+
       const fieldLabel =
         field === 'estado'
           ? 'estatus'

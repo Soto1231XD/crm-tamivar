@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
@@ -21,11 +22,13 @@ export function LeadLeadsPage() {
 
   const canCreate = can('registros_leads', 'crear');
   const canEdit = can('registros_leads', 'actualizar');
-
   const isSalesAdvisor =
     extractUserRoles(user ?? { rol: null, roles: [] }).some(
       (role) => normalizeRoleName(role) === 'asesor de ventas',
-    ) && !canEdit;
+    );
+  const [activeTab, setActiveTab] = useState<'todos' | 'mis_leads' | 'internos' | 'externos'>(
+    isSalesAdvisor ? 'internos' : 'todos',
+  );
   const canDelete = isSuperAdmin && can('registros_leads', 'eliminar');
   const canQuickEditStatus = canEdit || isSalesAdvisor;
   const canQuickEditComments = canEdit || isSalesAdvisor;
@@ -68,6 +71,9 @@ export function LeadLeadsPage() {
   } = useLeadLeadsPageState({
     userId: user?.id,
     accessToken,
+    restrictToUserId: isSalesAdvisor ? (user?.id ?? null) : null,
+    leadsType: isSalesAdvisor ? (activeTab as 'internos' | 'externos') : undefined,
+    myLeadsOnly: !isSalesAdvisor && activeTab === 'mis_leads',
   });
 
   return (
@@ -101,6 +107,7 @@ export function LeadLeadsPage() {
         statusOptions={statusOptions}
         sellerOptions={userChoices}
         hasResults={filteredLeads.length > 0}
+        hideSellerFilter={isSalesAdvisor}
         onSearchChange={setSearch}
         onStatusChange={setStatusFilter}
         onSellerChange={setSellerFilter}
@@ -108,6 +115,56 @@ export function LeadLeadsPage() {
         onLeadDateToChange={setLeadDateToFilter}
         onDownload={handleDownloadFilteredLeads}
       />
+
+      {isSalesAdvisor ? (
+        <div className="space-y-2">
+          <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm w-fit">
+            {([
+              { key: 'internos', label: 'Internos' },
+              { key: 'externos', label: 'Externos' },
+            ] as const).map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={[
+                  'rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
+                  activeTab === key
+                    ? 'bg-[#312C85] text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100',
+                ].join(' ')}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500">
+            <span className="font-semibold text-slate-600">Internos:</span> leads asignados por la oficina.&nbsp;&nbsp;
+            <span className="font-semibold text-slate-600">Externos:</span> leads conseguidos por ti mismo.
+          </p>
+        </div>
+      ) : (
+        <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm w-fit">
+          {([
+            { key: 'todos', label: 'Todos los leads' },
+            { key: 'mis_leads', label: 'Mis leads' },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={[
+                'rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
+                activeTab === key
+                  ? 'bg-[#312C85] text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100',
+              ].join(' ')}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <section className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <LeadLeadsTable
@@ -120,7 +177,7 @@ export function LeadLeadsPage() {
           canEditPriority={canQuickEditPriority}
           canEditAssignedSeller={canQuickEditAssignedSeller}
           canEditComments={canQuickEditComments}
-          canEdit={canEdit && !isSalesCoordinator && !isSalesAdvisor}
+          canEdit={canEdit && !isSalesCoordinator}
           canDelete={canDelete}
           userChoices={userChoices}
           onQuickChange={handleQuickLeadChange}
@@ -144,10 +201,11 @@ export function LeadLeadsPage() {
           onClose={() => setIsCreateModalOpen(false)}
           onCreate={handleCreateLead}
           userOptions={userChoices}
+          autoAssignUserId={isSalesAdvisor ? (user?.id ?? undefined) : undefined}
         />
       ) : null}
 
-      {canEdit && !isSalesCoordinator && !isSalesAdvisor ? (
+      {canEdit && !isSalesCoordinator ? (
         <EditLeadLeadModal
           isOpen={Boolean(editingLead)}
           lead={editingLead}

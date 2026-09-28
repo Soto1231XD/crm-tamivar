@@ -195,9 +195,11 @@ export function toLeadLeadDefaultValues(lead: LeadRecord | null): LeadLeadFormIn
     metodo_pago: parseLeadPaymentMethods(lead.metodo_pago),
     caracteristicas: lead.caracteristicas ?? '',
     origen_lead: lead.origen_lead ?? '',
-    fecha_registro: lead.creado_en
-      ? new Date(lead.creado_en).toISOString().slice(0, 10)
-      : '',
+    fecha_registro: lead.fecha_registro
+      ? new Date(lead.fecha_registro).toISOString().slice(0, 10)
+      : lead.creado_en
+        ? new Date(lead.creado_en).toISOString().slice(0, 10)
+        : '',
   };
 }
 

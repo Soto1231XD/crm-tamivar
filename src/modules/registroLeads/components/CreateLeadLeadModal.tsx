@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CreateLeadPayload } from '@/interfaces/lead.interface';
@@ -33,6 +33,7 @@ type CreateLeadLeadModalProps = {
   onClose: () => void;
   onCreate: (payload: Omit<CreateLeadPayload, 'creado_por_id'>) => Promise<string | null>;
   userOptions: UserOption[];
+  autoAssignUserId?: number;
 };
 
 
@@ -41,6 +42,7 @@ export function CreateLeadLeadModal({
   onClose,
   onCreate,
   userOptions,
+  autoAssignUserId,
 }: CreateLeadLeadModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -55,8 +57,21 @@ export function CreateLeadLeadModal({
     defaultValues: { ...INITIAL_LEAD_LEAD_FORM, fecha_registro: new Date().toISOString().slice(0, 10) },
   });
 
+  useEffect(() => {
+    if (!isOpen) return;
+    reset({
+      ...INITIAL_LEAD_LEAD_FORM,
+      fecha_registro: new Date().toISOString().slice(0, 10),
+      vendedor_asignado_id: autoAssignUserId ? String(autoAssignUserId) : '',
+    });
+  }, [isOpen, autoAssignUserId, reset]);
+
   function resetAndClose() {
-    reset({ ...INITIAL_LEAD_LEAD_FORM, fecha_registro: new Date().toISOString().slice(0, 10) });
+    reset({
+      ...INITIAL_LEAD_LEAD_FORM,
+      fecha_registro: new Date().toISOString().slice(0, 10),
+      vendedor_asignado_id: autoAssignUserId ? String(autoAssignUserId) : '',
+    });
     setIsSubmitting(false);
     setSubmitError('');
     onClose();
@@ -196,18 +211,20 @@ export function CreateLeadLeadModal({
               ) : null}
             </label>
 
-            <label className="flex flex-col gap-1.5">
-              <LeadLeadFieldLabel required>Vendedor asignado</LeadLeadFieldLabel>
-              <select {...register('vendedor_asignado_id')} className={leadLeadFieldClassName}>
-                <option value="">Selecciona un usuario</option>
-                {userOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {errors.vendedor_asignado_id ? <span className="text-xs text-red-600">{errors.vendedor_asignado_id.message}</span> : null}
-            </label>
+            {!autoAssignUserId && (
+              <label className="flex flex-col gap-1.5">
+                <LeadLeadFieldLabel required>Vendedor asignado</LeadLeadFieldLabel>
+                <select {...register('vendedor_asignado_id')} className={leadLeadFieldClassName}>
+                  <option value="">Selecciona un usuario</option>
+                  {userOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.vendedor_asignado_id ? <span className="text-xs text-red-600">{errors.vendedor_asignado_id.message}</span> : null}
+              </label>
+            )}
 
             <label className="flex flex-col gap-1.5">
               <LeadLeadFieldLabel>Fecha de registro</LeadLeadFieldLabel>

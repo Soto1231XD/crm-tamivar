@@ -56,6 +56,7 @@ export interface LeadRecord {
   metodo_pago?: string | null;
   caracteristicas?: string | null;
   origen_lead?: string | null;
+  fecha_registro?: string | null;
   creador?: LeadCreatorRecord | null;
   vendedor_asignado?: LeadCreatorRecord | null;
   propiedad?: LeadPropertyRecord | null;

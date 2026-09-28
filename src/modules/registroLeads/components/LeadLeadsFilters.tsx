@@ -10,6 +10,7 @@ type LeadLeadsFiltersProps = {
   statusOptions: string[];
   sellerOptions: Array<{ id: number; label: string }>;
   hasResults: boolean;
+  hideSellerFilter?: boolean;
   onSearchChange: (value: string) => void;
   onStatusChange: (value: string) => void;
   onSellerChange: (value: string) => void;
@@ -27,6 +28,7 @@ export function LeadLeadsFilters({
   statusOptions,
   sellerOptions,
   hasResults,
+  hideSellerFilter = false,
   onSearchChange,
   onStatusChange,
   onSellerChange,
@@ -34,9 +36,13 @@ export function LeadLeadsFilters({
   onLeadDateToChange,
   onDownload,
 }: LeadLeadsFiltersProps) {
+  const gridCols = hideSellerFilter
+    ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]'
+    : 'lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]';
+
   return (
     <FilterCard description="Busca por nombre o teléfono, filtra por estatus o vendedor y usa el rango de fechas para ubicar oportunidades más rápido.">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]">
+      <div className={`grid gap-3 ${gridCols}`}>
         <FilterSearchInput
           type="text"
           placeholder="Buscar por nombre o teléfono"
@@ -52,14 +58,16 @@ export function LeadLeadsFilters({
           ))}
         </FilterSelect>
 
-        <FilterSelect value={sellerFilter} onChange={(event) => onSellerChange(event.target.value)}>
-          <option value="">Todos los vendedores</option>
-          {sellerOptions.map((option) => (
-            <option key={option.id} value={String(option.id)}>
-              {option.label}
-            </option>
-          ))}
-        </FilterSelect>
+        {!hideSellerFilter && (
+          <FilterSelect value={sellerFilter} onChange={(event) => onSellerChange(event.target.value)}>
+            <option value="">Todos los vendedores</option>
+            {sellerOptions.map((option) => (
+              <option key={option.id} value={String(option.id)}>
+                {option.label}
+              </option>
+            ))}
+          </FilterSelect>
+        )}
 
         <FilterDateInput
           type="date"
