@@ -222,11 +222,17 @@ export function CarteraClientesPage() {
 
       {/* Cumpleaños próximos */}
       {cumplePróximos.length > 0 && (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
-            Cumpleaños próximos (30 días)
-          </p>
-          <div className="flex flex-wrap gap-2">
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 bg-orange-500 px-5 py-3">
+            <span className="text-base">🎂</span>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-white">
+              Cumpleaños próximos — próximos 30 días
+            </p>
+            <span className="ml-auto rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold text-white">
+              {cumplePróximos.length}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-3 p-4">
             {cumplePróximos.map((c) => (
               <button
                 key={c.id}
@@ -236,15 +242,19 @@ export function CarteraClientesPage() {
                     ? setBdayModal({ open: true, item: c })
                     : undefined
                 }
-                className="flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-sm transition hover:shadow-md dark:border-amber-800 dark:bg-amber-900/30"
+                className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:shadow-md"
               >
-                <span className="text-lg">🎂</span>
-                <span>
-                  <span className="font-semibold text-[var(--crm-text)]">{c.nombre}</span>
-                  <span className="ml-1.5 text-xs text-amber-600">{formatCumple(c.cumple_dia, c.cumple_mes)}</span>
-                </span>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-base">
+                  🎂
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-semibold text-slate-800 leading-tight">{c.nombre}</span>
+                  <span className="text-xs font-medium text-orange-500">{formatCumple(c.cumple_dia, c.cumple_mes)}</span>
+                </div>
                 {c.telefono && canMessage && (
-                  <span className="ml-1 text-xs font-medium text-green-600">Enviar →</span>
+                  <span className="ml-1 rounded-lg bg-[#25D366] px-2.5 py-1 text-xs font-semibold text-white">
+                    Enviar
+                  </span>
                 )}
               </button>
             ))}

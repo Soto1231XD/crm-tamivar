@@ -3,12 +3,23 @@ import { AppModal } from "@/components/ui/AppModal";
 import type { ClienteCartera } from "@/interfaces/cartera-clientes.interface";
 import { sendBirthday } from "../services/whatsapp.api";
 
+const INPUT = "w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10";
+const LABEL = "block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1.5";
+
+const MENSAJE_DEFAULT = `De parte de todo el equipo de Tamivar Inmobiliaria, te deseamos un día lleno de alegría y muchos éxitos.
+
+Ha sido un placer acompañarte en tu camino inmobiliario. ¡Esperamos seguir siendo parte de tus proyectos y sueños!
+
+Con cariño,
+🏠 Equipo Tamivar Inmobiliaria`;
+
 interface Props {
   cliente: ClienteCartera;
   onClose: () => void;
 }
 
 export function BirthdayWhatsappModal({ cliente, onClose }: Props) {
+  const [mensaje, setMensaje] = useState(MENSAJE_DEFAULT);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +29,7 @@ export function BirthdayWhatsappModal({ cliente, onClose }: Props) {
     setSending(true);
     setError(null);
     try {
-      await sendBirthday(cliente.telefono, cliente.nombre);
+      await sendBirthday(cliente.telefono, cliente.nombre, mensaje);
       setSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al enviar el mensaje");
@@ -54,21 +65,36 @@ export function BirthdayWhatsappModal({ cliente, onClose }: Props) {
       onClose={onClose}
       title="Enviar felicitación de cumpleaños"
       subtitle={`Para ${cliente.nombre} · ${cliente.telefono}`}
-      maxWidthClassName="max-w-sm"
+      maxWidthClassName="max-w-lg"
+      panelClassName="max-h-[90vh]"
     >
       <div className="space-y-4">
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
-          <p className="font-semibold mb-1">Se enviará el mensaje:</p>
-          <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-            🎂 ¡Feliz cumpleaños, <span className="font-semibold">{cliente.nombre}</span>! De parte
-            de todo el equipo de Tamivar Inmobiliaria...
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-xs font-semibold text-amber-700 mb-2">Vista previa del mensaje:</p>
+          <p className="text-xs leading-relaxed text-slate-700 whitespace-pre-line">
+            <span className="font-semibold">{"🎂 ¡Feliz cumpleaños, "}{cliente.nombre}{"!"}</span>
+            {"\n\n"}
+            {mensaje || "…"}
+          </p>
+        </div>
+
+        <div>
+          <label className={LABEL}>Mensaje personalizado</label>
+          <textarea
+            rows={6}
+            className={`${INPUT} resize-none`}
+            value={mensaje}
+            onChange={(e) => setMensaje(e.target.value)}
+            placeholder="Escribe el mensaje de felicitación..."
+            disabled={sending}
+          />
+          <p className="mt-1.5 text-xs text-slate-400">
+            {"El cliente recibirá: \"🎂 ¡Feliz cumpleaños, "}{cliente.nombre}{"!\" seguido de tu mensaje."}
           </p>
         </div>
 
         {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
-            {error}
-          </p>
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{error}</p>
         )}
 
         <div className="flex justify-center gap-3 border-t border-slate-200 pt-4">
@@ -82,7 +108,7 @@ export function BirthdayWhatsappModal({ cliente, onClose }: Props) {
           <button
             type="button"
             onClick={handleSend}
-            disabled={sending || !cliente.telefono}
+            disabled={sending || !mensaje.trim() || !cliente.telefono}
             className="flex items-center gap-2 rounded-lg bg-[#25D366] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">

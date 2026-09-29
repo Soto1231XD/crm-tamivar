@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import { SearchableSelect } from '@/shared/components/SearchableSelect';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import { AppModal } from '@/components/ui/AppModal';
@@ -49,6 +50,7 @@ export function EditLeadLeadModal({
 
   const {
     register,
+    control,
     reset,
     handleSubmit,
     formState: { errors, dirtyFields },
@@ -192,14 +194,19 @@ export function EditLeadLeadModal({
 
             <label className="flex flex-col gap-1.5">
               <LeadLeadFieldLabel required>Vendedor asignado</LeadLeadFieldLabel>
-              <select {...register('vendedor_asignado_id')} className={leadLeadFieldClassName}>
-                <option value="">Selecciona un usuario</option>
-                {userOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                name="vendedor_asignado_id"
+                control={control}
+                render={({ field }) => (
+                  <SearchableSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={userOptions}
+                    placeholder="Selecciona un usuario"
+                    className={leadLeadFieldClassName}
+                  />
+                )}
+              />
               {errors.vendedor_asignado_id ? <span className="text-xs text-red-600">{errors.vendedor_asignado_id.message}</span> : null}
             </label>
 
