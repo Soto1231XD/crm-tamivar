@@ -3,7 +3,9 @@ import toast from "react-hot-toast";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import agregarIcon from "@/assets/images/Agregar.png";
+import desArcIcon  from "@/assets/images/DesArc.png";
 import type { OperacionProceso, OperacionFiniquitada, Comision } from "@/interfaces/operaciones.interface";
+import { downloadFiniquitadasAsExcel } from "../utils/operaciones.utils";
 import { parseEtapa, ETAPA_COLORS } from "../components/ProcesoModal";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import {
@@ -71,6 +73,11 @@ export function OperacionesPage() {
 
   const [tab, setTab] = useState<Tab>("proceso");
 
+  const PAGE_SIZE = 10;
+  const [pageProc, setPageProc] = useState(1);
+  const [pageFin,  setPageFin]  = useState(1);
+  const [pageCom,  setPageCom]  = useState(1);
+
   // ── En Proceso ────────────────────────────────────────
   const [proceso, setProceso]             = useState<OperacionProceso[]>([]);
   const [loadingProceso, setLoadingProceso] = useState(true);
@@ -95,6 +102,7 @@ export function OperacionesPage() {
   const [filterProcesoQ,       setFilterProcesoQ]       = useState("");
   const [filterProcesoEstatus, setFilterProcesoEstatus] = useState("");
   const [filterFinQ,           setFilterFinQ]           = useState("");
+  const [filterFinFolio,       setFilterFinFolio]       = useState("");
   const [filterFinYear,        setFilterFinYear]        = useState("");
   const [filterFinPago,        setFilterFinPago]        = useState("");
   const [filterComQ,           setFilterComQ]           = useState("");
@@ -110,9 +118,14 @@ export function OperacionesPage() {
   useEffect(() => {
     setSelectedComisionIds(new Set());
     setFilterProcesoQ(""); setFilterProcesoEstatus("");
-    setFilterFinQ("");     setFilterFinYear("");     setFilterFinPago("");
+    setFilterFinQ("");     setFilterFinFolio("");    setFilterFinYear("");     setFilterFinPago("");
     setFilterComQ("");     setFilterComYear("");     setFilterComAsesor("");
+    setPageProc(1); setPageFin(1); setPageCom(1);
   }, [tab]);
+
+  useEffect(() => { setPageProc(1); }, [filterProcesoQ, filterProcesoEstatus]);
+  useEffect(() => { setPageFin(1); },  [filterFinQ, filterFinFolio, filterFinYear, filterFinPago]);
+  useEffect(() => { setPageCom(1); },  [filterComQ, filterComYear, filterComAsesor]);
 
   async function loadProceso() {
     setLoadingProceso(true);
@@ -278,9 +291,10 @@ export function OperacionesPage() {
   const finiquitadasFiltradas = finiquitadas.filter((r) => {
     const q = filterFinQ.toLowerCase();
     const matchQ = !q || [r.propietario, r.cliente, r.propiedad].some((v) => v?.toLowerCase().includes(q));
+    const matchFolio = !filterFinFolio || (r.folio ?? '').toLowerCase().includes(filterFinFolio.toLowerCase());
     const matchYear = !filterFinYear || r.fecha_firma?.startsWith(filterFinYear);
     const matchPago = !filterFinPago || r.estatus_pago === filterFinPago;
-    return matchQ && matchYear && matchPago;
+    return matchQ && matchFolio && matchYear && matchPago;
   });
 
   const comisionesFiltradas = comisiones.filter((r) => {
@@ -295,6 +309,14 @@ export function OperacionesPage() {
   const pagosUnicos       = [...new Set(finiquitadas.map((r) => r.estatus_pago).filter(Boolean))] as string[];
   const yearsComisiones   = [...new Set(comisiones.map((r) => r.fecha?.slice(0, 4)).filter(Boolean))].sort().reverse() as string[];
   const asesoresUnicos    = [...new Set(comisiones.map((r) => r.asesor_tamivar).filter(Boolean))].sort() as string[];
+
+  const totalPagesProc = Math.max(1, Math.ceil(procesoFiltrado.length / PAGE_SIZE));
+  const totalPagesFin  = Math.max(1, Math.ceil(finiquitadasFiltradas.length / PAGE_SIZE));
+  const totalPagesCom  = Math.max(1, Math.ceil(comisionesFiltradas.length / PAGE_SIZE));
+
+  const paginatedProceso      = procesoFiltrado.slice((pageProc - 1) * PAGE_SIZE, pageProc * PAGE_SIZE);
+  const paginatedFiniquitadas = finiquitadasFiltradas.slice((pageFin - 1) * PAGE_SIZE, pageFin * PAGE_SIZE);
+  const paginatedComisiones   = comisionesFiltradas.slice((pageCom - 1) * PAGE_SIZE, pageCom * PAGE_SIZE);
 
   // ── Columns ───────────────────────────────────────────
   const etapaCell = (raw: string | null) => {
@@ -329,6 +351,7 @@ export function OperacionesPage() {
   ];
 
   const finiquitadasColumns: ColumnDef<OperacionFiniquitada>[] = [
+    { header: "Folio", render: (r) => r.folio ? <span className="font-mono text-xs font-semibold text-[#312C85]">{r.folio}</span> : <span className="text-slate-300">—</span> },
     { header: "Propietario", accessorKey: "propietario" },
     { header: "Cliente",     accessorKey: "cliente" },
     { header: "Propiedad",   accessorKey: "propiedad" },
@@ -408,14 +431,27 @@ export function OperacionesPage() {
             <span className="whitespace-nowrap">Nueva operación</span>
           </button>
         )}
-        {tab === "finiquitadas" && canCreateProceso && (
-          <button
-            onClick={() => setFinModal({ open: true, item: null })}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
-            <span className="whitespace-nowrap">Nueva finiquitada</span>
-          </button>
+        {tab === "finiquitadas" && (
+          <div className="flex flex-wrap gap-2">
+            {finiquitadasFiltradas.length > 0 && (
+              <button
+                onClick={() => downloadFiniquitadasAsExcel(finiquitadasFiltradas)}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d]"
+              >
+                <img src={desArcIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Descargar reporte</span>
+              </button>
+            )}
+            {canCreateProceso && (
+              <button
+                onClick={() => setFinModal({ open: true, item: null })}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <img src={agregarIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Nueva finiquitada</span>
+              </button>
+            )}
+          </div>
         )}
         {tab === "comisiones" && canCreateComision && (
           <button
@@ -453,7 +489,7 @@ export function OperacionesPage() {
             </FilterSelect>
           </FiltersBar>
           <BaseTable
-            data={procesoFiltrado}
+            data={paginatedProceso}
             columns={procesoColumns}
             isLoading={loadingProceso}
             emptyMessage="No hay operaciones en proceso"
@@ -461,6 +497,9 @@ export function OperacionesPage() {
             onDelete={canDeleteProceso ? (item) => setDeleteProcesoId(item.id)         : undefined}
             canEdit={canEditProceso}
             canDelete={canDeleteProceso}
+            currentPage={pageProc}
+            totalPages={totalPagesProc}
+            onPageChange={setPageProc}
             customActions={(item) =>
               canCreateProceso ? (
                 <button
@@ -481,6 +520,7 @@ export function OperacionesPage() {
         <div className="space-y-3">
           <FiltersBar>
             <SearchInput value={filterFinQ} onChange={setFilterFinQ} placeholder="Buscar propietario, cliente o propiedad..." />
+            <SearchInput value={filterFinFolio} onChange={setFilterFinFolio} placeholder="Buscar por folio..." />
             <FilterSelect value={filterFinYear} onChange={setFilterFinYear} label="Año">
               {yearsFiniquitadas.map((y) => <option key={y} value={y}>{y}</option>)}
             </FilterSelect>
@@ -489,7 +529,7 @@ export function OperacionesPage() {
             </FilterSelect>
           </FiltersBar>
           <BaseTable
-            data={finiquitadasFiltradas}
+            data={paginatedFiniquitadas}
             columns={finiquitadasColumns}
             isLoading={loadingFin}
             emptyMessage="No hay operaciones finiquitadas"
@@ -497,6 +537,9 @@ export function OperacionesPage() {
             onDelete={canDeleteProceso ? (item) => setDeleteFinId(item.id)           : undefined}
             canEdit={canEditProceso}
             canDelete={canDeleteProceso}
+            currentPage={pageFin}
+            totalPages={totalPagesFin}
+            onPageChange={setPageFin}
           />
         </div>
       )}
@@ -559,13 +602,16 @@ export function OperacionesPage() {
             </FilterSelect>
           </FiltersBar>
           <BaseTable
-            data={comisionesFiltradas}
+            data={paginatedComisiones}
             columns={comisionColumns}
             isLoading={loadingCom}
             emptyMessage="No hay comisiones registradas"
             onEdit={canEditComision ? (item) => setComisionModal({ open: true, item }) : undefined}
             canEdit={canEditComision}
             canDelete={false}
+            currentPage={pageCom}
+            totalPages={totalPagesCom}
+            onPageChange={setPageCom}
             rowClassName={(item) => selectedComisionIds.has(item.id) ? "!bg-[#312C85]/5" : ""}
           />
         </div>

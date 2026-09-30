@@ -53,6 +53,8 @@ export function CarteraClientesPage() {
   const [search, setSearch]       = useState("");
   const [filterTipo, setFilterTipo] = useState("");
   const [filterMes, setFilterMes]   = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const load = async () => {
     setIsLoading(true);
@@ -64,6 +66,8 @@ export function CarteraClientesPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => { setCurrentPage(1); }, [search, filterTipo, filterMes]);
 
   const filtrados = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -92,6 +96,9 @@ export function CarteraClientesPage() {
         return a.nombre.localeCompare(b.nombre, "es");
       });
   }, [clientes, search, filterTipo, filterMes]);
+
+  const totalPages = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
+  const paginatedFiltrados = filtrados.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handleSave = async (data: Partial<ClienteCartera>) => {
     if (modal.item) {
@@ -291,7 +298,7 @@ export function CarteraClientesPage() {
 
       {/* Tabla */}
       <BaseTable
-        data={filtrados}
+        data={paginatedFiltrados}
         columns={columns}
         isLoading={isLoading}
         emptyMessage="No se encontraron clientes."
@@ -299,6 +306,9 @@ export function CarteraClientesPage() {
         canDelete={canDelete}
         onEdit={(item) => setModal({ open: true, item })}
         onDelete={(item) => setDeleteModal({ open: true, item })}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
       />
 
       {/* Modal crear/editar */}

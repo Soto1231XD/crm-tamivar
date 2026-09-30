@@ -17,6 +17,7 @@ export function FiniquitadaModal({ initial, prefill, onSave, onClose }: Props) {
   const isEdit = Boolean(initial);
 
   const [form, setForm] = useState<Partial<OperacionFiniquitada>>({
+    folio: null,
     propietario: prefill?.propietario ?? "",
     cliente: prefill?.cliente ?? "",
     propiedad: prefill?.propiedad ?? "",
@@ -62,6 +63,10 @@ export function FiniquitadaModal({ initial, prefill, onSave, onClose }: Props) {
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <p className={LABEL}>Información de la operación</p>
           <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className={LABEL}>Folio de identificación</label>
+              <input type="text" className={INPUT} value={form.folio ?? ""} onChange={(e) => set("folio", e.target.value)} placeholder="Ej: FIN-001" />
+            </div>
             <div className="sm:col-span-2">
               <label className={LABEL}>Propietario <span className="text-red-500">*</span></label>
               <input type="text" className={INPUT} value={form.propietario ?? ""} onChange={(e) => set("propietario", e.target.value)} placeholder="Nombre del propietario" />

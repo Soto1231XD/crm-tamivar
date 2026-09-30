@@ -18,6 +18,7 @@ export interface OperacionProceso {
 
 export interface OperacionFiniquitada {
   id: number;
+  folio: string | null;
   propietario: string;
   cliente: string;
   propiedad: string;
