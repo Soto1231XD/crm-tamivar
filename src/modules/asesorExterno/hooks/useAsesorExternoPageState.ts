@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { LeadRecord } from '@/interfaces/lead.interface';
 import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
+import { downloadLeadExternoAsExcel } from '@/modules/leads/utils/leads.utils';
 import { useAsesorExternoStore } from '../store/useAsesorExternoStore';
 import { updateAsesorExternoLead } from '../services/asesorExterno.api';
 import type {
@@ -121,6 +122,10 @@ export function useAsesorExternoPageState({ userId }: Params) {
     }
   }
 
+  function handleDownload() {
+    downloadLeadExternoAsExcel(filteredLeads);
+  }
+
   async function handleQuickStatusChange(leadId: number, value: string) {
     const current = leads.find((l) => l.id === leadId);
     if (!current || current.estado === value) return;
@@ -175,6 +180,7 @@ export function useAsesorExternoPageState({ userId }: Params) {
     handleCreate,
     handleEdit,
     handleDelete,
+    handleDownload,
     handleQuickStatusChange,
   };
 }

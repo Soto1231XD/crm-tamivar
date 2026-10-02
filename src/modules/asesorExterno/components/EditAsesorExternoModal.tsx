@@ -14,7 +14,6 @@ import {
   asesorExternoSchema,
   formatLeadBudget,
   normalizeLeadBudget,
-  parsePaymentMethods,
   sanitizeAsesorExternoName,
   sanitizeAsesorExternoPhone,
   toAsesorExternoDefaultValues,
@@ -106,7 +105,7 @@ export function EditAsesorExternoModal({ isOpen, lead, onClose, onEdit }: Props)
       isOpen={isOpen}
       onClose={onClose}
       title="Editar lead externo"
-      maxWidth="max-w-2xl"
+      maxWidthClassName="max-w-2xl"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-3">

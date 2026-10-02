@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import agregarIcon from '../../../assets/images/Agregar.png';
+import desArcIcon from '../../../assets/images/DesArc.png';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import { TablePagination } from '../../../shared/components/TablePagination';
@@ -40,6 +41,7 @@ export function AsesorExternoPage() {
     handleCreate,
     handleEdit,
     handleDelete,
+    handleDownload,
     handleQuickStatusChange,
   } = useAsesorExternoPageState({ userId: user?.id });
 
@@ -49,7 +51,6 @@ export function AsesorExternoPage() {
     if (!confirmingDelete) return;
     await handleDelete(confirmingDelete.id);
     setConfirmingDelete(null);
-    setDeletingLead(null);
   }
 
   return (
@@ -99,6 +100,15 @@ export function AsesorExternoPage() {
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={filteredLeads.length === 0}
+          className="inline-flex items-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <img src={desArcIcon} alt="" className="h-6 w-6 shrink-0" aria-hidden="true" />
+          <span>Descargar Excel</span>
+        </button>
       </div>
 
       {/* Table */}

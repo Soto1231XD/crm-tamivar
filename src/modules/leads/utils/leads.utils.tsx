@@ -295,3 +295,45 @@ export async function downloadLeadLeadsAsExcel(
     [budgetPng, paymentPng],
   );
 }
+
+export function downloadLeadExternoAsExcel(leads: LeadRecord[]) {
+  const headers = [
+    'Fecha',
+    'Estatus',
+    'Nombre',
+    'Últ. 4 dígitos',
+    'Prioridad',
+    'Operación',
+    'Zona / Ubicación',
+    'Solicitud',
+    'Presupuesto',
+    'Método de pago',
+    'Características',
+    'Comentarios',
+  ];
+
+  const rows = leads.map((lead) => [
+    formatDate(lead.creado_en),
+    lead.estado?.trim() || 'Sin estatus',
+    `${lead.nombres ?? ''} ${lead.apellidos ?? ''}`.trim() || 'Sin nombre',
+    lead.telefono != null ? String(lead.telefono) : '—',
+    lead.prioridad?.trim() || 'Sin prioridad',
+    lead.operacion?.trim() || 'Sin operación',
+    lead.ubicacion_propiedad?.trim() || 'Sin zona',
+    lead.solicitud?.trim() || 'Sin solicitud',
+    lead.presupuesto != null && Number(lead.presupuesto) !== 0
+      ? String(lead.presupuesto)
+      : 'Sin presupuesto',
+    lead.metodo_pago?.trim() || 'Sin método',
+    lead.caracteristicas?.trim() || 'Sin características',
+    lead.comentarios?.trim() || 'Sin comentarios',
+  ]);
+
+  downloadTableAsExcel({
+    title: 'Leads externos exportados',
+    sheetName: 'Asesor externo',
+    fileName: 'leads-externos.xlsx',
+    headers,
+    rows,
+  });
+}

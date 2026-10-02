@@ -96,7 +96,7 @@ export function CreateAsesorExternoModal({ isOpen, onClose, onCreate }: Props) {
       isOpen={isOpen}
       onClose={onClose}
       title="Nuevo lead externo"
-      maxWidth="max-w-2xl"
+      maxWidthClassName="max-w-2xl"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Datos del cliente */}
