@@ -285,8 +285,8 @@ export async function downloadLeadLeadsAsExcel(
 
   await downloadTableAsExcelWithCharts(
     {
-      title:     'Registros leads exportados',
-      sheetName: 'Registros leads',
+      title:     'Leads redes sociales exportados',
+      sheetName: 'Leads redes sociales',
       fileName:  'registros-leads-filtrados.xlsx',
       headers,
       rows,

@@ -4,7 +4,7 @@ import type { PermissionAction } from "@/shared/auth/permissions/permissions.uti
 export type DashboardCardTitle =
   | "Propiedades Disponibles"
   | "Registros visitas"
-  | "Registros leads"
+  | "Leads redes sociales"
   | "Propiedades vendidas"
   | "Blogs"
   | "Usuarios del sistema"
@@ -25,7 +25,7 @@ function canReadDashboardModule(can: DashboardCan, module: ModuleKey): boolean {
 const DASHBOARD_CARD_MODULES: Record<DashboardCardTitle, ModuleKey> = {
   "Propiedades Disponibles": "propiedades",
   "Registros visitas": "registros",
-  "Registros leads": "registros_leads",
+  "Leads redes sociales": "registros_leads",
   "Propiedades vendidas": "propiedades",
   Blogs: "blogs",
   "Usuarios del sistema": "usuarios",
@@ -42,7 +42,7 @@ const DASHBOARD_SECTION_MODULES: Record<DashboardSectionTitle, ModuleKey> = {
 const DASHBOARD_CARD_ORDER: readonly DashboardCardTitle[] = [
   "Propiedades Disponibles",
   "Registros visitas",
-  "Registros leads",
+  "Leads redes sociales",
   "Propiedades vendidas",
   "Blogs",
   "Usuarios del sistema",

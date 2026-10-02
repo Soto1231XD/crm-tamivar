@@ -8,6 +8,7 @@ import materialIcon from "@/assets/images/creador-de-contenido.png";
 import usuariosIcon from "@/assets/images/Usuarios.png";
 import rolIcon from "@/assets/images/Rol.png";
 import logsIcon from "@/assets/images/Logs.png";
+import leadsIcon from "@/assets/icons/leads.png";
 
 export const MODULE_ICONS: Record<ModuleKey, string> = {
   dashboard: dashboardIcon,
@@ -18,6 +19,7 @@ export const MODULE_ICONS: Record<ModuleKey, string> = {
   registros: registrosIcon,
   registros_leads: registrosIcon,
   solicitudes_leads: registrosIcon,
+  asesor_externo: leadsIcon,
   blogs: contenidoIcon,
   usuarios: usuariosIcon,
   roles: rolIcon,
@@ -36,9 +38,14 @@ export type NavGroupConfig = {
 
 export const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
   {
+    label: "Leads",
+    icon: leadsIcon,
+    modules: ["registros", "registros_leads", "solicitudes_leads", "asesor_externo"],
+  },
+  {
     label: "Clientes",
     icon: registrosIcon,
-    modules: ["registros", "registros_leads", "solicitudes_leads", "Operaciones", "CarteraClientes"],
+    modules: ["Operaciones", "CarteraClientes"],
   },
   {
     label: "Contenido",

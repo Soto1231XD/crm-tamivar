@@ -14,7 +14,7 @@ const MODULE_OPTIONS = [
   { value: "properties", label: "Propiedades" },
   { value: "developments", label: "Desarrollos" },
   { value: "registros", label: "Registros" },
-  { value: "registros-leads", label: "Registros leads" },
+  { value: "registros-leads", label: "Leads redes sociales" },
   { value: "blogs", label: "Blogs" },
   { value: "movimientos", label: "Movimientos" },
 ];

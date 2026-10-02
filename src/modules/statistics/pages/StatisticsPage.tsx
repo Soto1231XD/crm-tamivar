@@ -921,7 +921,7 @@ export function StatisticsPage() {
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <SummaryMetric
-              label="Registros leads"
+              label="Leads redes sociales"
               value={globalMetrics.totalLeads}
               helper="Total visible en la vista comercial de leads."
             />

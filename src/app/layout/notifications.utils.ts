@@ -66,7 +66,7 @@ export function getNotificationActionLabel(notification: AppNotification): strin
 }
 
 export function getNotificationModuleLabel(module: string): string {
-  if (module === "registros_leads") return "Registros leads";
+  if (module === "registros_leads") return "Leads redes sociales";
   if (module === "registros") return "Registros visitas";
   return module;
 }

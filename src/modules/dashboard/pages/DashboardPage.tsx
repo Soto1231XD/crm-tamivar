@@ -270,7 +270,7 @@ export function DashboardPage() {
     () => ({
       "Propiedades Disponibles": summary.propiedadesDisponibles,
       "Registros visitas": summary.registros,
-      "Registros leads": summary.registrosLeads,
+      "Leads redes sociales": summary.registrosLeads,
       "Propiedades vendidas": summary.propiedadesVendidas,
       Blogs: summary.blogs,
       "Roles del sistema": summary.rolesSistema,

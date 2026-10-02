@@ -357,7 +357,7 @@ export function AdvisorReportPdfDocument({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Graficas de estados</Text>
           <StatusChart
-            title="Registros leads"
+            title="Leads redes sociales"
             description="Distribucion visible de los estados en leads asignados."
             items={leadItems}
             total={advisor.leadCount}
