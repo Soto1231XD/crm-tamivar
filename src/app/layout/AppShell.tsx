@@ -19,7 +19,7 @@ import {
   subscribeToPushNotifications,
   type PushSubscriptionStatus,
 } from "@/modules/notifications/utils/pushNotifications";
-import { getAvailableModules, MODULE_LABELS, MODULE_PATHS } from "@/shared/auth/navigation.util";
+import { getAvailableModules, getModuleLabelForUser, MODULE_LABELS, MODULE_PATHS } from "@/shared/auth/navigation.util";
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
 import type { AppNotification } from "@/interfaces/notification.interface";
 import MenuIcon from "@/assets/images/Menu.png";
@@ -29,6 +29,9 @@ import { BellIcon } from "./components/AppIcons";
 import { Sidebar } from "./components/Sidebar";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import { ProfilePanel } from "./components/ProfilePanel";
+import { RecomendacionesBell } from "@/modules/recomendaciones/components/RecomendacionesBell";
+import { useRecomendacionesStore } from "@/modules/recomendaciones/store/useRecomendacionesStore";
+import { WelcomePhraseModal } from "@/modules/motivacion/components/WelcomePhraseModal";
 
 export function AppShell() {
   const user = useAuthStore((state) => state.user);
@@ -42,6 +45,7 @@ export function AppShell() {
   const markNotificationAsRead = useNotificationsStore((state) => state.markAsRead);
   const markAllNotificationsAsRead = useNotificationsStore((state) => state.markAllAsRead);
   const resetNotifications = useNotificationsStore((state) => state.reset);
+  const resetRecomendaciones = useRecomendacionesStore((state) => state.reset);
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
@@ -62,24 +66,24 @@ export function AppShell() {
   const availableModules = getAvailableModules(permissions, user?.roles ?? []);
   const isDark = theme === "dark";
   const primaryRoleDisplay = user ? getHighestPriorityRoleLabel(user) : "Sin rol asignado";
-  const pageTitle = getPageTitle(location.pathname);
+  const pageTitle = getPageTitle(location.pathname, user);
   const displayName = user
     ? `${user.nombres || ""} ${user.apellido_paterno || ""}`.trim() || user.correo_electronico
     : "Usuario";
 
   const navItems = availableModules.map((module: ModuleKey) => ({
     to: MODULE_PATHS[module],
-    label: MODULE_LABELS[module] || module,
+    label: getModuleLabelForUser(module, user) || module,
     icon: MODULE_ICONS[module],
   }));
   const standaloneNavItems = availableModules
     .filter((m) => STANDALONE_MODULES.has(m))
-    .map((m) => ({ to: MODULE_PATHS[m], label: MODULE_LABELS[m] || m, icon: MODULE_ICONS[m] }));
+    .map((m) => ({ to: MODULE_PATHS[m], label: getModuleLabelForUser(m, user) || m, icon: MODULE_ICONS[m] }));
   const activeNavGroups = NAV_GROUP_CONFIGS.map((group) => ({
     ...group,
     items: group.modules
       .filter((m) => availableModules.includes(m))
-      .map((m) => ({ to: MODULE_PATHS[m], label: MODULE_LABELS[m] || m, icon: MODULE_ICONS[m] })),
+      .map((m) => ({ to: MODULE_PATHS[m], label: getModuleLabelForUser(m, user) || m, icon: MODULE_ICONS[m] })),
   })).filter((group) => group.items.length > 0);
 
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
@@ -197,6 +201,7 @@ export function AppShell() {
   const handleLogout = () => {
     setIsProfileOpen(false);
     setIsNotificationsOpen(false);
+    resetRecomendaciones();
     performLogout();
     navigate("/login", { replace: true });
     void disconnectPushNotifications().catch((e) =>
@@ -246,6 +251,7 @@ export function AppShell() {
               </div>
 
               <div className="ml-auto flex items-center gap-3">
+                <RecomendacionesBell />
                 <button
                   type="button"
                   onClick={() => { setIsProfileOpen(false); setIsNotificationsOpen((prev) => !prev); }}
@@ -308,6 +314,8 @@ export function AppShell() {
           onNotificationClick={handleNotificationClick}
         />
       )}
+
+      <WelcomePhraseModal />
 
       {isProfileOpen && (
         <ProfilePanel

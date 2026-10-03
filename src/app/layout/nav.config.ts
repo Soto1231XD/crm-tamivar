@@ -28,6 +28,7 @@ export const MODULE_ICONS: Record<ModuleKey, string> = {
   Comisiones: logsIcon,
   CarteraClientes: usuariosIcon,
   evaluacion: usuariosIcon,
+  recomendaciones: usuariosIcon,
 };
 
 export type NavGroupConfig = {

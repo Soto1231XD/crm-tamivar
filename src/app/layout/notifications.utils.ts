@@ -1,14 +1,19 @@
 import type { AppNotification } from "@/interfaces/notification.interface";
 import type { BrowserNotificationPermissionState } from "@/modules/notifications/utils/browserNotifications";
 import type { PushSubscriptionStatus } from "@/modules/notifications/utils/pushNotifications";
-import { MODULE_LABELS } from "@/shared/auth/navigation.util";
+import { MODULE_LABELS, getModuleLabelForUser } from "@/shared/auth/navigation.util";
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
+import type { UserRecord } from "@/interfaces/user.interface";
 
-export function getPageTitle(pathname: string): string {
+export function getPageTitle(
+  pathname: string,
+  user?: Pick<UserRecord, 'rol' | 'roles'> | null,
+): string {
   if (pathname === "/dashboard") return "Dashboard";
   if (pathname.startsWith("/modulos/registros-visitas")) return MODULE_LABELS.registros;
   if (pathname.startsWith("/modulos/registros-leads")) return MODULE_LABELS.registros_leads;
   if (pathname.startsWith("/modulos/solicitudes-leads")) return MODULE_LABELS.solicitudes_leads;
+  if (pathname.startsWith("/modulos/asesor-externo")) return getModuleLabelForUser('asesor_externo', user ?? null);
   if (pathname.startsWith("/modulos/")) {
     const rawModule = pathname.replace("/modulos/", "").split("/")[0] as ModuleKey;
     return MODULE_LABELS[rawModule] ?? "Módulo";
@@ -66,7 +71,7 @@ export function getNotificationActionLabel(notification: AppNotification): strin
 }
 
 export function getNotificationModuleLabel(module: string): string {
-  if (module === "registros_leads") return "Leads redes sociales";
+  if (module === "registros_leads") return "Redes sociales";
   if (module === "registros") return "Registros visitas";
   return module;
 }

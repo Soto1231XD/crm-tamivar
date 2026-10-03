@@ -23,6 +23,7 @@ export function useAsesorExternoPageState({ userId }: Params) {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_STATES);
+  const [asesorFilter, setAsesorFilter] = useState(ALL_STATES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadRecord | null>(null);
   const [deletingLead, setDeletingLead] = useState<LeadRecord | null>(null);
@@ -42,6 +43,23 @@ export function useAsesorExternoPageState({ userId }: Params) {
     return [ALL_STATES, ...Array.from(values)];
   }, [leads]);
 
+  const asesorOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const lead of leads) {
+      if (!lead.creado_por) continue;
+      const id = String(lead.creado_por.id);
+      if (!seen.has(id)) {
+        const cp = lead.creado_por;
+        const nombre = `${cp.nombres ?? ''} ${cp.apellido_paterno ?? ''}`.trim() || 'Sin nombre';
+        seen.set(id, nombre);
+      }
+    }
+    return [
+      { value: ALL_STATES, label: 'Todos los asesores' },
+      ...Array.from(seen.entries()).map(([value, label]) => ({ value, label })),
+    ];
+  }, [leads]);
+
   const filteredLeads = useMemo(() => {
     const query = search.trim().toLowerCase();
     return leads
@@ -53,14 +71,17 @@ export function useAsesorExternoPageState({ userId }: Params) {
         const matchesStatus =
           statusFilter === ALL_STATES ||
           (lead.estado ?? '').trim() === statusFilter;
-        return matchesSearch && matchesStatus;
+        const matchesAsesor =
+          asesorFilter === ALL_STATES ||
+          String(lead.creado_por?.id ?? '') === asesorFilter;
+        return matchesSearch && matchesStatus && matchesAsesor;
       })
       .sort(
         (a, b) =>
           new Date(b.creado_en ?? 0).getTime() -
           new Date(a.creado_en ?? 0).getTime(),
       );
-  }, [leads, search, statusFilter]);
+  }, [leads, search, statusFilter, asesorFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 
@@ -71,7 +92,7 @@ export function useAsesorExternoPageState({ userId }: Params) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, asesorFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -161,6 +182,8 @@ export function useAsesorExternoPageState({ userId }: Params) {
     isLoading,
     search,
     statusFilter,
+    asesorFilter,
+    asesorOptions,
     isCreateModalOpen,
     editingLead,
     deletingLead,
@@ -173,6 +196,7 @@ export function useAsesorExternoPageState({ userId }: Params) {
     PAGE_SIZE,
     setSearch,
     setStatusFilter,
+    setAsesorFilter,
     setIsCreateModalOpen,
     setEditingLead,
     setDeletingLead,

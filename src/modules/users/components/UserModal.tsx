@@ -351,7 +351,7 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--crm-primary-border)] bg-[var(--crm-primary-soft)] px-3.5 py-2 text-sm font-semibold text-[var(--crm-primary)] transition-colors hover:bg-[var(--crm-primary-soft)]">
                     <span>{photoPreviewUrl ? 'Cambiar imagen' : 'Subir imagen'}</span>
                     <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                   </label>
@@ -395,8 +395,8 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
                   key={role.id}
                   className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-sm transition ${
                     selected
-                      ? 'border-[#312C85]/20 bg-indigo-50 text-slate-800'
-                      : 'border-slate-200 bg-white text-slate-700'
+                      ? 'border-[var(--crm-primary-border)] bg-[var(--crm-primary-soft)] text-[var(--crm-text)]'
+                      : 'border-[var(--crm-border)] bg-[var(--crm-surface)] text-[var(--crm-text-muted)]'
                   }`}
                 >
                   <input

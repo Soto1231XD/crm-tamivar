@@ -19,7 +19,6 @@ import {
   type ClienteCartera,
 } from "../services/cartera-clientes.api";
 import { ClienteModal } from "../components/ClienteModal";
-import { WhatsappModal } from "../components/WhatsappModal";
 import { BirthdayWhatsappModal } from "../components/BirthdayWhatsappModal";
 import { FestividadWhatsappModal } from "../components/FestividadWhatsappModal";
 
@@ -46,7 +45,6 @@ export function CarteraClientesPage() {
   const [isLoading, setIsLoading]     = useState(true);
   const [modal, setModal]             = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
-  const [waModal, setWaModal]         = useState<{ open: boolean; item: ClienteCartera | null; defaultMsg?: string }>({ open: false, item: null });
   const [bdayModal, setBdayModal]     = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [festividadOpen, setFestividadOpen] = useState(false);
 
@@ -159,23 +157,6 @@ export function CarteraClientesPage() {
       ? <span className="max-w-[200px] truncate block" title={c.sms_post_venta}>{c.sms_post_venta}</span>
       : "—"
     },
-    ...(canMessage
-      ? [{
-          header: "WhatsApp",
-          render: (c: ClienteCartera) =>
-            c.telefono ? (
-              <button
-                type="button"
-                onClick={() => setWaModal({ open: true, item: c })}
-                className="rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1da851]"
-              >
-                Enviar
-              </button>
-            ) : (
-              <span className="text-xs text-slate-400">Sin tel.</span>
-            ),
-        }]
-      : []),
   ];
 
   return (
@@ -317,15 +298,6 @@ export function CarteraClientesPage() {
           initial={modal.item}
           onSave={handleSave}
           onClose={() => setModal({ open: false, item: null })}
-        />
-      )}
-
-      {/* Modal WhatsApp individual */}
-      {waModal.open && waModal.item && (
-        <WhatsappModal
-          cliente={waModal.item}
-          defaultMessage={waModal.defaultMsg}
-          onClose={() => setWaModal({ open: false, item: null })}
         />
       )}
 

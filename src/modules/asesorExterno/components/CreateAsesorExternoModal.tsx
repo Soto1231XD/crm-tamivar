@@ -300,20 +300,20 @@ export function CreateAsesorExternoModal({ isOpen, onClose, onCreate }: Props) {
           </p>
         )}
 
-        <div className="flex justify-end gap-3 pt-1">
+        <div className="flex items-center justify-center gap-3 border-t border-slate-200 pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-[var(--crm-border-strong)] px-4 py-2 text-sm font-medium text-[var(--crm-text-muted)] transition hover:bg-[var(--crm-surface-soft)]"
+            className="rounded-lg bg-[#FD3939] px-4 py-2 text-sm font-semibold text-white"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-[#312C85] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#27226f] disabled:opacity-60"
+            className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isSubmitting ? 'Guardando...' : 'Guardar lead'}
+            {isSubmitting ? 'Guardando...' : 'Crear'}
           </button>
         </div>
       </form>

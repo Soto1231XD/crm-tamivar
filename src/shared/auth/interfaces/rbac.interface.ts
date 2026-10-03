@@ -15,7 +15,8 @@ export type ModuleKey =
   | 'Operaciones'
   | 'Comisiones'
   | 'CarteraClientes'
-  | 'evaluacion';
+  | 'evaluacion'
+  | 'recomendaciones';
 
 export type ModulePermissions = {
   ver: boolean;

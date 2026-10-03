@@ -58,6 +58,7 @@ export interface LeadRecord {
   origen_lead?: string | null;
   fecha_registro?: string | null;
   creador?: LeadCreatorRecord | null;
+  creado_por?: LeadCreatorRecord | null;
   vendedor_asignado?: LeadCreatorRecord | null;
   propiedad?: LeadPropertyRecord | null;
   desarrollo?: LeadDevelopmentRecord | null;

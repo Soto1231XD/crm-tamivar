@@ -1,4 +1,6 @@
 import type { ModuleKey } from "./interfaces/rbac.interface";
+import { isSalesAdvisorOnly } from "./role.utils";
+import type { UserRecord } from "@/interfaces/user.interface";
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard: "Dashboard",
@@ -7,9 +9,9 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   desarrollos: "Desarrollos",
   material: "Material",
   registros: "Registros visitas",
-  registros_leads: "Leads redes sociales",
+  registros_leads: "Redes sociales",
   solicitudes_leads: "Solicitudes",
-  asesor_externo: "Asesor externo",
+  asesor_externo: "Leads de asesores",
   blogs: "Blogs",
   usuarios: "Usuarios",
   roles: "Roles del sistema",
@@ -18,6 +20,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   Comisiones: "Comisiones",
   CarteraClientes: "Cartera de Clientes",
   evaluacion: "Evaluación de Asesores",
+  recomendaciones: "Recomendaciones",
 };
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
@@ -38,6 +41,7 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   Comisiones: "/modulos/comisiones",
   CarteraClientes: "/modulos/cartera-clientes",
   evaluacion: "/modulos/evaluacion",
+  recomendaciones: "/modulos/recomendaciones",
 };
 
 const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
@@ -131,4 +135,14 @@ export function getDefaultDashboardPath(
 
   const firstAvailable = availableModules.filter((module) => module !== "dashboard")[0];
   return firstAvailable ? MODULE_PATHS[firstAvailable] : "/login";
+}
+
+export function getModuleLabelForUser(
+  module: ModuleKey,
+  user: Pick<UserRecord, 'rol' | 'roles'> | null,
+): string {
+  if (module === 'asesor_externo' && user && isSalesAdvisorOnly(user)) {
+    return 'Mis leads';
+  }
+  return MODULE_LABELS[module];
 }

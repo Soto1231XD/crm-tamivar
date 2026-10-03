@@ -19,11 +19,15 @@ export function AsesorExternoPage() {
   const canCreate = can('asesor_externo', 'crear');
   const canEdit = can('asesor_externo', 'actualizar');
   const canDelete = isSuperAdmin && can('asesor_externo', 'eliminar');
+  const showCreator = can('asesor_externo', 'leer_todos');
+  const canRecomend = can('recomendaciones', 'crear');
 
   const {
     isLoading,
     search,
     statusFilter,
+    asesorFilter,
+    asesorOptions,
     isCreateModalOpen,
     editingLead,
     currentPage,
@@ -35,6 +39,7 @@ export function AsesorExternoPage() {
     PAGE_SIZE,
     setSearch,
     setStatusFilter,
+    setAsesorFilter,
     setIsCreateModalOpen,
     setEditingLead,
     setCurrentPage,
@@ -100,6 +105,19 @@ export function AsesorExternoPage() {
             </option>
           ))}
         </select>
+        {showCreator && (
+          <select
+            value={asesorFilter}
+            onChange={(e) => setAsesorFilter(e.target.value)}
+            className="h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition focus:border-[#312C85] focus:ring-2 focus:ring-[#312C85]/10"
+          >
+            {asesorOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           type="button"
           onClick={handleDownload}
@@ -119,6 +137,8 @@ export function AsesorExternoPage() {
           updatingLeadId={updatingLeadId}
           canEdit={canEdit}
           canDelete={canDelete}
+          showCreator={showCreator}
+          canRecomend={canRecomend}
           onQuickStatusChange={handleQuickStatusChange}
           onEdit={setEditingLead}
           onDelete={(lead) => setConfirmingDelete(lead)}

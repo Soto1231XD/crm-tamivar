@@ -303,3 +303,43 @@ html.crm-theme-dark .bg-indigo-50,
 html.crm-theme-dark .bg-brand-50 {
   filter: saturate(0.9) brightness(0.9);
 }
+
+/* Panel de notificaciones — colores sky que no están cubiertos */
+html.crm-theme-dark .bg-sky-50\/70 {
+  background-color: var(--crm-primary-soft) !important;
+}
+
+html.crm-theme-dark .bg-sky-50 {
+  background-color: var(--crm-primary-soft) !important;
+}
+
+html.crm-theme-dark .border-sky-100 {
+  border-color: var(--crm-primary-border) !important;
+}
+
+html.crm-theme-dark .hover\:bg-sky-50:hover {
+  background-color: var(--crm-primary-soft) !important;
+}
+
+html.crm-theme-dark .text-sky-700 {
+  color: var(--crm-primary) !important;
+}
+
+html.crm-theme-dark .text-sky-800,
+html.crm-theme-dark .hover\:text-sky-800:hover {
+  color: var(--crm-primary) !important;
+}
+
+html.crm-theme-dark .bg-sky-500 {
+  background-color: var(--crm-primary) !important;
+}
+
+/* Badge tipo de notificación (bg-white/80 sobre fondo sky) */
+html.crm-theme-dark .bg-white\/80 {
+  background-color: var(--crm-surface-muted) !important;
+}
+
+/* Separador punto "•" en el pie de la notificación */
+html.crm-theme-dark .text-slate-300 {
+  color: var(--crm-border-strong) !important;
+}
