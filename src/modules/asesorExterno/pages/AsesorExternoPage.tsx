@@ -246,7 +246,6 @@ export function AsesorExternoPage() {
           onQuickStatusChange={handleStatusChangeIntercepted}
           onEdit={setEditingLead}
           onDelete={(lead) => setConfirmingDelete(lead)}
-          onAgendarCita={showCreator ? undefined : setAgendarCitaLead}
         />
 
         <TablePagination

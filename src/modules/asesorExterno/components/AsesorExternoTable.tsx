@@ -38,7 +38,6 @@ type Props = {
   onQuickStatusChange: (leadId: number, value: string) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
-  onAgendarCita?: (lead: LeadRecord) => void;
 };
 
 type LeadGroup = {
@@ -314,7 +313,6 @@ export function AsesorExternoTable({
   onQuickStatusChange,
   onEdit,
   onDelete,
-  onAgendarCita,
 }: Props) {
   const columns = useMemo(
     () => buildColumns(updatingLeadId, canEdit, onQuickStatusChange),
