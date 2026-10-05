@@ -53,6 +53,7 @@ export function TourUploadField({ value, onChange, className }: Props) {
     isUploadedTour(value) ? "file" : "url",
   );
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -65,40 +66,57 @@ export function TourUploadField({ value, onChange, className }: Props) {
     setMode("file");
   }
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
+    setProgress(0);
     setUploadError(null);
 
-    try {
-      const token = useAuthStore.getState().token;
-      const formData = new FormData();
-      formData.append("file", file);
+    const token = useAuthStore.getState().token;
+    const formData = new FormData();
+    formData.append("file", file);
 
-      const res = await fetch(`${API_URL}/tours/upload-html`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token ?? ""}` },
-        body: formData,
-      });
+    const xhr = new XMLHttpRequest();
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(
-          (err as { message?: string })?.message ?? "Error al subir el archivo",
-        );
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        setProgress(Math.round((event.loaded / event.total) * 100));
       }
+    };
 
-      const data: { url: string } = await res.json();
-      onChange(`${API_URL}/${data.url}`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error desconocido";
-      setUploadError(msg);
-    } finally {
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data: { url: string } = JSON.parse(xhr.responseText);
+          onChange(`${API_URL}/${data.url}`);
+        } catch {
+          setUploadError("Respuesta inválida del servidor.");
+        }
+      } else {
+        let msg = "Error al subir el archivo";
+        try {
+          const err = JSON.parse(xhr.responseText) as { message?: string };
+          if (err.message) msg = err.message;
+        } catch { /* ignore */ }
+        setUploadError(msg);
+      }
       setUploading(false);
+      setProgress(0);
       if (fileRef.current) fileRef.current.value = "";
-    }
+    };
+
+    xhr.onerror = () => {
+      setUploadError("Error de red al subir el archivo.");
+      setUploading(false);
+      setProgress(0);
+      if (fileRef.current) fileRef.current.value = "";
+    };
+
+    xhr.open("POST", `${API_URL}/tours/upload-html`);
+    xhr.setRequestHeader("Authorization", `Bearer ${token ?? ""}`);
+    xhr.send(formData);
   }
 
   return (
@@ -171,24 +189,29 @@ export function TourUploadField({ value, onChange, className }: Props) {
                 onChange={handleFileChange}
                 className="hidden"
               />
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 transition-all hover:border-[#312C85] hover:bg-slate-100 hover:text-[#312C85] disabled:opacity-50"
-              >
-                {uploading ? (
-                  <>
-                    <IconSpinner size={18} />
-                    Subiendo...
-                  </>
-                ) : (
-                  <>
-                    <IconUpload size={18} />
-                    Seleccionar archivo .html
-                  </>
-                )}
-              </button>
+              {uploading ? (
+                <div className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-600">
+                    <span>Subiendo archivo...</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-[#312C85] transition-all duration-200"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 transition-all hover:border-[#312C85] hover:bg-slate-100 hover:text-[#312C85]"
+                >
+                  <IconUpload size={18} />
+                  Seleccionar archivo .html
+                </button>
+              )}
             </>
           )}
           {uploadError && (
