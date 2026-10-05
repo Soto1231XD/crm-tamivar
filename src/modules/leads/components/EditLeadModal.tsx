@@ -109,6 +109,10 @@ export function EditLeadModal({
       maxWidthClassName="max-w-2xl"
       panelClassName="max-h-[88vh]"
     >
+      <div className="mb-4 rounded-xl border border-[var(--crm-danger-border)] bg-[var(--crm-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--crm-danger-text)]">
+        <span className="font-semibold">*</span> Campo obligatorio
+      </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
           <div className="mb-4">

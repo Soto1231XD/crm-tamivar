@@ -19,7 +19,7 @@ import {
   subscribeToPushNotifications,
   type PushSubscriptionStatus,
 } from "@/modules/notifications/utils/pushNotifications";
-import { getAvailableModules, getModuleLabelForUser, MODULE_LABELS, MODULE_PATHS } from "@/shared/auth/navigation.util";
+import { getAvailableModules, getModuleLabelForUser, MODULE_PATHS } from "@/shared/auth/navigation.util";
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
 import type { AppNotification } from "@/interfaces/notification.interface";
 import MenuIcon from "@/assets/images/Menu.png";

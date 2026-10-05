@@ -38,6 +38,7 @@ type Props = {
   onQuickStatusChange: (leadId: number, value: string) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
+  onAgendarCita?: (lead: LeadRecord) => void;
 };
 
 type LeadGroup = {
@@ -152,6 +153,7 @@ function GroupedTable({
   canRecomend,
   onEdit,
   onDelete,
+  onAgendarCita,
   isLoading,
 }: {
   groups: LeadGroup[];
@@ -161,6 +163,7 @@ function GroupedTable({
   canRecomend: boolean;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
+  onAgendarCita?: (lead: LeadRecord) => void;
   isLoading: boolean;
 }) {
   const [recomModal, setRecomModal] = useState<RecomModal | null>(null);
@@ -313,6 +316,7 @@ export function AsesorExternoTable({
   onQuickStatusChange,
   onEdit,
   onDelete,
+  onAgendarCita,
 }: Props) {
   const columns = useMemo(
     () => buildColumns(updatingLeadId, canEdit, onQuickStatusChange),
@@ -346,6 +350,7 @@ export function AsesorExternoTable({
         canRecomend={canRecomend}
         onEdit={onEdit}
         onDelete={onDelete}
+        onAgendarCita={onAgendarCita}
         isLoading={isLoading}
       />
     );

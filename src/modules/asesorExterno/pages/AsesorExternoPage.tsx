@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import agregarIcon from '../../../assets/images/Agregar.png';
 import desArcIcon from '../../../assets/images/DesArc.png';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import { TablePagination } from '../../../shared/components/TablePagination';
@@ -8,9 +9,18 @@ import { useAsesorExternoPageState } from '../hooks/useAsesorExternoPageState';
 import { AsesorExternoTable } from '../components/AsesorExternoTable';
 import { CreateAsesorExternoModal } from '../components/CreateAsesorExternoModal';
 import { EditAsesorExternoModal } from '../components/EditAsesorExternoModal';
+import { AgendarCitaModal } from '../components/AgendarCitaModal';
 import type { LeadRecord } from '@/interfaces/lead.interface';
+import { createLead } from '@/modules/leads/services/leads.api';
+import { getProperties } from '@/modules/properties/services/properties.api';
+import { getDevelopments } from '@/modules/developments/services/developments.api';
+import { getReadableErrorMessage } from '@/shared/utils/errorMessages';
+import { updateAsesorExternoLead } from '../services/asesorExterno.api';
+import { useAsesorExternoStore } from '../store/useAsesorExternoStore';
 
 const ALL_STATES = 'Todos';
+
+type PropertyOption = { id: number; label: string };
 
 export function AsesorExternoPage() {
   const user = useAuthStore((state) => state.user);
@@ -51,6 +61,100 @@ export function AsesorExternoPage() {
   } = useAsesorExternoPageState({ userId: user?.id });
 
   const [confirmingDelete, setConfirmingDelete] = useState<LeadRecord | null>(null);
+  const [agendarCitaLead, setAgendarCitaLead] = useState<LeadRecord | null>(null);
+  const [propertyOptions, setPropertyOptions] = useState<PropertyOption[]>([]);
+  const [developmentOptions, setDevelopmentOptions] = useState<PropertyOption[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getProperties(), getDevelopments()]).then((results) => {
+      if (!active) return;
+      const [propsResult, devsResult] = results;
+      if (propsResult.status === 'fulfilled') {
+        setPropertyOptions(
+          propsResult.value
+            .filter((p) => p.estatus === 'Disponible')
+            .map((p) => ({ id: p.id, label: p.titulo?.trim() || `Propiedad #${p.id}` })),
+        );
+      }
+      if (devsResult.status === 'fulfilled') {
+        setDevelopmentOptions(
+          devsResult.value
+            .filter((d) => d.estatus === 'Disponible')
+            .map((d) => ({ id: d.id, label: d.titulo?.trim() || `Desarrollo #${d.id}` })),
+        );
+      }
+    });
+    return () => { active = false; };
+  }, []);
+
+  function handleStatusChangeIntercepted(leadId: number, value: string) {
+    if (value === 'Cita agendada') {
+      const lead = paginatedLeads.find((l) => l.id === leadId) ?? filteredLeads.find((l) => l.id === leadId);
+      if (lead) {
+        setAgendarCitaLead(lead);
+        return;
+      }
+    }
+    void handleQuickStatusChange(leadId, value);
+  }
+
+  async function handleAgendarCitaConfirm({
+    tipoObjetivo,
+    objetivoId,
+    fechaCita,
+    asesorExterno,
+    asesorExternoNombre,
+  }: {
+    tipoObjetivo: 'propiedad' | 'desarrollo';
+    objetivoId: number;
+    fechaCita: string;
+    asesorExterno: boolean;
+    asesorExternoNombre?: string;
+  }): Promise<string | null> {
+    if (!agendarCitaLead || !user) return 'No hay sesión válida.';
+    const lead = agendarCitaLead;
+    let nuevaVisita;
+    try {
+      nuevaVisita = await createLead({
+        nombres: lead.nombres,
+        apellidos: lead.apellidos,
+        telefono: String(lead.telefono),
+        lada: lead.lada ?? undefined,
+        estado: 'Agendado',
+        fecha_cita: fechaCita,
+        asesor_externo: asesorExterno,
+        asesor_externo_nombre: asesorExterno ? asesorExternoNombre : undefined,
+        creado_por_id: user.id,
+        ...(tipoObjetivo === 'propiedad' ? { propiedad_id: objetivoId } : { desarrollo_id: objetivoId }),
+      });
+    } catch (error) {
+      // Solo aquí, si falla la creación, mostramos error (nada fue creado)
+      return getReadableErrorMessage(error, 'No fue posible registrar la visita.');
+    }
+
+    // La visita ya fue creada — a partir de aquí cerramos el modal sin importar qué pase
+    // Intentamos vincular el lead externo con la visita; si falla, no bloqueamos el flujo
+    try {
+      await updateAsesorExternoLead(lead.id, { registro_lead_id: nuevaVisita.id });
+    } catch {
+      // El vínculo falló pero la visita ya existe; el botón se ocultará en sesión actual
+    }
+
+    useAsesorExternoStore.setState((state) => ({
+      leads: state.leads.map((l) =>
+        l.id === lead.id ? { ...l, registro_lead_id: nuevaVisita.id } : l,
+      ),
+    }));
+    await handleQuickStatusChange(lead.id, 'Cita agendada');
+    setAgendarCitaLead(null);
+    toast.success('Cita agendada y registro de visita creado.');
+    return null;
+  }
+
+  function handleAgendarCitaCancel() {
+    setAgendarCitaLead(null);
+  }
 
   async function confirmDelete() {
     if (!confirmingDelete) return;
@@ -139,9 +243,10 @@ export function AsesorExternoPage() {
           canDelete={canDelete}
           showCreator={showCreator}
           canRecomend={canRecomend}
-          onQuickStatusChange={handleQuickStatusChange}
+          onQuickStatusChange={handleStatusChangeIntercepted}
           onEdit={setEditingLead}
           onDelete={(lead) => setConfirmingDelete(lead)}
+          onAgendarCita={showCreator ? undefined : setAgendarCitaLead}
         />
 
         <TablePagination
@@ -170,6 +275,15 @@ export function AsesorExternoPage() {
           onEdit={handleEdit}
         />
       )}
+
+      <AgendarCitaModal
+        isOpen={Boolean(agendarCitaLead)}
+        lead={agendarCitaLead}
+        propertyOptions={propertyOptions}
+        developmentOptions={developmentOptions}
+        onConfirm={handleAgendarCitaConfirm}
+        onCancel={handleAgendarCitaCancel}
+      />
 
       {/* Delete confirmation */}
       {canDelete && confirmingDelete && (

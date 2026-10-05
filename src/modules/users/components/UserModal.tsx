@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent, type HTMLAttributes } from 'react';
 import { AppModal } from '@/components/ui/AppModal';
+import { PhotoCropModal } from '@/components/ui/PhotoCropModal';
 import type { CreateUserPayload, RoleOptionRecord, UpdateUserPayload, UserRecord } from '@/interfaces/user.interface';
 import { getFullImageUrl } from '@/shared/utils/imageUrl';
 
@@ -100,6 +101,8 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState('');
   const [photoRemoved, setPhotoRemoved] = useState(false);
+  const [cropSrc, setCropSrc] = useState('');
+  const [isCropOpen, setIsCropOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -109,6 +112,8 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
     setSelectedPhotoFile(null);
     setPhotoPreviewUrl(user?.foto_url?.trim() || '');
     setPhotoRemoved(false);
+    setCropSrc('');
+    setIsCropOpen(false);
   }, [isOpen, user]);
 
   useEffect(() => {
@@ -132,7 +137,7 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
     }));
   }
 
-  async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+  function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -143,13 +148,47 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
     }
 
     setSubmitError('');
-    if (photoPreviewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(photoPreviewUrl);
-    }
-    setSelectedPhotoFile(file);
-    setPhotoPreviewUrl(URL.createObjectURL(file));
-    setPhotoRemoved(false);
+    if (cropSrc.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
+    setCropSrc(URL.createObjectURL(file));
+    setIsCropOpen(true);
     event.target.value = '';
+  }
+
+  function handleCropConfirm(croppedFile: File) {
+    if (cropSrc.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
+    setCropSrc('');
+    setIsCropOpen(false);
+    if (photoPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(photoPreviewUrl);
+    setSelectedPhotoFile(croppedFile);
+    setPhotoPreviewUrl(URL.createObjectURL(croppedFile));
+    setPhotoRemoved(false);
+  }
+
+  function handleCropCancel() {
+    if (cropSrc.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
+    setCropSrc('');
+    setIsCropOpen(false);
+  }
+
+  async function handleEditPhoto() {
+    if (!photoPreviewUrl) return;
+    const fullUrl = getFullImageUrl(photoPreviewUrl);
+    // Si ya es un blob podemos abrirlo directo; si es URL del servidor lo descargamos primero
+    // para que canvas pueda dibujarlo sin restricciones CORS.
+    if (photoPreviewUrl.startsWith('blob:')) {
+      setCropSrc(photoPreviewUrl);
+      setIsCropOpen(true);
+    } else {
+      try {
+        const response = await fetch(fullUrl);
+        const blob = await response.blob();
+        if (cropSrc.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
+        setCropSrc(URL.createObjectURL(blob));
+        setIsCropOpen(true);
+      } catch {
+        setSubmitError('No se pudo cargar la imagen para editar.');
+      }
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -357,20 +396,29 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
                   </label>
 
                   {photoPreviewUrl ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (photoPreviewUrl.startsWith('blob:')) {
-                          URL.revokeObjectURL(photoPreviewUrl);
-                        }
-                        setSelectedPhotoFile(null);
-                        setPhotoPreviewUrl('');
-                        setPhotoRemoved(Boolean(user?.foto_url));
-                      }}
-                      className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                    >
-                      Quitar imagen
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleEditPhoto}
+                        className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                      >
+                        Editar foto
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (photoPreviewUrl.startsWith('blob:')) {
+                            URL.revokeObjectURL(photoPreviewUrl);
+                          }
+                          setSelectedPhotoFile(null);
+                          setPhotoPreviewUrl('');
+                          setPhotoRemoved(Boolean(user?.foto_url));
+                        }}
+                        className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                      >
+                        Quitar imagen
+                      </button>
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -427,6 +475,14 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
           </button>
         </div>
       </form>
+      {isCropOpen && cropSrc ? (
+        <PhotoCropModal
+          isOpen={isCropOpen}
+          imageSrc={cropSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      ) : null}
     </AppModal>
   );
 }

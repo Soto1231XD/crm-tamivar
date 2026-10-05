@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getReadableErrorMessage } from "@/shared/utils/errorMessages";
@@ -7,6 +7,7 @@ import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
 import { BadgeSelect } from "@/components/ui/BadgeSelect";
 import { usePropertiesStore } from "../store/usePropertiesStore";
 import { DownloadPdfButton } from "../utils/DownloadPdfButton";
+import { getFullImageUrl } from "@/shared/utils/imageUrl";
 import descInfIcon from "@/assets/images/DescInf.png";
 import verIcon from "@/assets/images/Ver.png";
 import {
@@ -67,13 +68,10 @@ export function PropertiesTable({
         headerClassName: "min-w-[180px]",
         cellClassName: "min-w-[180px] whitespace-normal align-top",
         render: (property) => (
-          <button
-            type="button"
-            className="text-left font-medium text-slate-800 hover:text-[#4F5EF8] hover:underline transition-colors cursor-pointer"
-            onClick={() => navigate(`/modulos/propiedades/${property.id}`)}
-          >
-            {property.titulo || "Sin título"}
-          </button>
+          <PropertyTitleCell
+            property={property}
+            onNavigate={() => navigate(`/modulos/propiedades/${property.id}`)}
+          />
         ),
       },
       {
@@ -215,5 +213,70 @@ export function PropertiesTable({
         </>
       )}
     />
+  );
+}
+
+function PropertyTitleCell({
+  property,
+  onNavigate,
+}: {
+  property: PropertyRecord;
+  onNavigate: () => void;
+}) {
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mainImage = property.imagenes?.find((img) => img.principal) ?? property.imagenes?.[0];
+
+  function handleMouseEnter(e: React.MouseEvent<HTMLButtonElement>) {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPos({ top: rect.top - 8, left: rect.left });
+  }
+
+  function handleMouseLeave() {
+    hideTimer.current = setTimeout(() => setTooltipPos(null), 80);
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={onNavigate}
+        className="text-left font-medium text-slate-800 hover:text-[#4F5EF8] hover:underline transition-colors cursor-pointer"
+      >
+        {property.titulo || "Sin título"}
+      </button>
+
+      {tooltipPos && (
+        <div
+          style={{
+            position: "fixed",
+            top: tooltipPos.top,
+            left: tooltipPos.left,
+            transform: "translateY(-100%)",
+            zIndex: 9999,
+          }}
+          className="pointer-events-none w-56 overflow-hidden rounded-xl bg-slate-900 shadow-xl"
+        >
+          {mainImage ? (
+            <img
+              src={getFullImageUrl(mainImage.url)}
+              alt={property.titulo}
+              className="h-36 w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-36 w-full items-center justify-center bg-slate-800 text-xs text-slate-400">
+              Sin imagen
+            </div>
+          )}
+          <p className="px-3 py-2 text-xs font-medium leading-4 text-white">
+            {property.titulo || "Sin título"}
+          </p>
+          <span className="absolute left-4 top-full h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-slate-900" />
+        </div>
+      )}
+    </>
   );
 }

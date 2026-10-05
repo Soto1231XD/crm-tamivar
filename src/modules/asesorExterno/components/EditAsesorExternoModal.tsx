@@ -107,6 +107,10 @@ export function EditAsesorExternoModal({ isOpen, lead, onClose, onEdit }: Props)
       title="Editar lead externo"
       maxWidthClassName="max-w-2xl"
     >
+      <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-slate-600">
+        <span className="font-semibold text-red-600">*</span> Campo obligatorio
+      </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--crm-text-muted)]">

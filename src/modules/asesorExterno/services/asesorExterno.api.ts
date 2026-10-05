@@ -20,7 +20,9 @@ export type CreateAsesorExternoPayload = {
   fecha_registro?: string;
 };
 
-export type UpdateAsesorExternoPayload = Partial<CreateAsesorExternoPayload>;
+export type UpdateAsesorExternoPayload = Partial<CreateAsesorExternoPayload> & {
+  registro_lead_id?: number;
+};
 
 export async function getAsesorExternoLeads(): Promise<LeadRecord[]> {
   const data = await apiRequest<LeadRecord[]>(PATH);
