@@ -153,7 +153,6 @@ function GroupedTable({
   canRecomend,
   onEdit,
   onDelete,
-  onAgendarCita,
   isLoading,
 }: {
   groups: LeadGroup[];
@@ -163,7 +162,6 @@ function GroupedTable({
   canRecomend: boolean;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
-  onAgendarCita?: (lead: LeadRecord) => void;
   isLoading: boolean;
 }) {
   const [recomModal, setRecomModal] = useState<RecomModal | null>(null);
@@ -350,7 +348,6 @@ export function AsesorExternoTable({
         canRecomend={canRecomend}
         onEdit={onEdit}
         onDelete={onDelete}
-        onAgendarCita={onAgendarCita}
         isLoading={isLoading}
       />
     );
