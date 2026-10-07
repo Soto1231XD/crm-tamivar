@@ -3,10 +3,11 @@ import editarIcon from '@/assets/images/Editar.png';
 import borrarIcon from '@/assets/images/Borrar.png';
 import { BaseTable, type ColumnDef } from '@/components/ui/BaseTable';
 import { BadgeSelect } from '@/components/ui/BadgeSelect';
-import type { LeadRecord } from '@/interfaces/lead.interface';
+import type { Etiqueta, LeadRecord } from '@/interfaces/lead.interface';
 import { getStatusStyles } from '@/shared/ui/statusStyles';
 import { ASESOR_EXTERNO_STATUS_OPTIONS } from './asesorExterno.shared';
 import { CreateRecomendacionModal } from '@/modules/recomendaciones/components/CreateRecomendacionModal';
+import { EtiquetaChip } from '@/components/ui/EtiquetaChip';
 
 function ExpandableText({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -38,6 +39,9 @@ type Props = {
   onQuickStatusChange: (leadId: number, value: string) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
+  visibleEtiquetaIds?: Set<number>;
+  onManageEtiquetas: (lead: LeadRecord) => void;
+  currentUserId?: number;
 };
 
 type LeadGroup = {
@@ -52,8 +56,37 @@ function buildColumns(
   updatingLeadId: number | null,
   canEdit: boolean,
   onQuickStatusChange: (leadId: number, value: string) => void,
+  onManageEtiquetas: (lead: LeadRecord) => void,
+  visibleEtiquetaIds: Set<number> | undefined,
+  currentUserId: number | undefined,
 ): ColumnDef<LeadRecord>[] {
   return [
+    {
+      header: '',
+      cellClassName: 'w-[80px] min-w-[80px] pl-2 pr-1',
+      render: (lead) => {
+        const isOwner = lead.creado_por_id === currentUserId;
+        return (
+          <div className="flex flex-wrap items-center gap-1">
+            {(lead.etiquetas ?? [])
+              .filter((j) => !visibleEtiquetaIds || visibleEtiquetaIds.has(j.etiqueta.id))
+              .map((j) => (
+                <EtiquetaChip key={j.etiqueta.id} etiqueta={j.etiqueta} compact />
+              ))}
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => onManageEtiquetas(lead)}
+                title="Gestionar etiquetas"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#312C85]/10 text-[#312C85] font-bold text-sm transition hover:bg-[#312C85] hover:text-white"
+              >
+                +
+              </button>
+            )}
+          </div>
+        );
+      },
+    },
     {
       header: 'Fecha',
       cellClassName: 'min-w-[100px]',
@@ -162,6 +195,7 @@ function GroupedTable({
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
   isLoading: boolean;
+  allEtiquetas?: Etiqueta[];
 }) {
   const [recomModal, setRecomModal] = useState<RecomModal | null>(null);
   const hasActions = canEdit || canDelete;
@@ -313,10 +347,13 @@ export function AsesorExternoTable({
   onQuickStatusChange,
   onEdit,
   onDelete,
+  visibleEtiquetaIds,
+  onManageEtiquetas,
+  currentUserId,
 }: Props) {
   const columns = useMemo(
-    () => buildColumns(updatingLeadId, canEdit, onQuickStatusChange),
-    [updatingLeadId, canEdit, onQuickStatusChange],
+    () => buildColumns(updatingLeadId, canEdit, onQuickStatusChange, onManageEtiquetas, visibleEtiquetaIds, currentUserId),
+    [updatingLeadId, canEdit, onQuickStatusChange, onManageEtiquetas, visibleEtiquetaIds, currentUserId],
   );
 
   const groups = useMemo<LeadGroup[]>(() => {

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import agregarIcon from '../../../assets/images/Agregar.png';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useHasPermission } from '@/shared/auth/permissions/useHasPermission';
 import { extractUserRoles, normalizeRoleName } from '@/shared/auth/role.utils';
@@ -11,20 +12,75 @@ import { EditLeadLeadModal } from '../components/EditLeadLeadModal';
 import { DeleteLeadConfirmModal } from '../../leads/components/DeleteLeadConfirmModal';
 import { useLeadLeadsPageState } from '../hooks/useLeadLeadsPageState';
 import { PAGE_SIZE } from '../../leads/utils/leads.constants';
+import { useEtiquetasStore } from '@/modules/etiquetas/store/useEtiquetasStore';
+import { assignEtiquetaToRegistroLead, removeEtiquetaFromRegistroLead } from '@/modules/etiquetas/services/etiquetas.api';
+import type { Etiqueta, LeadRecord } from '@/interfaces/lead.interface';
+import { useLeadLeadsStore } from '../store/useLeadLeadsStore';
+import { EtiquetaAsignacionModal } from '@/modules/etiquetas/components/EtiquetaAsignacionModal';
+import { GestionarEtiquetasModal } from '@/modules/etiquetas/components/GestionarEtiquetasModal';
 
 export function LeadLeadsPage() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.token);
-  const { can, isSuperAdmin } = useHasPermission();
+  const { can, isSuperAdmin, isAdmin } = useHasPermission();
   const userRoles = extractUserRoles(user ?? { rol: null, roles: [] });
   const isSalesAdvisor = userRoles.some(
     (role) => normalizeRoleName(role) === 'asesor de ventas',
+  );
+  const showTabs = userRoles.some((role) =>
+    ['super administrador', 'administrador', 'coordinador de ventas'].includes(
+      normalizeRoleName(role),
+    ),
   );
 
   const canCreate = can('registros_leads', 'crear');
   const canEdit = can('registros_leads', 'actualizar');
   const [activeTab, setActiveTab] = useState<'todos' | 'mis_leads'>('todos');
-  const canDelete = isSuperAdmin && can('registros_leads', 'eliminar');
+  const canDelete = (isSuperAdmin || isAdmin) && can('registros_leads', 'eliminar');
+
+  const { etiquetas, fetchEtiquetas } = useEtiquetasStore();
+
+  const etiquetasScope: 'personal' = 'personal';
+
+  useEffect(() => {
+    void fetchEtiquetas('personal');
+    setEtiquetaFilter(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [managingEtiquetasLead, setManagingEtiquetasLead] = useState<LeadRecord | null>(null);
+  const [etiquetaFilter, setEtiquetaFilter] = useState<number | null>(null);
+  const [isGestionarOpen, setIsGestionarOpen] = useState(false);
+
+  // Always a Set — empty while loading, scoped IDs once loaded.
+  // Never null, so asesor chips never flash through during the fetch.
+  const visibleEtiquetaIds = new Set(etiquetas.map((e) => e.id));
+
+
+  async function handleToggleEtiqueta(lead: LeadRecord, etiqueta: Etiqueta, assigned: boolean) {
+    if (lead.vendedor_asignado_id !== user?.id) return;
+    try {
+      if (assigned) {
+        await removeEtiquetaFromRegistroLead(lead.id, etiqueta.id);
+        const updatedEtiquetas = (lead.etiquetas ?? []).filter((j) => j.etiqueta.id !== etiqueta.id);
+        const updatedLead = { ...lead, etiquetas: updatedEtiquetas };
+        useLeadLeadsStore.setState((s) => ({
+          leads: s.leads.map((l) => l.id === lead.id ? updatedLead : l),
+        }));
+        setManagingEtiquetasLead((prev) => prev?.id === lead.id ? updatedLead : prev);
+      } else {
+        await assignEtiquetaToRegistroLead(lead.id, etiqueta.id);
+        const updatedEtiquetas = [...(lead.etiquetas ?? []), { etiqueta }];
+        const updatedLead = { ...lead, etiquetas: updatedEtiquetas };
+        useLeadLeadsStore.setState((s) => ({
+          leads: s.leads.map((l) => l.id === lead.id ? updatedLead : l),
+        }));
+        setManagingEtiquetasLead((prev) => prev?.id === lead.id ? updatedLead : prev);
+      }
+    } catch {
+      toast.error('No se pudo actualizar la etiqueta.');
+    }
+  }
   const canQuickEditStatus = canEdit;
   const canQuickEditComments = canEdit;
   const canQuickEditPriority = canEdit;
@@ -68,6 +124,7 @@ export function LeadLeadsPage() {
     accessToken,
     restrictToUserId: isSalesAdvisor ? (user?.id ?? null) : null,
     myLeadsOnly: activeTab === 'mis_leads',
+    etiquetaFilter,
   });
 
   return (
@@ -102,15 +159,19 @@ export function LeadLeadsPage() {
         sellerOptions={userChoices}
         hasResults={filteredLeads.length > 0}
         hideSellerFilter={false}
+        etiquetas={etiquetas}
+        etiquetaFilter={etiquetaFilter}
         onSearchChange={setSearch}
         onStatusChange={setStatusFilter}
         onSellerChange={setSellerFilter}
         onLeadDateFromChange={setLeadDateFromFilter}
         onLeadDateToChange={setLeadDateToFilter}
         onDownload={handleDownloadFilteredLeads}
+        onEtiquetaChange={setEtiquetaFilter}
+        onManageEtiquetas={() => setIsGestionarOpen(true)}
       />
 
-      {!isSalesAdvisor && (
+      {showTabs && (
         <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm w-fit">
           {([
             { key: 'todos', label: 'Todos los leads' },
@@ -150,6 +211,9 @@ export function LeadLeadsPage() {
           onQuickChange={handleQuickLeadChange}
           onEdit={setEditingLead}
           onDelete={setDeletingLead}
+          visibleEtiquetaIds={visibleEtiquetaIds}
+          onManageEtiquetas={setManagingEtiquetasLead}
+          currentUserId={user?.id}
         />
 
         <TablePagination
@@ -178,6 +242,8 @@ export function LeadLeadsPage() {
           onClose={() => setEditingLead(null)}
           onEdit={handleEditLead}
           userOptions={userChoices}
+          allEtiquetas={etiquetas}
+          onToggleEtiqueta={handleToggleEtiqueta}
         />
       ) : null}
 
@@ -189,6 +255,21 @@ export function LeadLeadsPage() {
           onConfirm={handleDeleteLead}
         />
       ) : null}
+
+      <EtiquetaAsignacionModal
+        isOpen={Boolean(managingEtiquetasLead)}
+        lead={managingEtiquetasLead}
+        allEtiquetas={etiquetas}
+        onToggle={handleToggleEtiqueta}
+        onClose={() => setManagingEtiquetasLead(null)}
+      />
+
+      <GestionarEtiquetasModal
+        isOpen={isGestionarOpen}
+        scope={etiquetasScope}
+        onClose={() => setIsGestionarOpen(false)}
+      />
+
     </div>
   );
 }

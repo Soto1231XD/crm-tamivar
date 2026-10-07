@@ -12,11 +12,11 @@ import { useLeadRequestsPageState } from '../hooks/useLeadRequestsPageState';
 
 export function LeadRequestsPage() {
   const user = useAuthStore((state) => state.user);
-  const { can, isSuperAdmin } = useHasPermission();
+  const { can, isSuperAdmin, isAdmin } = useHasPermission();
 
   const canCreate = can('solicitudes_leads', 'crear');
   const canEdit = can('solicitudes_leads', 'actualizar');
-  const canDelete = isSuperAdmin && can('solicitudes_leads', 'eliminar');
+  const canDelete = (isSuperAdmin || isAdmin) && can('solicitudes_leads', 'eliminar');
 
   const {
     isLoading,

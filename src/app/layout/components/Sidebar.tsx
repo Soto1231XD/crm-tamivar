@@ -84,7 +84,7 @@ export function Sidebar({
                 }
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
-                  <img src={item.icon} alt="" className="h-5 w-5 shrink-0" />
+                  <img src={item.icon} alt="" className="h-7 w-7 shrink-0" />
                 </span>
               </NavLink>
             ))
@@ -97,12 +97,12 @@ export function Sidebar({
                   onClick={closeMobile}
                   className={({ isActive }) =>
                     ["group flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm transition-all duration-200",
-                      isActive ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]" : "text-slate-300 hover:bg-white/5 hover:text-white",
+                      isActive ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]" : "text-slate-400 hover:bg-white/5 hover:text-white",
                     ].join(" ")
                   }
                 >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
-                    <img src={item.icon} alt="" className="h-5 w-5 shrink-0" />
+                    <img src={item.icon} alt="" className="h-7 w-7 shrink-0" />
                   </span>
                   <span className="truncate font-medium">{item.label}</span>
                 </NavLink>
@@ -124,7 +124,7 @@ export function Sidebar({
                       <span className={["flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10",
                         isGroupActive ? "bg-white/10" : "bg-white/5",
                       ].join(" ")}>
-                        <img src={group.icon} alt="" className="h-5 w-5 shrink-0" />
+                        <img src={group.icon} alt="" className="h-7 w-7 shrink-0" />
                       </span>
                       <span className="flex-1 truncate text-left font-medium">{group.label}</span>
                       <ChevronDownIcon className={["h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200",
@@ -145,8 +145,8 @@ export function Sidebar({
                               ].join(" ")
                             }
                           >
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
-                              <img src={item.icon} alt="" className="h-4 w-4 shrink-0" />
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
+                              <img src={item.icon} alt="" className="h-6 w-6 shrink-0" />
                             </span>
                             <span className="truncate font-medium">{item.label}</span>
                           </NavLink>

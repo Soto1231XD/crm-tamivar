@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AppModal } from '@/components/ui/AppModal';
-import type { LeadRecord } from '@/interfaces/lead.interface';
+import type { Etiqueta, LeadRecord } from '@/interfaces/lead.interface';
 import type { UpdateAsesorExternoPayload } from '../services/asesorExterno.api';
+import { EtiquetaSelector } from '@/components/ui/EtiquetaSelector';
 import {
   ASESOR_EXTERNO_OPERATION_OPTIONS,
   ASESOR_EXTERNO_PAYMENT_METHOD_OPTIONS,
@@ -26,9 +27,11 @@ type Props = {
   lead: LeadRecord | null;
   onClose: () => void;
   onEdit: (id: number, payload: UpdateAsesorExternoPayload) => Promise<string | null>;
+  allEtiquetas: Etiqueta[];
+  onToggleEtiqueta: (lead: LeadRecord, etiqueta: Etiqueta, assigned: boolean) => void;
 };
 
-export function EditAsesorExternoModal({ isOpen, lead, onClose, onEdit }: Props) {
+export function EditAsesorExternoModal({ isOpen, lead, onClose, onEdit, allEtiquetas, onToggleEtiqueta }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -303,6 +306,16 @@ export function EditAsesorExternoModal({ isOpen, lead, onClose, onEdit }: Props)
             />
           </div>
         </div>
+
+        {lead && (
+          <div className="border-t border-slate-200 pt-4">
+            <EtiquetaSelector
+              lead={lead}
+              allEtiquetas={allEtiquetas}
+              onToggle={(et, assigned) => onToggleEtiqueta(lead, et, assigned)}
+            />
+          </div>
+        )}
 
         {submitError && (
           <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-600">

@@ -18,10 +18,12 @@ export const useHasPermission = () => {
 
   // Atajo para saber si es Super Admin (por rol o por comodín)
   const isSuperAdmin = user?.roles.includes('Super Administrador') || userPermissions.includes('*:*');
+  const isAdmin = user?.roles.includes('Administrador') ?? false;
 
-  return { 
-    can, 
-    isSuperAdmin, 
-    userPermissions 
+  return {
+    can,
+    isSuperAdmin,
+    isAdmin,
+    userPermissions
   };
 };

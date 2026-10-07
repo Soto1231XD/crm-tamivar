@@ -23,6 +23,18 @@ export interface LeadDevelopmentRecord {
   tipo_inmueble?: string | null;
 }
 
+export interface Etiqueta {
+  id: number;
+  nombre: string;
+  color: string;
+  creado_por_id?: number | null;
+  creado_en?: string;
+}
+
+export interface LeadEtiquetaJunction {
+  etiqueta: Etiqueta;
+}
+
 export interface LeadRecord {
   id: number;
   registro_lead_id?: number | null;
@@ -62,6 +74,7 @@ export interface LeadRecord {
   vendedor_asignado?: LeadCreatorRecord | null;
   propiedad?: LeadPropertyRecord | null;
   desarrollo?: LeadDevelopmentRecord | null;
+  etiquetas?: LeadEtiquetaJunction[];
 }
 
 export interface CreateLeadPayload {

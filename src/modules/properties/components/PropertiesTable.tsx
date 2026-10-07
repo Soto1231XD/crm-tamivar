@@ -43,6 +43,7 @@ export function PropertiesTable({
   const navigate = useNavigate();
   const { editProperty } = usePropertiesStore();
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
+  const [updatingExclusivaId, setUpdatingExclusivaId] = useState<number | null>(null);
 
   const handleStatusChange = async (id: number, nextStatus: string) => {
     setUpdatingStatusId(id);
@@ -58,6 +59,22 @@ export function PropertiesTable({
       );
     } finally {
       setUpdatingStatusId(null);
+    }
+  };
+
+  const handleExclusivaToggle = async (property: PropertyRecord) => {
+    setUpdatingExclusivaId(property.id);
+    try {
+      await editProperty(property.id, { exclusiva: !property.exclusiva });
+      toast.success(
+        !property.exclusiva ? "Marcada como exclusiva." : "Exclusiva removida.",
+      );
+    } catch (error) {
+      toast.error(
+        getReadableErrorMessage(error, "No fue posible actualizar la exclusiva."),
+      );
+    } finally {
+      setUpdatingExclusivaId(null);
     }
   };
 
@@ -101,17 +118,40 @@ export function PropertiesTable({
         header: "Exclusivo",
         headerClassName: "w-[100px]",
         cellClassName: "w-[100px] align-top",
-        render: (property) => (
-          <span
-            className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
-              property.exclusiva
-                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                : "text-slate-500"
-            }`}
-          >
-            {property.exclusiva ? "Sí" : "No"}
-          </span>
-        ),
+        render: (property) =>
+          canEdit ? (
+            <button
+              type="button"
+              disabled={updatingExclusivaId === property.id}
+              onClick={() => handleExclusivaToggle(property)}
+              title={property.exclusiva ? "Quitar exclusiva" : "Marcar como exclusiva"}
+              className={[
+                "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider border transition-all disabled:opacity-50 disabled:cursor-not-allowed",
+                property.exclusiva
+                  ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                  : "bg-white text-slate-400 border-slate-200 hover:border-amber-300 hover:text-amber-600",
+              ].join(" ")}
+            >
+              {updatingExclusivaId === property.id ? (
+                <span className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              ) : (
+                <svg className="h-3 w-3 shrink-0" fill={property.exclusiva ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+              )}
+              {property.exclusiva ? "Sí" : "No"}
+            </button>
+          ) : (
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
+                property.exclusiva
+                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                  : "text-slate-500"
+              }`}
+            >
+              {property.exclusiva ? "Sí" : "No"}
+            </span>
+          ),
       },
       {
         header: "Dirección",
@@ -165,7 +205,7 @@ export function PropertiesTable({
         ),
       },
     ],
-    [updatingStatusId, canEdit, statusOptions],
+    [updatingStatusId, updatingExclusivaId, canEdit, statusOptions],
   );
 
   return (

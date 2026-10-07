@@ -33,6 +33,8 @@ export function SystemRolesPage() {
   const { can } = useHasPermission();
 
   const canCreate = can("roles", "crear");
+  const canEdit = can("roles", "actualizar");
+  const canDelete = can("roles", "eliminar");
 
   const [roles, setRoles] = useState<SystemRoleRecord[]>([]);
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -187,35 +189,28 @@ export function SystemRolesPage() {
                       Módulos asignados
                     </button>
 
-                    {isProtectedRole(role.rol) ? (
-                      <div
-                        className={`w-full max-w-[320px] rounded-xl px-4 py-3 text-sm leading-6 xl:mt-auto ${
-                          isDark
-                            ? "border border-amber-500/30 bg-amber-500/10 text-amber-100"
-                            : "border border-amber-100 bg-amber-50 text-slate-700"
-                        }`}
-                      >
-                        Este es un rol base del sistema y no puede editarse ni eliminarse desde esta vista.
-                      </div>
-                    ) : (
+                    {(canEdit || canDelete) && (
                       <div className="flex flex-wrap justify-start gap-2 xl:justify-end">
-                        <button
-                          type="button"
-                          onClick={() => setEditingRole(role)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100"
-                        >
-                          <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                          <span>Editar</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setDeletingRole(role)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-orange-100 bg-orange-50 px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition-colors hover:bg-orange-100"
-                        >
-                          <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
-                          <span>Eliminar</span>
-                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingRole(role)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3.5 py-2.5 text-sm font-semibold text-[#312C85] transition-colors hover:bg-indigo-100"
+                          >
+                            <img src={editarDosIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                            <span>Editar</span>
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => setDeletingRole(role)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-orange-100 bg-orange-50 px-3.5 py-2.5 text-sm font-semibold text-[#CA5874] transition-colors hover:bg-orange-100"
+                          >
+                            <img src={borrarIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+                            <span>Eliminar</span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -352,19 +347,3 @@ function getUserRoles(user: UserRecord): string[] {
   return extractUserRoles(user);
 }
 
-function isProtectedRole(roleName: string): boolean {
-  const normalized = normalizeRoleName(roleName);
-  return [
-    "super admin",
-    "super administrador",
-    "admin",
-    "administrador",
-    "marketing",
-    "rh",
-    "recursos humanos",
-    "coordinador ventas",
-    "coordinador de ventas",
-    "asesor ventas",
-    "asesor de ventas",
-  ].includes(normalized);
-}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BaseTable, type ColumnDef } from "@/components/ui/BaseTable";
 import { BadgeSelect } from "@/components/ui/BadgeSelect";
 import type { LeadRecord } from "@/interfaces/lead.interface";
+import { EtiquetaChip } from "@/components/ui/EtiquetaChip";
 import {
   formatDate,
   formatPhone,
@@ -38,6 +39,9 @@ type LeadLeadsTableProps = {
   ) => void;
   onEdit: (lead: LeadRecord) => void;
   onDelete: (lead: LeadRecord) => void;
+  visibleEtiquetaIds?: Set<number>;
+  onManageEtiquetas: (lead: LeadRecord) => void;
+  currentUserId?: number;
 };
 
 export function LeadLeadsTable({
@@ -53,9 +57,12 @@ export function LeadLeadsTable({
   canEdit = true,
   canDelete = true,
   userChoices = [],
+  visibleEtiquetaIds,
   onQuickChange,
   onEdit,
   onDelete,
+  onManageEtiquetas,
+  currentUserId,
 }: LeadLeadsTableProps) {
   const [commentDrafts, setCommentDrafts] = useState<Record<number, string>>({});
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -84,6 +91,32 @@ export function LeadLeadsTable({
   }
 
   const columns: ColumnDef<LeadRecord>[] = [
+    {
+      header: '',
+      cellClassName: 'w-[80px] min-w-[80px] pl-2 pr-1',
+      render: (lead) => {
+        const isOwner = lead.vendedor_asignado_id === currentUserId;
+        return (
+          <div className="flex flex-wrap items-center gap-1">
+            {(lead.etiquetas ?? [])
+              .filter((j) => !visibleEtiquetaIds || visibleEtiquetaIds.has(j.etiqueta.id))
+              .map((j) => (
+                <EtiquetaChip key={j.etiqueta.id} etiqueta={j.etiqueta} compact />
+              ))}
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => onManageEtiquetas(lead)}
+                title="Gestionar etiquetas"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#312C85]/10 text-[#312C85] font-bold text-sm transition hover:bg-[#312C85] hover:text-white"
+              >
+                +
+              </button>
+            )}
+          </div>
+        );
+      },
+    },
     {
       header: "Fecha",
       cellClassName: "min-w-[100px]",

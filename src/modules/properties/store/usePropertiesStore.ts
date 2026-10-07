@@ -146,7 +146,6 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
     payload: UpdatePropertyPayload,
     files: NuevaImagen[] = [],
   ) => {
-    set({ isLoading: true, error: null });
     try {
       const updatedProperty = await updateProperty(id, payload, files);
       set((state) => {
@@ -162,7 +161,6 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
             state.currentProperty?.id === id
               ? { ...state.currentProperty, ...updatedProperty }
               : state.currentProperty,
-          isLoading: false,
         };
       });
     } catch (error) {
@@ -171,7 +169,6 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
           error,
           "No fue posible actualizar la propiedad.",
         ),
-        isLoading: false,
       });
       throw error;
     }

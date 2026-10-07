@@ -21,7 +21,7 @@ function normalizeRoleName(role: string): string {
 export function LeadsPage() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.token);
-  const { can, isSuperAdmin } = useHasPermission();
+  const { can, isSuperAdmin, isAdmin } = useHasPermission();
 
   const canCreate = can('registros', 'crear');
   const canEditOwn = can('registros', 'actualizar');
@@ -142,7 +142,7 @@ export function LeadsPage() {
           canQuickEdit={canEditAll || canEditOwn}
           canQuickEditItem={canEditVisit}
           canEditItem={canEditVisit}
-          canDeleteItem={() => isSuperAdmin && canDelete}
+          canDeleteItem={() => (isSuperAdmin || isAdmin) && canDelete}
           onQuickChange={handleQuickLeadChange}
           onEdit={setEditingLead}
           onDelete={setDeletingLead}

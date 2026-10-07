@@ -49,6 +49,9 @@ const SystemRolesPage = lazy(() =>
 const ContentPage = lazy(() =>
   import("@/modules/content/pages/ContentPage").then((m) => ({ default: m.ContentPage }))
 );
+const ContentDetailPage = lazy(() =>
+  import("@/modules/content/pages/ContentDetailPage").then((m) => ({ default: m.ContentDetailPage }))
+);
 const MaterialPage = lazy(() =>
   import("@/modules/material/pages/MaterialPage").then((m) => ({ default: m.MaterialPage }))
 );
@@ -144,6 +147,7 @@ export function AppRoutes() {
           </Route>
           <Route element={<ProtectedRoute module="blogs" />}>
             <Route path="modulos/blogs" element={<ContentPage />} />
+            <Route path="modulos/blogs/:id" element={<ContentDetailPage />} />
           </Route>
           <Route element={<ProtectedRoute module="roles" />}>
             <Route path="modulos/roles" element={<SystemRolesPage />} />

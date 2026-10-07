@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type {
   BlogImageRecord,
   BlogRecord,
@@ -30,8 +31,8 @@ const ALL_CONTENT_TYPES = "Todos los tipos";
 
 export function ContentPage() {
   const { can } = useHasPermission();
+  const navigate = useNavigate();
 
-  // Validamos permisos para la llave "blogs"
   const canCreate = can("blogs", "crear");
   const canEdit = can("blogs", "actualizar");
   const canDelete = can("blogs", "eliminar");
@@ -60,9 +61,12 @@ export function ContentPage() {
         statusFilter === ALL_CONTENT_STATES || currentStatus === statusFilter;
       const matchesTipo =
         tipoFilter === ALL_CONTENT_TYPES || (item.tipo ?? "Blog") === tipoFilter;
-      return matchesTitle && matchesStatus && matchesTipo;
+      // Usuarios sin permiso de editar solo ven capacitaciones publicadas
+      const isCapacitacion = item.tipo === "Capacitación";
+      const isVisibleForRole = !isCapacitacion || item.publicado || canEdit;
+      return matchesTitle && matchesStatus && matchesTipo && isVisibleForRole;
     });
-  }, [blogs, search, statusFilter, tipoFilter]);
+  }, [blogs, search, statusFilter, tipoFilter, canEdit]);
 
   return (
     <div className="space-y-5">
@@ -72,7 +76,7 @@ export function ContentPage() {
             Contenido
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Gestiona blogs y artículos del sitio web
+            Gestiona blogs del sitio web y capacitaciones internas
           </p>
         </div>
         <button
@@ -189,19 +193,34 @@ export function ContentPage() {
                   <div className={`mt-5 flex items-center gap-2 border-t border-slate-200 pt-4 ${!canEdit && !canDelete ? "justify-center" : "justify-between"}`}>
                     {/* Acciones principales */}
                     <div className="flex flex-wrap items-center gap-2">
-                      {item.publicado && (
-                        <a
-                          href={`${WEBSITE_URL}/blog/${item.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
-                          title="Ver en el sitio web"
+                      {(item.tipo ?? "Blog") === "Capacitación" ? (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/modulos/blogs/${item.id}`)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
+                          title="Ver capacitación"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                           <span>Ver</span>
-                        </a>
+                        </button>
+                      ) : (
+                        item.publicado && (
+                          <a
+                            href={`${WEBSITE_URL}/blog/${item.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                            title="Ver en el sitio web"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            <span>Ver</span>
+                          </a>
+                        )
                       )}
 
                       {canEdit && (

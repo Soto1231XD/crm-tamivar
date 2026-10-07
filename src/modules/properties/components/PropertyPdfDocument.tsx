@@ -175,14 +175,13 @@ const styles = StyleSheet.create({
   },
   galleryCol: {
     width: "48.5%",
-    marginBottom: 15,
+    marginBottom: 12,
   },
   galleryImage: {
-    height: 170,
+    width: "100%",
+    height: 250,
     objectFit: "cover",
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderRadius: 4,
   },
 
   // Sección Ubicación - mapa de zona

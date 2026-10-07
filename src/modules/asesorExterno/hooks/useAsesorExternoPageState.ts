@@ -15,9 +15,11 @@ const ALL_STATES = 'Todos';
 
 type Params = {
   userId?: number | null;
+  myLeadsOnly?: boolean;
+  etiquetaFilter?: number | null;
 };
 
-export function useAsesorExternoPageState({ userId }: Params) {
+export function useAsesorExternoPageState({ userId, myLeadsOnly = false, etiquetaFilter = null }: Params) {
   const { leads, isLoading, fetchLeads, addLead, editLead, removeLead } =
     useAsesorExternoStore();
 
@@ -74,14 +76,18 @@ export function useAsesorExternoPageState({ userId }: Params) {
         const matchesAsesor =
           asesorFilter === ALL_STATES ||
           String(lead.creado_por?.id ?? '') === asesorFilter;
-        return matchesSearch && matchesStatus && matchesAsesor;
+        const matchesMyLeads =
+          !myLeadsOnly || lead.creado_por?.id === userId;
+        const matchesEtiqueta =
+          etiquetaFilter == null || (lead.etiquetas ?? []).some((j) => j.etiqueta.id === etiquetaFilter);
+        return matchesSearch && matchesStatus && matchesAsesor && matchesMyLeads && matchesEtiqueta;
       })
       .sort(
         (a, b) =>
           new Date(b.creado_en ?? 0).getTime() -
           new Date(a.creado_en ?? 0).getTime(),
       );
-  }, [leads, search, statusFilter, asesorFilter]);
+  }, [leads, search, statusFilter, asesorFilter, myLeadsOnly, userId, etiquetaFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 
@@ -92,7 +98,7 @@ export function useAsesorExternoPageState({ userId }: Params) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, asesorFilter]);
+  }, [search, statusFilter, asesorFilter, myLeadsOnly, etiquetaFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);

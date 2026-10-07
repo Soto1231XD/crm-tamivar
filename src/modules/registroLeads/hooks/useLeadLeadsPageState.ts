@@ -22,9 +22,10 @@ type UseLeadLeadsPageStateParams = {
   restrictToUserId?: number | null;
   leadsType?: 'internos' | 'externos';
   myLeadsOnly?: boolean;
+  etiquetaFilter?: number | null;
 };
 
-export function useLeadLeadsPageState({ userId, accessToken, restrictToUserId, leadsType, myLeadsOnly = false }: UseLeadLeadsPageStateParams) {
+export function useLeadLeadsPageState({ userId, accessToken, restrictToUserId, leadsType, myLeadsOnly = false, etiquetaFilter = null }: UseLeadLeadsPageStateParams) {
   const {
     leads,
     isLoading,
@@ -119,8 +120,10 @@ export function useLeadLeadsPageState({ userId, accessToken, restrictToUserId, l
               : !isExterno;
         const matchesMyLeads =
           !myLeadsOnly || lead.vendedor_asignado_id === userId;
+        const matchesEtiqueta =
+          etiquetaFilter == null || (lead.etiquetas ?? []).some((j) => j.etiqueta.id === etiquetaFilter);
 
-        return matchesSearch && matchesStatus && matchesSeller && matchesLeadDateFrom && matchesLeadDateTo && matchesRestriction && matchesType && matchesMyLeads;
+        return matchesSearch && matchesStatus && matchesSeller && matchesLeadDateFrom && matchesLeadDateTo && matchesRestriction && matchesType && matchesMyLeads && matchesEtiqueta;
       })
       .sort((left, right) => {
         const leftIsCancelled = (left.estado ?? '').trim().toLowerCase() === 'cancelado';
@@ -132,7 +135,7 @@ export function useLeadLeadsPageState({ userId, accessToken, restrictToUserId, l
 
         return new Date(right.creado_en ?? 0).getTime() - new Date(left.creado_en ?? 0).getTime();
       });
-  }, [leadDateFromFilter, leadDateToFilter, leads, leadsType, myLeadsOnly, restrictToUserId, search, sellerFilter, statusFilter, userId]);
+  }, [etiquetaFilter, leadDateFromFilter, leadDateToFilter, leads, leadsType, myLeadsOnly, restrictToUserId, search, sellerFilter, statusFilter, userId]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 

@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { SearchableSelect } from '@/shared/components/SearchableSelect';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
+import type { Etiqueta, LeadRecord, UpdateLeadPayload } from '@/interfaces/lead.interface';
 import { AppModal } from '@/components/ui/AppModal';
+import { EtiquetaSelector } from '@/components/ui/EtiquetaSelector';
 import {
   buildLeadLeadUpdatePayload,
   LeadLeadFieldLabel,
@@ -36,6 +37,8 @@ type EditLeadLeadModalProps = {
   onClose: () => void;
   onEdit: (leadId: number, payload: UpdateLeadPayload) => Promise<string | null>;
   userOptions: UserOption[];
+  allEtiquetas: Etiqueta[];
+  onToggleEtiqueta: (lead: LeadRecord, etiqueta: Etiqueta, assigned: boolean) => void;
 };
 
 export function EditLeadLeadModal({
@@ -44,6 +47,8 @@ export function EditLeadLeadModal({
   onClose,
   onEdit,
   userOptions,
+  allEtiquetas,
+  onToggleEtiqueta,
 }: EditLeadLeadModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -357,6 +362,14 @@ export function EditLeadLeadModal({
               {errors.comentarios ? <span className="text-xs text-red-600">{errors.comentarios.message}</span> : null}
             </label>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+          <EtiquetaSelector
+            lead={lead ?? currentLead}
+            allEtiquetas={allEtiquetas}
+            onToggle={(et, assigned) => onToggleEtiqueta(lead ?? currentLead, et, assigned)}
+          />
         </div>
 
         {submitError ? <p className="text-sm font-medium text-red-600">{submitError}</p> : null}
