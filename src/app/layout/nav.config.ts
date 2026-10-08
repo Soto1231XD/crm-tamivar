@@ -18,7 +18,6 @@ export const MODULE_ICONS: Record<ModuleKey, string> = {
   material: materialIcon,
   registros: registrosIcon,
   registros_leads: registrosIcon,
-  solicitudes_leads: registrosIcon,
   asesor_externo: leadsIcon,
   blogs: contenidoIcon,
   usuarios: usuariosIcon,
@@ -41,7 +40,7 @@ export const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
   {
     label: "Leads",
     icon: leadsIcon,
-    modules: ["registros", "registros_leads", "solicitudes_leads", "asesor_externo"],
+    modules: ["registros", "registros_leads", "asesor_externo"],
   },
   {
     label: "Clientes",

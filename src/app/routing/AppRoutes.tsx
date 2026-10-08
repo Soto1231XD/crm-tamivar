@@ -25,9 +25,6 @@ const LeadsPage = lazy(() =>
 const LeadLeadsPage = lazy(() =>
   import("@/modules/registroLeads/pages/LeadLeadsPage").then((m) => ({ default: m.LeadLeadsPage }))
 );
-const LeadRequestsPage = lazy(() =>
-  import("@/modules/leadRequests/pages/LeadRequestsPage").then((m) => ({ default: m.LeadRequestsPage }))
-);
 const DevelopmentsPage = lazy(() =>
   import("@/modules/developments/pages/DevelopmentsPage").then((m) => ({ default: m.DevelopmentsPage }))
 );
@@ -135,9 +132,6 @@ export function AppRoutes() {
           </Route>
           <Route element={<ProtectedRoute module="registros_leads" />}>
             <Route path="modulos/registros-leads" element={<LeadLeadsPage />} />
-          </Route>
-          <Route element={<ProtectedRoute module="solicitudes_leads" />}>
-            <Route path="modulos/solicitudes-leads" element={<LeadRequestsPage />} />
           </Route>
           <Route element={<ProtectedRoute module="asesor_externo" />}>
             <Route path="modulos/asesor-externo" element={<AsesorExternoPage />} />

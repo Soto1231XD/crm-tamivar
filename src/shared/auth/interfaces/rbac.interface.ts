@@ -6,7 +6,6 @@ export type ModuleKey =
   | 'material'
   | 'registros'
   | 'registros_leads'
-  | 'solicitudes_leads'
   | 'asesor_externo'
   | 'blogs'
   | 'usuarios'

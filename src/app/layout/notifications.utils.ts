@@ -12,7 +12,6 @@ export function getPageTitle(
   if (pathname === "/dashboard") return "Dashboard";
   if (pathname.startsWith("/modulos/registros-visitas")) return MODULE_LABELS.registros;
   if (pathname.startsWith("/modulos/registros-leads")) return MODULE_LABELS.registros_leads;
-  if (pathname.startsWith("/modulos/solicitudes-leads")) return MODULE_LABELS.solicitudes_leads;
   if (pathname.startsWith("/modulos/asesor-externo")) return getModuleLabelForUser('asesor_externo', user ?? null);
   if (pathname.startsWith("/modulos/")) {
     const rawModule = pathname.replace("/modulos/", "").split("/")[0] as ModuleKey;
