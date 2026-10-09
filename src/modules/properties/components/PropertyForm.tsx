@@ -236,6 +236,13 @@ export function PropertyForm({
                 label="¿Es exclusiva?"
                 className="!min-h-[48px] h-[48px]"
               />
+              <Toggle
+                name="tiene_lona"
+                checked={form.tiene_lona}
+                onChange={handleInputChange}
+                label="¿Tiene lona?"
+                className="!min-h-[48px] h-[48px]"
+              />
             </div>
             </div>
             <FieldTextarea
@@ -604,13 +611,22 @@ export function PropertyForm({
                     Formulario simplificado para terreno
                   </h4>
                 </div>
-                <Toggle
-                  name="tiene_gravamen"
-                  checked={form.tiene_gravamen}
-                  onChange={handleInputChange}
-                  label="Tiene gravamen"
-                  className={shouldShowLienToggle ? "min-w-[220px]" : "hidden"}
-                />
+                <div className="flex gap-3">
+                  <Toggle
+                    name="tiene_gravamen"
+                    checked={form.tiene_gravamen}
+                    onChange={handleInputChange}
+                    label="Tiene gravamen"
+                    className={shouldShowLienToggle ? "min-w-[220px]" : "hidden"}
+                  />
+                  <Toggle
+                    name="tiene_lona"
+                    checked={form.tiene_lona}
+                    onChange={handleInputChange}
+                    label="¿Tiene lona?"
+                    className="min-w-[180px]"
+                  />
+                </div>
               </div>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Se ocultaron los campos de distribución y habitabilidad porque

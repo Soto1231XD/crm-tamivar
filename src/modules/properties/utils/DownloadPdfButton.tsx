@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { usePDF } from "@react-pdf/renderer";
 import { PropertyPdfDocument } from "../components/PropertyPdfDocument";
 import type { PropertyRecord } from "@/interfaces/property.interface";
@@ -65,10 +66,9 @@ export const DownloadPdfButton = ({ property, className, children }: Props) => {
           mapsImageBase64={mapsImageBase64}
         />,
       );
-    } catch (error) {
-      console.error("Error al preparar el PDF:", error);
+    } catch {
+      toast.error("No se pudo generar el PDF. Intenta de nuevo.");
       setIsGenerating(false);
-      // Aquí podrías mostrar un toast.error("Error al generar el PDF");
     }
   };
 

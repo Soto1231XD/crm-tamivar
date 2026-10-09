@@ -360,6 +360,9 @@ export function OperacionesPage() {
     { header: "Pago",        render: (r) => r.estatus_pago
         ? <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">{r.estatus_pago}</span>
         : <span className="text-slate-300">—</span> },
+    { header: "Entrega", render: (r) => r.entrega_casa
+        ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">Entregada</span>
+        : <span className="rounded-full bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-400 border border-slate-200">Pendiente</span> },
   ];
 
   const allComSelected  = comisiones.length > 0 && selectedComisionIds.size === comisiones.length;

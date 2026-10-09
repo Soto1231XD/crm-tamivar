@@ -67,7 +67,6 @@ export function CreatePropertyPage() {
       navigate("/modulos/propiedades");
       return null;
     } catch (error: unknown) {
-      console.error("Error al registrar propiedad:", error);
       return getReadableErrorMessage(
         error,
         "No fue posible crear la propiedad. Revisa la información general, la operación, la dirección y las imágenes.",

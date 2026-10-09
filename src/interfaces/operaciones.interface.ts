@@ -12,6 +12,7 @@ export interface OperacionProceso {
   etapa_notaria: string | null;
   etapa_constancia: string | null;
   etapa_firma: string | null;
+  etapa_recordatorios?: Record<string, { fecha: string; nota?: string }> | null;
   creado_en: string;
   actualizado_en: string;
 }
@@ -25,6 +26,7 @@ export interface OperacionFiniquitada {
   fecha_firma: string | null;
   monto_operacion: string | null;
   estatus_pago: string | null;
+  entrega_casa: boolean;
   creado_en: string;
   actualizado_en: string;
   comision?: Comision | null;

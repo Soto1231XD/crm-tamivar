@@ -102,6 +102,7 @@ export function PropertiesPage() {
     filters.tipo_operacion,
     filters.minPrecio,
     filters.maxPrecio,
+    filters.sortPrecio,
   ]);
 
   useEffect(() => {
@@ -122,6 +123,7 @@ export function PropertiesPage() {
     filters.tipo_operacion,
     filters.minPrecio,
     filters.maxPrecio,
+    filters.sortPrecio,
     filters.search,
   ]);
 
@@ -339,6 +341,29 @@ export function PropertiesPage() {
           />
         </div>
       </CollapsibleFilters>
+
+      <div className="flex items-center justify-between gap-3 px-1">
+        <p className="text-sm text-slate-500">
+          {isLoading ? "Cargando..." : `${totalItems} propiedad${totalItems !== 1 ? "es" : ""}`}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500 whitespace-nowrap">Ordenar por precio:</span>
+          <select
+            value={filters.sortPrecio ?? ""}
+            onChange={(e) =>
+              setFilters({
+                sortPrecio: (e.target.value as "asc" | "desc") || undefined,
+                page: 1,
+              })
+            }
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition focus:border-[#312C85] focus:outline-none focus:ring-1 focus:ring-[#312C85]"
+          >
+            <option value="">Más reciente</option>
+            <option value="desc">Mayor a menor precio</option>
+            <option value="asc">Menor a mayor precio</option>
+          </select>
+        </div>
+      </div>
 
       <PropertiesTable
         data={filteredProperties}

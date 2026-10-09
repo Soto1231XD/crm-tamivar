@@ -44,6 +44,23 @@ export function PropertiesTable({
   const { editProperty } = usePropertiesStore();
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
   const [updatingExclusivaId, setUpdatingExclusivaId] = useState<number | null>(null);
+  const [updatingLonaId, setUpdatingLonaId] = useState<number | null>(null);
+
+  const handleLonaToggle = async (property: PropertyRecord) => {
+    setUpdatingLonaId(property.id);
+    try {
+      await editProperty(property.id, { tiene_lona: !property.tiene_lona });
+      toast.success(
+        !property.tiene_lona ? "Lona marcada." : "Lona removida.",
+      );
+    } catch (error) {
+      toast.error(
+        getReadableErrorMessage(error, "No fue posible actualizar la lona."),
+      );
+    } finally {
+      setUpdatingLonaId(null);
+    }
+  };
 
   const handleStatusChange = async (id: number, nextStatus: string) => {
     setUpdatingStatusId(id);
@@ -154,6 +171,43 @@ export function PropertiesTable({
           ),
       },
       {
+        header: "Lona",
+        headerClassName: "w-[100px]",
+        cellClassName: "w-[100px] align-top",
+        render: (property) =>
+          canEdit ? (
+            <button
+              type="button"
+              disabled={updatingLonaId === property.id}
+              onClick={() => handleLonaToggle(property)}
+              title={property.tiene_lona ? "Quitar lona" : "Marcar con lona"}
+              className={[
+                "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider border transition-all disabled:opacity-50 disabled:cursor-not-allowed",
+                property.tiene_lona
+                  ? "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
+                  : "bg-white text-slate-400 border-slate-200 hover:border-orange-300 hover:text-orange-600",
+              ].join(" ")}
+            >
+              {updatingLonaId === property.id ? (
+                <span className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              ) : (
+                <span>🪧</span>
+              )}
+              {property.tiene_lona ? "Sí" : "No"}
+            </button>
+          ) : (
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
+                property.tiene_lona
+                  ? "bg-orange-50 text-orange-700 border border-orange-200"
+                  : "text-slate-500"
+              }`}
+            >
+              {property.tiene_lona ? "🪧 Sí" : "No"}
+            </span>
+          ),
+      },
+      {
         header: "Dirección",
         headerClassName: "min-w-[260px]",
         cellClassName: "min-w-[260px] whitespace-normal align-top",
@@ -205,7 +259,7 @@ export function PropertiesTable({
         ),
       },
     ],
-    [updatingStatusId, updatingExclusivaId, canEdit, statusOptions],
+    [updatingStatusId, updatingExclusivaId, updatingLonaId, canEdit, statusOptions],
   );
 
   return (
@@ -279,16 +333,27 @@ function PropertyTitleCell({
 
   return (
     <>
-      <button
-        type="button"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={onNavigate}
-        className="text-left font-medium text-slate-800 hover:text-[#4F5EF8] hover:underline transition-colors cursor-pointer"
-      >
-        {property.titulo || "Sin título"}
-      </button>
+      {/* Móvil: thumbnail pequeño + título en fila */}
+      <div className="flex items-center gap-2 sm:contents">
+        {mainImage && (
+          <img
+            src={getFullImageUrl(mainImage.url)}
+            alt={property.titulo}
+            className="h-12 w-16 shrink-0 rounded-md object-cover sm:hidden"
+          />
+        )}
+        <button
+          type="button"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onClick={onNavigate}
+          className="text-left font-medium text-slate-800 hover:text-[#4F5EF8] hover:underline transition-colors cursor-pointer"
+        >
+          {property.titulo || "Sin título"}
+        </button>
+      </div>
 
+      {/* Tooltip hover solo en desktop */}
       {tooltipPos && (
         <div
           style={{

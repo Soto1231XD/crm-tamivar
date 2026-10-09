@@ -41,7 +41,7 @@ self.addEventListener("push", (event) => {
         notificationId: payload?.notificationId,
       },
       badge: "/logo_pwa.png",
-      icon: "/logo_pwa.png",
+      icon: "/Logo.png",
     }),
   );
 });

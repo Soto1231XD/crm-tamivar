@@ -30,15 +30,6 @@ function getPriceSummary(property: PropertyRecord): string {
     .join(' | ');
 }
 
-function getCreatorName(property: PropertyRecord): string {
-  const parts = [
-    property.creador?.nombres?.trim(),
-    property.creador?.apellido_paterno?.trim(),
-  ].filter(Boolean);
-
-  return parts.join(' ') || 'Sin asignar';
-}
-
 export function downloadPropertiesAsExcel(properties: PropertyRecord[]) {
   const headers = [
     'Propiedad',
@@ -46,7 +37,8 @@ export function downloadPropertiesAsExcel(properties: PropertyRecord[]) {
     'Operacion',
     'Direccion',
     'Precio (MXN)',
-    'Registrado por',
+    'Exclusivo',
+    'Lona',
     'Estado',
   ];
 
@@ -56,7 +48,8 @@ export function downloadPropertiesAsExcel(properties: PropertyRecord[]) {
     getOperationSummary(property),
     formatDireccion(property.direccion),
     getPriceSummary(property),
-    getCreatorName(property),
+    property.exclusiva ? 'Sí' : 'No',
+    property.tiene_lona ? 'Sí' : 'No',
     property.estatus?.trim() || 'Sin estado',
   ]);
 

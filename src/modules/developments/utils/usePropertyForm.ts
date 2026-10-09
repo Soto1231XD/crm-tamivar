@@ -332,6 +332,7 @@ function buildInitialPayload(
     estatus: property.estatus,
     tiene_gravamen: Boolean(property.tiene_gravamen),
     pet_friendly: false,
+    tiene_lona: Boolean(property.tiene_lona),
     etiquetas: Array.isArray(property.etiquetas) ? property.etiquetas : [],
     cuota_mantenimiento: property.cuota_mantenimiento ?? undefined,
     comentarios: property.comentarios || undefined,
@@ -737,6 +738,7 @@ export function usePropertyForm(
         ? form.tiene_gravamen
         : false,
       pet_friendly: false,
+      tiene_lona: false,
       etiquetas: form.etiquetas
         .split(",")
         .map((item) => item.trim())

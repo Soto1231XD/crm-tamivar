@@ -42,6 +42,14 @@ interface Props {
   onClose: () => void;
 }
 
+function toLocalDatetimeInput(isoStr: string): string {
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return "";
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+}
+
 export function ProcesoModal({ initial, onSave, onClose }: Props) {
   const isEdit = Boolean(initial);
 
@@ -51,11 +59,25 @@ export function ProcesoModal({ initial, onSave, onClose }: Props) {
     etapa_avaluo: null, etapa_inscripcion: null, etapa_notaria: null,
     etapa_constancia: null, etapa_firma: null,
   });
+  const [recordatorios, setRecordatorios] = useState<Record<string, { fecha: string; nota: string }>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (initial) setForm(initial);
+    if (initial) {
+      setForm(initial);
+      setRecordatorios(
+        initial.etapa_recordatorios
+          ? Object.fromEntries(
+              Object.entries(initial.etapa_recordatorios).map(([k, v]) => {
+                const fechaRaw = typeof v === "string" ? v : v?.fecha ?? "";
+                const nota = typeof v === "string" ? "" : (v?.nota ?? "");
+                return [k, { fecha: fechaRaw ? toLocalDatetimeInput(fechaRaw) : "", nota }];
+              }),
+            )
+          : {},
+      );
+    }
   }, [initial]);
 
   const set = (k: keyof OperacionProceso, v: string | null) =>
@@ -69,6 +91,25 @@ export function ProcesoModal({ initial, onSave, onClose }: Props) {
     set(key, updated);
   };
 
+  const setRecordatorioFecha = (etapaKey: string, value: string) => {
+    setRecordatorios((prev) => {
+      const next = { ...prev };
+      if (value) {
+        next[etapaKey] = { fecha: value, nota: prev[etapaKey]?.nota ?? "" };
+      } else {
+        delete next[etapaKey];
+      }
+      return next;
+    });
+  };
+
+  const setRecordatorioNota = (etapaKey: string, value: string) => {
+    setRecordatorios((prev) => {
+      if (!prev[etapaKey]) return prev;
+      return { ...prev, [etapaKey]: { ...prev[etapaKey], nota: value } };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.propietario?.trim() || !form.cliente?.trim() || !form.propiedad?.trim()) {
@@ -77,8 +118,19 @@ export function ProcesoModal({ initial, onSave, onClose }: Props) {
     }
     setSaving(true);
     setError("");
+
+    const recordatoriosISO: Record<string, { fecha: string; nota: string }> = {};
+    for (const [k, v] of Object.entries(recordatorios)) {
+      if (v.fecha) {
+        recordatoriosISO[k] = { fecha: new Date(v.fecha).toISOString(), nota: v.nota };
+      }
+    }
+
     try {
-      await onSave(form);
+      await onSave({
+        ...form,
+        etapa_recordatorios: Object.keys(recordatoriosISO).length > 0 ? recordatoriosISO : {},
+      });
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al guardar");
@@ -131,6 +183,7 @@ export function ProcesoModal({ initial, onSave, onClose }: Props) {
             {ETAPAS.map(({ key, label }) => {
               const etapa = parseEtapa(form[key] as string | null);
               const colorStyle = ETAPA_COLORS[etapa.s];
+              const recordatorio = recordatorios[key as string];
               return (
                 <div key={key} className="rounded-xl border border-slate-200 bg-white p-3">
                   <p className={LABEL + " mb-2"}>{label}</p>
@@ -173,6 +226,40 @@ export function ProcesoModal({ initial, onSave, onClose }: Props) {
                     onChange={(e) => setEtapa(key, "n", e.target.value)}
                     placeholder="Notas de seguimiento..."
                   />
+
+                  {/* Recordatorio */}
+                  <div className="mt-2.5 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 shrink-0">
+                        🔔 Recordatorio
+                      </span>
+                      <input
+                        type="datetime-local"
+                        value={recordatorio?.fecha ?? ""}
+                        onChange={(e) => setRecordatorioFecha(key as string, e.target.value)}
+                        className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition focus:border-[#312C85] focus:bg-white focus:ring-1 focus:ring-[#312C85]/20"
+                      />
+                      {recordatorio?.fecha && (
+                        <button
+                          type="button"
+                          onClick={() => setRecordatorioFecha(key as string, "")}
+                          className="shrink-0 rounded-md p-1 text-slate-400 hover:text-red-500 transition-colors"
+                          title="Quitar recordatorio"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    {recordatorio?.fecha && (
+                      <textarea
+                        rows={2}
+                        value={recordatorio.nota}
+                        onChange={(e) => setRecordatorioNota(key as string, e.target.value)}
+                        placeholder="Ej: Revisar el documento, confirmar datos con el cliente..."
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition resize-none placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-1 focus:ring-[#312C85]/20"
+                      />
+                    )}
+                  </div>
                 </div>
               );
             })}

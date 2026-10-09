@@ -57,6 +57,7 @@ export type FormState = {
   tiene_gravamen: boolean;
   exclusiva: boolean;
   pet_friendly: boolean;
+  tiene_lona: boolean;
   cuota_mantenimiento: string;
   comentarios: string;
   pisos_tiene: string;

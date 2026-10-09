@@ -12,6 +12,7 @@ export interface PropertyRecord {
   exclusiva: boolean;
   tiene_gravamen: boolean;
   pet_friendly: boolean;
+  tiene_lona: boolean;
   cuota_mantenimiento?: number;
   comentarios?: string;
   pisos_tiene?: number;
@@ -119,6 +120,7 @@ export interface PropertyFilters {
   exclusiva?: string;
   minPrecio?: number;
   maxPrecio?: number;
+  sortPrecio?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }

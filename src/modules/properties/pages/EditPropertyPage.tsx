@@ -72,7 +72,6 @@ export function EditPropertyPage() {
       navigate("/modulos/propiedades");
       return null;
     } catch (error: unknown) {
-      console.error("Error al actualizar:", error);
       return getReadableErrorMessage(
         error,
         "No fue posible actualizar la propiedad. Revisa la información general, la operación, la dirección y las imágenes.",

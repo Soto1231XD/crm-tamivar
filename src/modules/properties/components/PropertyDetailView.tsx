@@ -354,6 +354,13 @@ export const PropertyDetailView = () => {
                     </span>
                   )}
 
+                  {/* Insignia de Lona */}
+                  {currentProperty.tiene_lona && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wide bg-orange-50 text-orange-700 border border-orange-200 shadow-sm">
+                      🪧 Tiene lona
+                    </span>
+                  )}
+
                   {/* Estatus*/}
                   <span
                     className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wide border shadow-sm whitespace-nowrap"

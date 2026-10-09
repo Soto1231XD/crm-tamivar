@@ -169,6 +169,7 @@ const INITIAL_FORM_STATE: FormState = {
   exclusiva: false,
   tiene_gravamen: false,
   pet_friendly: false,
+  tiene_lona: false,
   cuota_mantenimiento: "",
   comentarios: "",
   pisos_tiene: "",
@@ -296,6 +297,7 @@ function toFormState(property?: PropertyRecord | null): FormState {
     exclusiva: Boolean(property.exclusiva),
     tiene_gravamen: Boolean(property.tiene_gravamen),
     pet_friendly: Boolean(property.pet_friendly),
+    tiene_lona: Boolean(property.tiene_lona),
     cuota_mantenimiento:
       property.cuota_mantenimiento != null
         ? String(property.cuota_mantenimiento)
@@ -334,6 +336,7 @@ function buildInitialPayload(
     estatus: property.estatus,
     tiene_gravamen: Boolean(property.tiene_gravamen),
     pet_friendly: Boolean(property.pet_friendly),
+    tiene_lona: Boolean(property.tiene_lona),
     etiquetas: Array.isArray(property.etiquetas) ? property.etiquetas : [],
     cuota_mantenimiento: property.cuota_mantenimiento ?? undefined,
     comentarios: property.comentarios || undefined,
@@ -754,6 +757,7 @@ export function usePropertyForm(
       tipos_pago: form.tipos_pago,
       estatus: form.estatus.trim(),
       exclusiva: form.exclusiva,
+      tiene_lona: form.tiene_lona,
       tiene_gravamen: selectedOperations.includes("Venta")
         ? form.tiene_gravamen
         : false,
