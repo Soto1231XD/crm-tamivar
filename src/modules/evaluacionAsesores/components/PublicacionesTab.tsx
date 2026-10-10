@@ -126,12 +126,6 @@ export function PublicacionesTab({
             className="w-full rounded-xl border border-[var(--crm-border-strong)] bg-[var(--crm-surface-soft)] px-3 py-2.5 text-sm text-[var(--crm-text)] outline-none focus:border-[var(--crm-primary)] focus:ring-2 focus:ring-[var(--crm-primary-soft)]"
           />
           <input
-            placeholder="Descripción (opcional)"
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            className="w-full rounded-xl border border-[var(--crm-border-strong)] bg-[var(--crm-surface-soft)] px-3 py-2.5 text-sm text-[var(--crm-text)] outline-none focus:border-[var(--crm-primary)] focus:ring-2 focus:ring-[var(--crm-primary-soft)]"
-          />
-          <input
             placeholder="URL de la publicación (ej. https://facebook.com/...)"
             value={urlPublicacion}
             onChange={(e) => setUrlPublicacion(e.target.value)}
@@ -246,15 +240,6 @@ export function PublicacionesTab({
                       className="text-xs font-medium text-green-600 hover:text-green-800"
                     >
                       Aceptar
-                    </button>
-                  )}
-                  {canSeeAll && p.estado_validacion !== 'rechazado' && (
-                    <button
-                      type="button"
-                      onClick={() => handleValidar(p.id, 'rechazado')}
-                      className="text-xs font-medium text-red-400 hover:text-red-600"
-                    >
-                      Rechazar
                     </button>
                   )}
                   {(canSeeAll || p.usuario.id === currentUserId) && (

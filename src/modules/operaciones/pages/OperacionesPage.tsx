@@ -105,6 +105,7 @@ export function OperacionesPage() {
   const [filterFinFolio,       setFilterFinFolio]       = useState("");
   const [filterFinYear,        setFilterFinYear]        = useState("");
   const [filterFinPago,        setFilterFinPago]        = useState("");
+  const [filterFinEntrega,     setFilterFinEntrega]     = useState("");
   const [filterComQ,           setFilterComQ]           = useState("");
   const [filterComYear,        setFilterComYear]        = useState("");
   const [filterComAsesor,      setFilterComAsesor]      = useState("");
@@ -118,13 +119,13 @@ export function OperacionesPage() {
   useEffect(() => {
     setSelectedComisionIds(new Set());
     setFilterProcesoQ(""); setFilterProcesoEstatus("");
-    setFilterFinQ("");     setFilterFinFolio("");    setFilterFinYear("");     setFilterFinPago("");
+    setFilterFinQ("");     setFilterFinFolio("");    setFilterFinYear("");     setFilterFinPago("");     setFilterFinEntrega("");
     setFilterComQ("");     setFilterComYear("");     setFilterComAsesor("");
     setPageProc(1); setPageFin(1); setPageCom(1);
   }, [tab]);
 
   useEffect(() => { setPageProc(1); }, [filterProcesoQ, filterProcesoEstatus]);
-  useEffect(() => { setPageFin(1); },  [filterFinQ, filterFinFolio, filterFinYear, filterFinPago]);
+  useEffect(() => { setPageFin(1); },  [filterFinQ, filterFinFolio, filterFinYear, filterFinPago, filterFinEntrega]);
   useEffect(() => { setPageCom(1); },  [filterComQ, filterComYear, filterComAsesor]);
 
   async function loadProceso() {
@@ -294,7 +295,8 @@ export function OperacionesPage() {
     const matchFolio = !filterFinFolio || (r.folio ?? '').toLowerCase().includes(filterFinFolio.toLowerCase());
     const matchYear = !filterFinYear || r.fecha_firma?.startsWith(filterFinYear);
     const matchPago = !filterFinPago || r.estatus_pago === filterFinPago;
-    return matchQ && matchFolio && matchYear && matchPago;
+    const matchEntrega = !filterFinEntrega || (filterFinEntrega === "si" ? r.entrega_casa : !r.entrega_casa);
+    return matchQ && matchFolio && matchYear && matchPago && matchEntrega;
   });
 
   const comisionesFiltradas = comisiones.filter((r) => {
@@ -529,6 +531,10 @@ export function OperacionesPage() {
             </FilterSelect>
             <FilterSelect value={filterFinPago} onChange={setFilterFinPago} label="Estatus de pago">
               {pagosUnicos.map((p) => <option key={p} value={p}>{p}</option>)}
+            </FilterSelect>
+            <FilterSelect value={filterFinEntrega} onChange={setFilterFinEntrega} label="Entrega de casa">
+              <option value="si">Entregada</option>
+              <option value="no">Pendiente</option>
             </FilterSelect>
           </FiltersBar>
           <BaseTable
