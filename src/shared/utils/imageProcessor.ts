@@ -56,7 +56,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () =>
       reject(
         new Error(
-          `No pudimos leer la imagen "${file.name}". Verifica que el archivo no esté dañado o incompleto.`,
+          `No pudimos leer "${file.name}". Si la imagen viene de WhatsApp, guárdala primero en el Escritorio o en Descargas y súbela desde ahí.`,
         ),
       );
     reader.readAsDataURL(file);
