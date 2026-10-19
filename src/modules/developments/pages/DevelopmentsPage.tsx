@@ -15,7 +15,9 @@ import { useDevelopmentsStore } from "../store/useDevelopmentsStore";
 import { DevelopmentsTable } from "../components/DevelopmentsTable";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { getFriendlyDevelopmentError } from "../utils/developmentErrors";
+import { downloadDevelopmentsAsExcel } from "../utils/developmentExport";
 import agregarIcon from "@/assets/images/Agregar.png";
+import desArcIcon from "@/assets/images/DesArc.png";
 
 const STATUS_OPTIONS = ["Todos los estados", "Disponible", "Apartado", "Vendido", "Baja"];
 
@@ -200,6 +202,16 @@ export function DevelopmentsPage() {
           minPrice != null,
           maxPrice != null,
         ].filter(Boolean).length}
+        downloadSlot={
+          <button
+            type="button"
+            onClick={() => downloadDevelopmentsAsExcel(filteredDevelopments)}
+            className="inline-flex h-10.5 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#15803d]"
+          >
+            <img src={desArcIcon} alt="" className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Descargar Excel</span>
+          </button>
+        }
         searchSlot={
           <FilterSearchInput
             type="text"
