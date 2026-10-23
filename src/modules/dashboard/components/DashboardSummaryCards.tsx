@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useThemeStore } from "@/shared/theme/useThemeStore";
 import blogsIcon from "../../../assets/images/Blogs.png";
 import propertyAvailableIcon from "../../../assets/images/Propiety.png";
@@ -10,6 +11,15 @@ type DashboardSummaryCardsProps = {
   titles: readonly string[];
   values: Record<string, string | number>;
   isLoading: boolean;
+};
+
+const DASHBOARD_CARD_ROUTES: Partial<Record<string, string>> = {
+  "Propiedades Disponibles": "/modulos/propiedades",
+  "Registros visitas": "/modulos/registros-visitas",
+  "Leads redes sociales": "/modulos/registros-leads",
+  Blogs: "/modulos/blogs",
+  "Usuarios del sistema": "/modulos/usuarios",
+  "Roles del sistema": "/modulos/roles",
 };
 
 const DASHBOARD_CARD_ICONS: Partial<Record<string, string>> = {
@@ -28,15 +38,20 @@ export function DashboardSummaryCards({
   isLoading,
 }: DashboardSummaryCardsProps) {
   const theme = useThemeStore((state) => state.theme);
+  const navigate = useNavigate();
   const isDark = theme === "dark";
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {titles.map((title) => (
+      {titles.map((title) => {
+        const route = DASHBOARD_CARD_ROUTES[title];
+        return (
         <article
           key={title}
+          onClick={route ? () => navigate(route) : undefined}
           className={[
             "group relative overflow-hidden rounded-3xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
+            route ? "cursor-pointer" : "",
             isDark
               ? "border border-slate-700/70 bg-slate-900/90 shadow-[0_20px_45px_rgba(2,6,23,0.28)]"
               : "border border-slate-200/80 bg-white shadow-sm",
@@ -90,7 +105,8 @@ export function DashboardSummaryCards({
             ) : null}
           </div>
         </article>
-      ))}
+        );
+      })}
     </div>
   );
 }
