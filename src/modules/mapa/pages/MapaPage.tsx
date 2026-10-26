@@ -12,6 +12,8 @@ import { parseGoogleMapsLink, type LatLng } from "../utils/parseGoogleMapsLink";
 import { resolveMapLinks } from "../services/mapa.api";
 import { formatCurrency, calculateFinalPrice } from "@/modules/properties/utils/formatters";
 import { useThemeStore } from "@/shared/theme/useThemeStore";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { normalizeRoleName } from "@/shared/auth/role.utils";
 
 // --- Custom marker icons ---
 const PROPERTY_COLOR = "#312C85";
@@ -120,6 +122,9 @@ export function MapaPage() {
   const navigate = useNavigate();
   const theme = useThemeStore((s) => s.theme);
   const isDark = theme === "dark";
+  const user = useAuthStore((s) => s.user);
+  const isAsesor = (user?.roles ?? []).length > 0 &&
+    (user?.roles ?? []).every((r) => normalizeRoleName(r) === "asesor de ventas");
 
   // Devuelve eventHandlers para cada marker:
   // - Desktop: abre en hover, cierra al salir (con delay para poder mover al popup)
@@ -345,7 +350,7 @@ export function MapaPage() {
             Google Maps registrado.
           </p>
         </div>
-        {noLocationCount > 0 && (
+        {noLocationCount > 0 && !isAsesor && (
           <div
             className={[
               "self-start rounded-xl border px-4 py-2.5 text-sm",
@@ -492,8 +497,8 @@ export function MapaPage() {
         </span>
       </div>
 
-      {/* Sin ubicación */}
-      {sinUbicacion.length > 0 && !isResolving && (
+      {/* Sin ubicación — oculto para Asesor de Ventas */}
+      {sinUbicacion.length > 0 && !isResolving && !isAsesor && (
         <div
           className={[
             "rounded-2xl border px-5 py-4",
