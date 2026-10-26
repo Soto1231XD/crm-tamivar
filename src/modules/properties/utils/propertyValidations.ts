@@ -64,6 +64,8 @@ export type FormState = {
   servicios_instalaciones: string;
   amenidades: string;
   recorrido_url: string;
+  latitud: number | null;
+  longitud: number | null;
   imagenes: NuevaImagen[];
   imagenes_existentes: Imagen[];
 };

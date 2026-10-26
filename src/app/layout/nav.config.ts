@@ -9,6 +9,7 @@ import usuariosIcon from "@/assets/images/Usuarios.png";
 import rolIcon from "@/assets/images/Rol.png";
 import logsIcon from "@/assets/images/Logs.png";
 import leadsIcon from "@/assets/icons/leads.png";
+import mapaIcon from "@/assets/icons/maps.png";
 
 export const MODULE_ICONS: Record<ModuleKey, string> = {
   dashboard: dashboardIcon,
@@ -28,6 +29,7 @@ export const MODULE_ICONS: Record<ModuleKey, string> = {
   CarteraClientes: usuariosIcon,
   evaluacion: usuariosIcon,
   recomendaciones: usuariosIcon,
+  mapa: mapaIcon,
 };
 
 export type NavGroupConfig = {
@@ -69,4 +71,5 @@ export const STANDALONE_MODULES = new Set<ModuleKey>([
   "Estadísticas",
   "propiedades",
   "desarrollos",
+  "mapa",
 ]);

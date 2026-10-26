@@ -70,6 +70,9 @@ const EvaluacionPage = lazy(() =>
 const AsesorExternoPage = lazy(() =>
   import("@/modules/asesorExterno/pages/AsesorExternoPage").then((m) => ({ default: m.AsesorExternoPage }))
 );
+const MapaPage = lazy(() =>
+  import("@/modules/mapa/pages/MapaPage").then((m) => ({ default: m.MapaPage }))
+);
 
 export function AppRoutes() {
   return (
@@ -123,6 +126,7 @@ export function AppRoutes() {
             />
           </Route>
           <Route path="modulos/material" element={<MaterialPage />} />
+          <Route path="modulos/mapa" element={<MapaPage />} />
           <Route element={<ProtectedRoute module="registros" />}>
             <Route
               path="modulos/registros"

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+.leaflet-control-attribution,
+.leaflet-control-attribution a {
+  display: none !important;
+}
+
 :root {
   --font-sans-crm:
     "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;

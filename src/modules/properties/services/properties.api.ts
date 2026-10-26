@@ -20,6 +20,11 @@ export async function getProperties(): Promise<PropertyRecord[]> {
   return apiRequest<PropertyRecord[]>(PATH);
 }
 
+// Obtener propiedades filtradas por estatus (usa /search para aplicar el filtro en el backend)
+export async function getPropertiesByEstatus(estatus: string): Promise<PropertyRecord[]> {
+  return apiRequest<PropertyRecord[]>(`${PATH}/search`, { params: { estatus } });
+}
+
 export async function getPaginatedProperties(
   params: PropertyFilters,
 ): Promise<PaginatedPropertyResponse> {

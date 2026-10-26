@@ -14,6 +14,8 @@ import {
 } from "./FormFields";
 import { TourUploadField } from "@/components/ui/TourUploadField";
 import { usePropertyForm } from "../utils/usePropertyForm";
+import MapCoordinatePicker from "@/shared/components/MapCoordinatePicker";
+import { parseGoogleMapsLink } from "@/modules/mapa/utils/parseGoogleMapsLink";
 import {
   OPERATION_OPTIONS,
   PAYMENT_OPTIONS,
@@ -113,6 +115,8 @@ export function PropertyForm({
     handleExistingImageTitleChange,
     handleSetPrimaryImage,
     handleReorderImages,
+    handleCoordsChange,
+    isResolvingLink,
     handleSubmit,
   } = usePropertyForm(property, onSubmit);
 
@@ -402,14 +406,37 @@ export function PropertyForm({
               error={errors.cp}
               type="number"
             />
-            <FieldInput 
-              label="Enlace de Google Maps"
-              name="enlace_direccion"
-              value={form.enlace_direccion}
-              onChange={handleInputChange}
-              error={errors.enlace_direccion}
-              className="md:col-span-4"
-            />
+            <div className="md:col-span-4 space-y-3">
+              <div>
+                <FieldInput
+                  label="Enlace de Google Maps (para navegación)"
+                  name="enlace_direccion"
+                  value={form.enlace_direccion}
+                  onChange={handleInputChange}
+                  error={errors.enlace_direccion}
+                />
+                {form.enlace_direccion && (
+                  <p className="mt-1 text-xs">
+                    {isResolvingLink
+                      ? <span className="text-blue-500">Resolviendo ubicación…</span>
+                      : parseGoogleMapsLink(form.enlace_direccion) || (form.latitud && form.longitud)
+                        ? <span className="text-green-600">✓ Coordenadas extraídas automáticamente</span>
+                        : <span className="text-amber-600">⚠ No se pudo resolver el link — coloca el pin manualmente</span>
+                    }
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: "var(--foreground)" }}>
+                  Ubicación en el mapa
+                </p>
+                <MapCoordinatePicker
+                  lat={form.latitud}
+                  lng={form.longitud}
+                  onChange={handleCoordsChange}
+                />
+              </div>
+            </div>
             <FieldTextarea
               label="Referencias"
               name="referencias"

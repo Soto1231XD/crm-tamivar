@@ -14,6 +14,8 @@ import {
   type FormState,
   type FormErrors,
 } from "./propertyValidations";
+import { parseGoogleMapsLink } from "@/modules/mapa/utils/parseGoogleMapsLink";
+import { resolveMapLinks } from "@/modules/mapa/services/mapa.api";
 
 const NON_NEGATIVE_INTEGER_FIELD_NAMES = new Set([
   "cp",
@@ -176,6 +178,8 @@ const INITIAL_FORM_STATE: FormState = {
   servicios_instalaciones: "",
   amenidades: "",
   recorrido_url: "",
+  latitud: null,
+  longitud: null,
   imagenes: [],
   imagenes_existentes: [],
 };
@@ -308,6 +312,8 @@ function toFormState(property?: PropertyRecord | null): FormState {
     servicios_instalaciones: property.servicios_instalaciones ?? "",
     amenidades: property.amenidades ?? "",
     recorrido_url: property.recorrido_url ?? "",
+    latitud: property.latitud ?? null,
+    longitud: property.longitud ?? null,
     imagenes: [],
     imagenes_existentes: Array.isArray(property.imagenes)
       ? property.imagenes
@@ -452,12 +458,39 @@ export function usePropertyForm(
   const [form, setForm] = useState<FormState>(() => toFormState(property));
   const [submitError, setSubmitError] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isResolvingLink, setIsResolvingLink] = useState(false);
 
   useEffect(() => {
     setForm(toFormState(property));
     setSubmitError("");
     setErrors({});
   }, [property]);
+
+  // Auto-resolve links cortos de Google Maps via backend
+  useEffect(() => {
+    const url = form.enlace_direccion.trim();
+    if (!url || parseGoogleMapsLink(url)) return; // Ya tiene coords directas
+
+    const isShortLink = /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl)\//.test(url);
+    if (!isShortLink) return;
+
+    setIsResolvingLink(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await resolveMapLinks([url]);
+        const coords = result[url];
+        if (coords) {
+          setForm((prev) => ({ ...prev, latitud: coords.lat, longitud: coords.lng }));
+        }
+      } catch {
+        // fallo silencioso — el usuario puede poner el pin manual
+      } finally {
+        setIsResolvingLink(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [form.enlace_direccion]);
 
   function handleInputChange(
     event: ChangeEvent<
@@ -509,6 +542,15 @@ export function usePropertyForm(
           return { ...prev, tipo_inmueble: nextType, ...TERRAIN_RESET_VALUES };
         }
         return { ...prev, tipo_inmueble: nextType };
+      }
+
+      if (name === "enlace_direccion") {
+        const url = String(value);
+        const coords = parseGoogleMapsLink(url);
+        if (coords) {
+          return { ...prev, enlace_direccion: url, latitud: coords.lat, longitud: coords.lng };
+        }
+        return { ...prev, enlace_direccion: url };
       }
 
       return { ...prev, [name]: value };
@@ -783,6 +825,8 @@ export function usePropertyForm(
         fondo: parsedNumbers.fondo,
       },
       enlace_direccion: form.enlace_direccion.trim() || undefined,
+      latitud: form.latitud ?? undefined,
+      longitud: form.longitud ?? undefined,
       direccion: {
         cp: form.cp.trim() ? parsedNumbers.cp : undefined,
         fraccionamiento: form.fraccionamiento.trim(),
@@ -866,10 +910,19 @@ export function usePropertyForm(
     }
   }
 
+  function handleCoordsChange(coords: { lat: number; lng: number } | null) {
+    setForm((prev) => ({
+      ...prev,
+      latitud: coords ? coords.lat : null,
+      longitud: coords ? coords.lng : null,
+    }));
+  }
+
   return {
     form,
     submitError,
     errors,
+    isResolvingLink,
     handleInputChange,
     handlePaymentToggle,
     handleOperationToggle,
@@ -880,6 +933,7 @@ export function usePropertyForm(
     handleExistingImageTitleChange,
     handleSetPrimaryImage,
     handleReorderImages,
+    handleCoordsChange,
     handleSubmit,
   };
 }

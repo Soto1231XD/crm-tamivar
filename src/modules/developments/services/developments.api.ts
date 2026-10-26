@@ -13,6 +13,11 @@ export async function getDevelopments(): Promise<DevelopmentRecord[]> {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getDevelopmentsByEstatus(estatus: string): Promise<DevelopmentRecord[]> {
+  const data = await apiRequest<DevelopmentRecord[]>(`${PATH}/search`, { params: { estatus } });
+  return Array.isArray(data) ? data : [];
+}
+
 export async function getDevelopment(id: number): Promise<DevelopmentRecord> {
   return apiRequest<DevelopmentRecord>(`${PATH}/${id}`);
 }

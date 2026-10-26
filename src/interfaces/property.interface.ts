@@ -20,6 +20,8 @@ export interface PropertyRecord {
   enlace_direccion: string;
   amenidades?: string;
   recorrido_url?: string;
+  latitud?: number;
+  longitud?: number;
   medidas: Medidas;
   direccion: Direccion;
   caracteristicas?: Caracteristicas;

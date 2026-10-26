@@ -14,7 +14,7 @@ type ProfilePanelProps = {
 export function ProfilePanel({ user, displayName, primaryRoleDisplay, isDark, toggleTheme, onClose }: ProfilePanelProps) {
   return (
     <div
-      className="fixed inset-0 z-[90] bg-slate-950/35 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[1600] bg-slate-950/35 backdrop-blur-[2px]"
       onClick={onClose}
     >
       <div

@@ -27,6 +27,9 @@ import {
   Toggle,
 } from "./FormFields";
 import { ImageGridUploader } from "./ImageGridUploader";
+import MapCoordinatePicker from "@/shared/components/MapCoordinatePicker";
+import { parseGoogleMapsLink } from "@/modules/mapa/utils/parseGoogleMapsLink";
+import { resolveMapLinks } from "@/modules/mapa/services/mapa.api";
 import {
   PAYMENT_OPTIONS,
   STATUS_OPTIONS,
@@ -128,6 +131,8 @@ type DevelopmentFormState = {
   servicios_instalaciones: string;
   amenidades: string;
   recorrido_url: string;
+  latitud: number | null;
+  longitud: number | null;
   comentarios: string;
   imagenes_existentes: DevelopmentImage[];
   imagenes: NewDevelopmentImage[];
@@ -224,6 +229,8 @@ const INITIAL_FORM: DevelopmentFormState = {
   servicios_instalaciones: "",
   amenidades: "",
   recorrido_url: "",
+  latitud: null,
+  longitud: null,
   comentarios: "",
   imagenes_existentes: [],
   imagenes: [],
@@ -374,6 +381,8 @@ function mapDevelopmentToForm(
     servicios_instalaciones: development.servicios_instalaciones ?? "",
     amenidades: development.amenidades ?? "",
     recorrido_url: development.recorrido_url ?? "",
+    latitud: development.latitud ?? null,
+    longitud: development.longitud ?? null,
     comentarios: development.comentarios ?? "",
     imagenes_existentes: development.imagenes ?? [],
     imagenes: [],
@@ -618,12 +627,39 @@ export function DevelopmentForm({
   );
   const [submitError, setSubmitError] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isResolvingLink, setIsResolvingLink] = useState(false);
 
   useEffect(() => {
     setForm(mapDevelopmentToForm(development));
     setErrors({});
     setSubmitError("");
   }, [development]);
+
+  // Auto-resolve links cortos de Google Maps via backend
+  useEffect(() => {
+    const url = form.enlace_direccion.trim();
+    if (!url || parseGoogleMapsLink(url)) return;
+
+    const isShortLink = /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl)\//.test(url);
+    if (!isShortLink) return;
+
+    setIsResolvingLink(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await resolveMapLinks([url]);
+        const coords = result[url];
+        if (coords) {
+          setForm((prev) => ({ ...prev, latitud: coords.lat, longitud: coords.lng }));
+        }
+      } catch {
+        // fallo silencioso
+      } finally {
+        setIsResolvingLink(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [form.enlace_direccion]);
 
   function handleInputChange(
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -646,8 +682,25 @@ export function DevelopmentForm({
         return { ...prev, [name]: String(event.target.value).toUpperCase() };
       }
 
+      if (name === "enlace_direccion") {
+        const url = String(nextValue);
+        const coords = parseGoogleMapsLink(url);
+        if (coords) {
+          return { ...prev, enlace_direccion: url, latitud: coords.lat, longitud: coords.lng };
+        }
+        return { ...prev, enlace_direccion: url };
+      }
+
       return { ...prev, [name]: nextValue };
     });
+  }
+
+  function handleCoordsChange(coords: { lat: number; lng: number } | null) {
+    setForm((prev) => ({
+      ...prev,
+      latitud: coords ? coords.lat : null,
+      longitud: coords ? coords.lng : null,
+    }));
   }
 
   function handleOperationToggle(option: OperationOption) {
@@ -1163,6 +1216,8 @@ export function DevelopmentForm({
       amenidades: form.amenidades.trim() || undefined,
       recorrido_url: form.recorrido_url.trim() || undefined,
       enlace_direccion: form.enlace_direccion.trim() || undefined,
+      latitud: form.latitud ?? undefined,
+      longitud: form.longitud ?? undefined,
       medidas: {},
       direccion: {
         fraccionamiento: form.fraccionamiento.trim(),
@@ -1375,13 +1430,36 @@ export function DevelopmentForm({
               required
               error={errors.municipio}
             />
-            <FieldInput
-              label="Enlace de Google Maps"
-              name="enlace_direccion"
-              value={form.enlace_direccion}
-              onChange={handleInputChange}
-              className="md:col-span-2"
-            />
+            <div className="md:col-span-2 space-y-3">
+              <div>
+                <FieldInput
+                  label="Enlace de Google Maps (para navegación)"
+                  name="enlace_direccion"
+                  value={form.enlace_direccion}
+                  onChange={handleInputChange}
+                />
+                {form.enlace_direccion && (
+                  <p className="mt-1 text-xs">
+                    {isResolvingLink
+                      ? <span className="text-blue-500">Resolviendo ubicación…</span>
+                      : parseGoogleMapsLink(form.enlace_direccion) || (form.latitud && form.longitud)
+                        ? <span className="text-green-600">✓ Coordenadas extraídas automáticamente</span>
+                        : <span className="text-amber-600">⚠ No se pudo resolver el link — coloca el pin manualmente</span>
+                    }
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: "var(--foreground)" }}>
+                  Ubicación en el mapa
+                </p>
+                <MapCoordinatePicker
+                  lat={form.latitud}
+                  lng={form.longitud}
+                  onChange={handleCoordsChange}
+                />
+              </div>
+            </div>
           </div>
         </SectionCard>
 

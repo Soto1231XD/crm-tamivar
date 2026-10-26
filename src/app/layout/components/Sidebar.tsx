@@ -40,12 +40,12 @@ export function Sidebar({
   return (
     <>
       {!isCollapsed && (
-        <div className="fixed inset-0 z-40 bg-slate-950/45 md:hidden" onClick={onClose} />
+        <div className="fixed inset-0 z-[1500] bg-slate-950/45 md:hidden" onClick={onClose} />
       )}
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800/80 bg-[linear-gradient(180deg,#0f172a_0%,#111827_100%)] text-slate-100 transition-all duration-300 md:relative",
+          "fixed inset-y-0 left-0 z-[2000] flex flex-col border-r border-slate-800/80 bg-[linear-gradient(180deg,#0f172a_0%,#111827_100%)] text-slate-100 transition-all duration-300 md:relative md:z-auto",
           isCollapsed
             ? "-translate-x-full md:translate-x-0 md:w-[92px] md:px-3 md:py-5"
             : "w-[282px] translate-x-0 px-4 py-5 md:w-[264px] md:px-5 md:py-6",

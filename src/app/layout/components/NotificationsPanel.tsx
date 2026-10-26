@@ -33,10 +33,10 @@ export function NotificationsPanel({
   onNotificationClick,
 }: NotificationsPanelProps) {
   return (
-    <div className="pointer-events-none fixed inset-0 z-[92]">
+    <div className="pointer-events-none fixed inset-0 z-[1600]">
       <div
         ref={panelRef}
-        className="pointer-events-auto absolute right-4 top-20 z-[93] w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_32px_80px_rgba(15,23,42,0.22)] md:right-8"
+        className="pointer-events-auto absolute right-4 top-20 z-[1601] w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_32px_80px_rgba(15,23,42,0.22)] md:right-8"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>

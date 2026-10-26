@@ -20,6 +20,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   CarteraClientes: "Cartera de Clientes",
   evaluacion: "Evaluación de Asesores",
   recomendaciones: "Recomendaciones",
+  mapa: "Mapa",
 };
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
@@ -40,6 +41,7 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   CarteraClientes: "/modulos/cartera-clientes",
   evaluacion: "/modulos/evaluacion",
   recomendaciones: "/modulos/recomendaciones",
+  mapa: "/modulos/mapa",
 };
 
 const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
@@ -97,6 +99,7 @@ export function getAvailableModules(
     "Estadísticas",
     "propiedades",
     "desarrollos",
+    "mapa",
     "material",
     "registros",
     "registros_leads",
@@ -117,6 +120,7 @@ export function getAvailableModules(
     if (module === "dashboard") return canAccessDashboard(permissions);
     if (module === "Estadísticas") return canAccessStatistics(userRoles, permissions);
     if (module === "material") return true;
+    if (module === "mapa") return hasModuleReadAccess(permissions, "mapa");
     return permissions.some((permission) => permission.startsWith(`${module}:`));
   });
 }
