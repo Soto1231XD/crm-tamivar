@@ -1,6 +1,6 @@
 import "leaflet/dist/leaflet.css";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { useNavigate } from "react-router-dom";
 import { getPropertiesByEstatus } from "@/modules/properties/services/properties.api";
@@ -113,6 +113,49 @@ const STATUS_COLORS: Record<string, string> = {
   Baja: "#64748B",
 };
 
+const DEFAULT_CENTER: [number, number] = [21.1619, -86.8515];
+const DEFAULT_ZOOM = 12;
+
+// --- ZoomTracker: notifies parent of zoom changes ---
+function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
+  useMapEvents({
+    zoomend(e) {
+      onZoomChange(e.target.getZoom());
+    },
+  });
+  return null;
+}
+
+// --- ResetMapView: flies back to the default view ---
+function ResetMapView({ trigger }: { trigger: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (trigger === 0) return;
+    map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 1 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger]);
+  return null;
+}
+
+// --- FlyToMarker: component inside MapContainer that pans to a target ---
+function FlyToMarker({
+  target,
+  onArrived,
+}: {
+  target: { lat: number; lng: number } | null;
+  onArrived?: () => void;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (!target) return;
+    map.flyTo([target.lat, target.lng], 17, { duration: 1 });
+    const t = setTimeout(() => onArrived?.(), 1150);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
+  return null;
+}
+
 // Touch detection (móvil no tiene hover, mantiene comportamiento de click)
 const isTouch = () =>
   typeof window !== "undefined" &&
@@ -165,6 +208,17 @@ export function MapaPage() {
 
   const [showProperties, setShowProperties] = useState(true);
   const [showDevelopments, setShowDevelopments] = useState(true);
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
+  const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number } | null>(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [viewReset, setViewReset] = useState(0);
+  const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
+  const markerRefs = useRef<Map<string, L.Marker>>(new Map());
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -289,6 +343,78 @@ export function MapaPage() {
   }, [properties, developments, resolvedCoords]);
 
   const allMarkers: MapMarker[] = [...propertyMarkers, ...developmentMarkers];
+
+  // Search suggestions
+  const suggestions = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return allMarkers.filter((m) => m.titulo.toLowerCase().includes(q)).slice(0, 8);
+  }, [searchQuery, allMarkers]);
+
+  // Markers visible on map (all, or only the highlighted one)
+  const visiblePropertyMarkers = highlightedKey
+    ? propertyMarkers.filter((m) => `p-${m.id}` === highlightedKey)
+    : propertyMarkers;
+
+  const visibleDevelopmentMarkers = highlightedKey
+    ? developmentMarkers.filter((m) => `d-${m.id}` === highlightedKey)
+    : developmentMarkers;
+
+  // Reset active index when the search text changes
+  useEffect(() => { setActiveIndex(-1); }, [searchQuery]);
+
+  function selectSuggestion(m: MapMarker) {
+    const key = `${m.type === "propiedad" ? "p" : "d"}-${m.id}`;
+    setSearchQuery(m.titulo);
+    setShowSuggestions(false);
+    setActiveIndex(-1);
+    setHighlightedKey(key);
+    setFlyTarget({ lat: m.lat, lng: m.lng });
+  }
+
+  function clearSearch() {
+    setSearchQuery("");
+    setHighlightedKey(null);
+    setFlyTarget(null);
+    setShowSuggestions(false);
+    setActiveIndex(-1);
+    setViewReset((n) => n + 1);
+    setCurrentZoom(DEFAULT_ZOOM);
+  }
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeIndex >= 0 && activeIndex < suggestions.length) {
+        selectSuggestion(suggestions[activeIndex]);
+      }
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setActiveIndex(-1);
+    }
+  }
+
+  const handleFlyArrived = useCallback(() => {
+    if (!highlightedKey) return;
+    markerRefs.current.get(highlightedKey)?.openPopup();
+  }, [highlightedKey]);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   const sinUbicacion = useMemo(() => {
     const hasCoords = (item: PropertyRecord | DevelopmentRecord) => {
@@ -416,6 +542,129 @@ export function MapaPage() {
         </span>
       </div>
 
+      {/* Search bar */}
+      <div ref={searchRef} className="relative">
+        <div
+          className={[
+            "flex items-center gap-2 rounded-xl border px-4 py-2.5 shadow-sm transition",
+            isDark
+              ? "border-slate-600 bg-slate-800"
+              : "border-slate-200 bg-white",
+          ].join(" ")}
+        >
+          {/* Search icon */}
+          <svg
+            className={isDark ? "text-slate-400" : "text-slate-400"}
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSuggestions(true);
+              if (!e.target.value.trim()) {
+                setHighlightedKey(null);
+                setFlyTarget(null);
+              }
+            }}
+            onFocus={() => { if (searchQuery.trim()) setShowSuggestions(true); }}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Buscar propiedad o desarrollo…"
+            className={[
+              "flex-1 bg-transparent text-sm outline-none",
+              isDark ? "text-white placeholder:text-slate-500" : "text-slate-800 placeholder:text-slate-400",
+            ].join(" ")}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className={[
+                "rounded-md p-0.5 transition hover:bg-slate-100",
+                isDark ? "text-slate-400 hover:bg-slate-700" : "text-slate-400",
+              ].join(" ")}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div
+            className={[
+              "absolute left-0 right-0 top-full z-[1100] mt-1.5 overflow-hidden rounded-xl border shadow-lg",
+              isDark
+                ? "border-slate-600 bg-slate-800"
+                : "border-slate-200 bg-white",
+            ].join(" ")}
+          >
+            {suggestions.map((m, idx) => {
+              const isP = m.type === "propiedad";
+              const color = isP ? PROPERTY_COLOR : DEVELOPMENT_COLOR;
+              const isActive = idx === activeIndex;
+              return (
+                <button
+                  key={`${m.type}-${m.id}`}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); selectSuggestion(m); }}
+                  onMouseEnter={() => setActiveIndex(idx)}
+                  className={[
+                    "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition",
+                    isActive
+                      ? isDark ? "bg-slate-700" : "bg-slate-100"
+                      : isDark ? "hover:bg-slate-700" : "hover:bg-slate-50",
+                  ].join(" ")}
+                >
+                  <span
+                    className="shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold"
+                    style={{ background: color + "18", color }}
+                  >
+                    {isP ? "P" : "D"}
+                  </span>
+                  <span className={[
+                    "min-w-0 flex-1 truncate font-medium",
+                    isDark ? "text-slate-200" : "text-slate-800",
+                  ].join(" ")}>
+                    {m.titulo}
+                  </span>
+                  <span className={isDark ? "text-slate-500 text-xs" : "text-slate-400 text-xs"}>
+                    {m.tipo_inmueble}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {showSuggestions && searchQuery.trim() && suggestions.length === 0 && (
+          <div
+            className={[
+              "absolute left-0 right-0 top-full z-[1100] mt-1.5 rounded-xl border px-4 py-3 text-sm shadow-lg",
+              isDark
+                ? "border-slate-600 bg-slate-800 text-slate-400"
+                : "border-slate-200 bg-white text-slate-500",
+            ].join(" ")}
+          >
+            Sin resultados para "{searchQuery}"
+          </div>
+        )}
+      </div>
+
       {/* Error */}
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
@@ -438,9 +687,30 @@ export function MapaPage() {
             )}
           </div>
         )}
+        {/* Botón flotante para restablecer la vista */}
+        {(highlightedKey || currentZoom > DEFAULT_ZOOM) && (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className={[
+              "absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 inline-flex items-center gap-2",
+              "rounded-full border px-4 py-2 text-sm font-semibold shadow-lg transition",
+              isDark
+                ? "border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            Ver todo el mapa
+          </button>
+        )}
+
         <MapContainer
-          center={[21.1619, -86.8515]}
-          zoom={12}
+          center={DEFAULT_CENTER}
+          zoom={DEFAULT_ZOOM}
           style={{ height: "100%", width: "100%" }}
           zoomControl={true}
         >
@@ -449,12 +719,20 @@ export function MapaPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {propertyMarkers.map((m) => (
+          <ZoomTracker onZoomChange={setCurrentZoom} />
+          <ResetMapView trigger={viewReset} />
+          <FlyToMarker target={flyTarget} onArrived={handleFlyArrived} />
+
+          {visiblePropertyMarkers.map((m) => (
             <Marker
               key={`p-${m.id}`}
               position={[m.lat, m.lng]}
               icon={propiedadIcon}
               eventHandlers={markerHandlers()}
+              ref={(instance) => {
+                if (instance) markerRefs.current.set(`p-${m.id}`, instance);
+                else markerRefs.current.delete(`p-${m.id}`);
+              }}
             >
               <Popup maxWidth={260}>
                 <PopupCard marker={m} onDetail={() => navigate(`/modulos/propiedades/${m.id}`)} />
@@ -462,12 +740,16 @@ export function MapaPage() {
             </Marker>
           ))}
 
-          {developmentMarkers.map((m) => (
+          {visibleDevelopmentMarkers.map((m) => (
             <Marker
               key={`d-${m.id}`}
               position={[m.lat, m.lng]}
               icon={desarrolloIcon}
               eventHandlers={markerHandlers()}
+              ref={(instance) => {
+                if (instance) markerRefs.current.set(`d-${m.id}`, instance);
+                else markerRefs.current.delete(`d-${m.id}`);
+              }}
             >
               <Popup maxWidth={260}>
                 <PopupCard marker={m} onDetail={() => navigate(`/modulos/desarrollos/${m.id}`)} />
