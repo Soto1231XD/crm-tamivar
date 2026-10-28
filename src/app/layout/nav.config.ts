@@ -42,7 +42,7 @@ export const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
   {
     label: "Leads",
     icon: leadsIcon,
-    modules: ["registros", "registros_leads", "asesor_externo"],
+    modules: ["registros", "registros_leads", "asesor_externo", "Estadísticas"],
   },
   {
     label: "Clientes",
@@ -68,7 +68,6 @@ export const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
 
 export const STANDALONE_MODULES = new Set<ModuleKey>([
   "dashboard",
-  "Estadísticas",
   "propiedades",
   "desarrollos",
   "mapa",
