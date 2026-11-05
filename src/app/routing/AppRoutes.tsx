@@ -73,6 +73,12 @@ const AsesorExternoPage = lazy(() =>
 const MapaPage = lazy(() =>
   import("@/modules/mapa/pages/MapaPage").then((m) => ({ default: m.MapaPage }))
 );
+const EmpleadosPage = lazy(() =>
+  import("@/modules/empleados/pages/EmpleadosPage").then((m) => ({ default: m.EmpleadosPage }))
+);
+const EmpleadoDetailPage = lazy(() =>
+  import("@/modules/empleados/pages/EmpleadoDetailPage").then((m) => ({ default: m.EmpleadoDetailPage }))
+);
 
 export function AppRoutes() {
   return (
@@ -161,6 +167,11 @@ export function AppRoutes() {
           </Route>
           <Route element={<ProtectedRoute module="evaluacion" />}>
             <Route path="modulos/evaluacion" element={<EvaluacionPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute module="rh_empleados" />}>
+            <Route path="modulos/rh/empleados" element={<EmpleadosPage />} />
+            <Route path="modulos/rh/empleados/:id" element={<EmpleadoDetailPage />} />
           </Route>
         </Route>
       </Route>

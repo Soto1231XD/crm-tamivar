@@ -15,6 +15,7 @@ import {
 } from "../services/operaciones.api";
 import { ProcesoModal } from "../components/ProcesoModal";
 import { FiniquitadaModal } from "../components/FiniquitadaModal";
+import { FiniquitadaWhatsappModal } from "../components/FiniquitadaWhatsappModal";
 import { ComisionModal } from "../components/ComisionModal";
 
 type Tab = "proceso" | "finiquitadas" | "comisiones";
@@ -90,6 +91,7 @@ export function OperacionesPage() {
   const [finModal, setFinModal]           = useState<{ open: boolean; item: OperacionFiniquitada | null }>({ open: false, item: null });
   const [finiquitarProceso, setFiniquitarProceso] = useState<OperacionProceso | null>(null);
   const [deleteFinId, setDeleteFinId]     = useState<number | null>(null);
+  const [finWaModal, setFinWaModal]       = useState<OperacionFiniquitada | null>(null);
 
   // ── Comisiones ────────────────────────────────────────
   const [comisiones, setComisiones]       = useState<Comision[]>([]);
@@ -365,6 +367,41 @@ export function OperacionesPage() {
     { header: "Entrega", render: (r) => r.entrega_casa
         ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">Entregada</span>
         : <span className="rounded-full bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-400 border border-slate-200">Pendiente</span> },
+    {
+      header: "Estado WA",
+      render: (r) => (
+        <span className={[
+          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+          r.estado_whatsapp === "Enviado"
+            ? "bg-green-100 text-green-700"
+            : "bg-amber-100 text-amber-700",
+        ].join(" ")}>
+          {r.estado_whatsapp ?? "Pendiente"}
+        </span>
+      ),
+    },
+    {
+      header: "Enviar WA",
+      render: (r) => (
+        <button
+          type="button"
+          onClick={() => setFinWaModal(r)}
+          title={`Solicitar reseña a ${r.cliente}`}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1da851]"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
+          </svg>
+          Enviar
+        </button>
+      ),
+    },
+    {
+      header: "Fecha envío WA",
+      render: (r) => r.whatsapp_enviado_en
+        ? <span className="text-xs text-slate-600">{fmtDate(r.whatsapp_enviado_en)}</span>
+        : <span className="text-slate-300">—</span>,
+    },
   ];
 
   const allComSelected  = comisiones.length > 0 && selectedComisionIds.size === comisiones.length;
@@ -648,6 +685,14 @@ export function OperacionesPage() {
             setFinModal({ open: false, item: null });
             setFiniquitarProceso(null);
           }}
+        />
+      )}
+
+      {finWaModal && (
+        <FiniquitadaWhatsappModal
+          finiquitada={finWaModal}
+          onClose={() => setFinWaModal(null)}
+          onSent={() => { loadFiniquitadas(); setFinWaModal(null); }}
         />
       )}
 

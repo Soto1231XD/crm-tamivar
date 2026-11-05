@@ -30,6 +30,7 @@ export const MODULE_ICONS: Record<ModuleKey, string> = {
   evaluacion: usuariosIcon,
   recomendaciones: usuariosIcon,
   mapa: mapaIcon,
+  rh_empleados: usuariosIcon,
 };
 
 export type NavGroupConfig = {
@@ -58,6 +59,11 @@ export const NAV_GROUP_CONFIGS: NavGroupConfig[] = [
     label: "Evaluación",
     icon: usuariosIcon,
     modules: ["evaluacion"],
+  },
+  {
+    label: "Recursos Humanos",
+    icon: usuariosIcon,
+    modules: ["rh_empleados"],
   },
   {
     label: "Administración",

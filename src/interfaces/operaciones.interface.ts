@@ -23,10 +23,13 @@ export interface OperacionFiniquitada {
   propietario: string;
   cliente: string;
   propiedad: string;
+  telefono: string | null;
   fecha_firma: string | null;
   monto_operacion: string | null;
   estatus_pago: string | null;
   entrega_casa: boolean;
+  estado_whatsapp: string;
+  whatsapp_enviado_en: string | null;
   creado_en: string;
   actualizado_en: string;
   comision?: Comision | null;

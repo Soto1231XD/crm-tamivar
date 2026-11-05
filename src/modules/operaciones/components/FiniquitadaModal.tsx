@@ -23,6 +23,7 @@ export function FiniquitadaModal({ initial, prefill, onSave, onClose }: Props) {
     propietario: prefill?.propietario ?? "",
     cliente: prefill?.cliente ?? "",
     propiedad: prefill?.propiedad ?? "",
+    telefono: null,
     fecha_firma: null,
     monto_operacion: null,
     estatus_pago: null,
@@ -120,6 +121,16 @@ export function FiniquitadaModal({ initial, prefill, onSave, onClose }: Props) {
                 value={form.propiedad ?? ""}
                 onChange={(e) => set("propiedad", e.target.value)}
                 placeholder="Nombre o dirección de la propiedad"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={LABEL}>Teléfono del cliente</label>
+              <input
+                type="tel"
+                className={INPUT}
+                value={form.telefono ?? ""}
+                onChange={(e) => set("telefono", e.target.value)}
+                placeholder="Ej: 9981234567"
               />
             </div>
             <div>

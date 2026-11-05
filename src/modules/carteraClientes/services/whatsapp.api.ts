@@ -21,8 +21,8 @@ export const sendCampaign = (recipients: string[], body: string) =>
 export const sendBirthday = (to: string, nombre: string, mensaje: string) =>
   apiRequest<SendResult>("/whatsapp/send-birthday", { method: "POST", data: { to, nombre, mensaje } });
 
-export const sendFestividad = (to: string, nombre: string, mensaje: string) =>
-  apiRequest<SendResult>("/whatsapp/send-festividad", { method: "POST", data: { to, nombre, mensaje } });
+export const sendFestividad = (to: string, nombre: string) =>
+  apiRequest<SendResult>("/whatsapp/send-festividad", { method: "POST", data: { to, nombre } });
 
 export interface FestividadCampaignResult {
   total: number;
@@ -33,9 +33,8 @@ export interface FestividadCampaignResult {
 
 export const sendFestividadCampaign = (
   recipients: { telefono: string; nombre: string }[],
-  mensaje: string,
 ) =>
   apiRequest<FestividadCampaignResult>("/whatsapp/campaign-festividad", {
     method: "POST",
-    data: { recipients, mensaje },
+    data: { recipients },
   });

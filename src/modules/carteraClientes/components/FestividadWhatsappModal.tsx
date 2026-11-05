@@ -3,7 +3,6 @@ import { AppModal } from "@/components/ui/AppModal";
 import type { ClienteCartera } from "@/interfaces/cartera-clientes.interface";
 import { sendFestividadCampaign } from "../services/whatsapp.api";
 
-const INPUT = "w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10";
 const LABEL = "block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1.5";
 
 interface Props {
@@ -16,7 +15,6 @@ type Result = { total: number; sent: number; failed: number };
 export function FestividadWhatsappModal({ clientes, onClose }: Props) {
   const conTelefono = clientes.filter((c) => c.telefono);
   const [selected, setSelected] = useState<Set<number>>(new Set(conTelefono.map((c) => c.id)));
-  const [mensaje, setMensaje] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +41,7 @@ export function FestividadWhatsappModal({ clientes, onClose }: Props) {
     setSending(true);
     setError(null);
     try {
-      const res = await sendFestividadCampaign(destinatarios, mensaje);
+      const res = await sendFestividadCampaign(destinatarios);
       setResult({ total: res.total, sent: res.sent, failed: res.failed });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al enviar");
@@ -87,24 +85,21 @@ export function FestividadWhatsappModal({ clientes, onClose }: Props) {
     <AppModal
       isOpen
       onClose={onClose}
-      title="Mensaje de festividad"
+      title="Día de Muertos — WhatsApp"
       subtitle={`${selected.size} destinatario${selected.size !== 1 ? "s" : ""} seleccionado${selected.size !== 1 ? "s" : ""}`}
       maxWidthClassName="max-w-2xl"
       panelClassName="max-h-[90vh]"
     >
       <div className="space-y-4">
-        <div>
-          <label className={LABEL}>Mensaje de la festividad</label>
-          <textarea
-            rows={4}
-            className={INPUT + " resize-none"}
-            value={mensaje}
-            onChange={(e) => setMensaje(e.target.value)}
-            placeholder="Ej: En este Día de Navidad, todo el equipo de Tamivar te desea felices fiestas llenas de alegría y prosperidad. 🎄"
-          />
-          <p className="mt-1.5 text-xs text-slate-400">
-            Cada cliente recibirá: "¡Hola <span className="font-medium">[nombre]</span>! 🎉 {mensaje || "..."} Con cariño, 🏠 Equipo Tamivar"
-          </p>
+        {/* Info del template */}
+        <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 flex items-start gap-3">
+          <span className="text-2xl shrink-0">💀</span>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-orange-700 mb-0.5">Plantilla: dia_de_muertos</p>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Se enviará la plantilla de WhatsApp aprobada de Día de Muertos personalizada con el nombre de cada cliente. No necesitas escribir ningún mensaje.
+            </p>
+          </div>
         </div>
 
         {error && (
@@ -152,7 +147,7 @@ export function FestividadWhatsappModal({ clientes, onClose }: Props) {
           <button
             type="button"
             onClick={handleSend}
-            disabled={sending || !mensaje.trim() || selected.size === 0}
+            disabled={sending || selected.size === 0}
             className="rounded-lg bg-[#25D366] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
             {sending ? "Enviando..." : `Enviar a ${selected.size}`}

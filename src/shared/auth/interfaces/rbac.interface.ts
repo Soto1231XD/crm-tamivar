@@ -16,7 +16,8 @@ export type ModuleKey =
   | 'CarteraClientes'
   | 'evaluacion'
   | 'recomendaciones'
-  | 'mapa';
+  | 'mapa'
+  | 'rh_empleados';
 
 export type ModulePermissions = {
   ver: boolean;
