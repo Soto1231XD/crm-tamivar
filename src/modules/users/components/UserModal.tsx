@@ -28,6 +28,9 @@ type FormState = {
   cargo_publico: string;
   bio_publica: string;
   perfil_publico: boolean;
+  perfil_ocultar_contacto: boolean;
+  perfil_publico_email: string;
+  perfil_publico_telefono: string;
   roles_ids: number[];
 };
 
@@ -44,6 +47,9 @@ const INITIAL_FORM: FormState = {
   cargo_publico: '',
   bio_publica: '',
   perfil_publico: false,
+  perfil_ocultar_contacto: false,
+  perfil_publico_email: '',
+  perfil_publico_telefono: '',
   roles_ids: [],
 };
 
@@ -215,6 +221,9 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
             cargo_publico: form.cargo_publico.trim() || undefined,
             bio_publica: form.bio_publica.trim() || undefined,
             perfil_publico: form.perfil_publico,
+            perfil_ocultar_contacto: form.perfil_ocultar_contacto,
+            perfil_publico_email: form.perfil_publico_email.trim() || undefined,
+            perfil_publico_telefono: form.perfil_publico_telefono.trim() || undefined,
             roles_ids: form.roles_ids,
             contrasena: form.contrasena.trim(),
           }
@@ -365,6 +374,41 @@ export function UserModal({ isOpen, mode, user, roles, onClose, onSubmit }: User
                 <span className="text-xs text-slate-500">Activa esto solo para usuarios que deben tener una vista publica.</span>
               </span>
             </label>
+
+            <label className="mt-3 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.perfil_ocultar_contacto}
+                onChange={(event) => updateField('perfil_ocultar_contacto', event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#312C85] focus:ring-[#312C85]"
+              />
+              <span>
+                <span className="block font-semibold text-slate-800">Ocultar teléfono y correo en el sitio web</span>
+                <span className="text-xs text-slate-500">El nombre y foto siguen visibles, pero no se mostrará información de contacto.</span>
+              </span>
+            </label>
+
+            {!form.perfil_ocultar_contacto && (
+              <div className="mt-3 grid gap-4 md:grid-cols-2">
+                <Field
+                  label="Correo publico (opcional)"
+                  type="email"
+                  value={form.perfil_publico_email}
+                  placeholder={form.correo_electronico || 'correo@ejemplo.com'}
+                  onChange={(value) => updateField('perfil_publico_email', value)}
+                />
+                <Field
+                  label="Teléfono publico (opcional)"
+                  value={form.perfil_publico_telefono}
+                  inputMode="numeric"
+                  placeholder={form.telefono || '9981234567'}
+                  onChange={(value) => updateField('perfil_publico_telefono', value.replace(/\D/g, '').slice(0, 10))}
+                />
+                <p className="col-span-2 -mt-2 text-xs text-slate-500">
+                  Si se llenan, el sitio web mostrará estos datos en lugar del correo y teléfono reales del usuario.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
@@ -503,6 +547,9 @@ function getInitialForm(user?: UserRecord | null): FormState {
     cargo_publico: user.cargo_publico?.trim() || '',
     bio_publica: user.bio_publica?.trim() || '',
     perfil_publico: Boolean(user.perfil_publico),
+    perfil_ocultar_contacto: Boolean(user.perfil_ocultar_contacto),
+    perfil_publico_email: user.perfil_publico_email?.trim() ?? '',
+    perfil_publico_telefono: user.perfil_publico_telefono?.trim() ?? '',
     roles_ids: getRoleIds(user),
   };
 }
@@ -565,6 +612,15 @@ function buildUpdatePayload(form: FormState, user?: UserRecord | null, photoRemo
   }
   if (form.perfil_publico !== initial.perfil_publico) {
     payload.perfil_publico = form.perfil_publico;
+  }
+  if (form.perfil_ocultar_contacto !== initial.perfil_ocultar_contacto) {
+    payload.perfil_ocultar_contacto = form.perfil_ocultar_contacto;
+  }
+  if ((form.perfil_publico_email.trim() || '') !== (initial.perfil_publico_email.trim() || '')) {
+    payload.perfil_publico_email = form.perfil_publico_email.trim() || undefined;
+  }
+  if ((form.perfil_publico_telefono.trim() || '') !== (initial.perfil_publico_telefono.trim() || '')) {
+    payload.perfil_publico_telefono = form.perfil_publico_telefono.trim() || undefined;
   }
   if (!arraysEqual(form.roles_ids, initial.roles_ids)) {
     payload.roles_ids = form.roles_ids;

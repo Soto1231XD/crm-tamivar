@@ -31,6 +31,9 @@ export interface UserRecord {
   cargo_publico?: string | null;
   bio_publica?: string | null;
   perfil_publico?: boolean | null;
+  perfil_ocultar_contacto?: boolean | null;
+  perfil_publico_email?: string | null;
+  perfil_publico_telefono?: string | null;
   activo?: boolean | null;
   rol?: UserRoleRecord | string | null;
   roles?: UserRoleRecord[] | string[] | null;
@@ -50,6 +53,9 @@ export interface CreateUserPayload {
   cargo_publico?: string;
   bio_publica?: string;
   perfil_publico?: boolean;
+  perfil_ocultar_contacto?: boolean;
+  perfil_publico_email?: string;
+  perfil_publico_telefono?: string;
   creado_por_id?: number;
   roles_ids: number[];
 }
