@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AppModal } from "@/components/ui/AppModal";
 import type { Empleado, CreateEmpleadoPayload, UpdateEmpleadoPayload } from "../services/empleados.api";
-import { uploadFotoEmpleado } from "../services/empleados.api";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
