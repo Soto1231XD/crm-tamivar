@@ -16,9 +16,10 @@ Con cariño,
 interface Props {
   cliente: ClienteCartera;
   onClose: () => void;
+  onSent?: (clienteId: number) => void;
 }
 
-export function BirthdayWhatsappModal({ cliente, onClose }: Props) {
+export function BirthdayWhatsappModal({ cliente, onClose, onSent }: Props) {
   const [mensaje, setMensaje] = useState(MENSAJE_DEFAULT);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -31,6 +32,7 @@ export function BirthdayWhatsappModal({ cliente, onClose }: Props) {
     try {
       await sendBirthday(cliente.telefono, cliente.nombre, mensaje);
       setSent(true);
+      onSent?.(cliente.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al enviar el mensaje");
     } finally {

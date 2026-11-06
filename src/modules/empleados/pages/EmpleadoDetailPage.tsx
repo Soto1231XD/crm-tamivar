@@ -68,16 +68,32 @@ import {
   TIPOS_DOCUMENTO,
   type DocumentoEmpleado,
 } from "../services/documentos.api";
+import {
+  getHistorialIngresos,
+  reactivarEmpleado,
+  type HistorialIngreso,
+} from "../services/historial-ingreso.api";
+import {
+  getAmonestacionesByEmpleado,
+  createAmonestacion,
+  updateAmonestacion,
+  deleteAmonestacion,
+  type Amonestacion,
+  type CreateAmonestacionPayload,
+  type UpdateAmonestacionPayload,
+} from "../services/amonestaciones.api";
+import { AmonestacionModal } from "../components/AmonestacionModal";
 
-type Tab = "faltas" | "vacaciones" | "permisos" | "incapacidades" | "bajas" | "documentos" | "reporte";
+type Tab = "faltas" | "vacaciones" | "permisos" | "incapacidades" | "amonestaciones" | "historial" | "documentos" | "reporte";
 const TABS: { key: Tab; label: string }[] = [
-  { key: "faltas",         label: "Faltas" },
-  { key: "vacaciones",     label: "Vacaciones" },
-  { key: "permisos",       label: "Permisos" },
-  { key: "incapacidades",  label: "Incapacidades" },
-  { key: "bajas",          label: "Bajas" },
-  { key: "documentos",     label: "Documentos" },
-  { key: "reporte",        label: "Reporte Individual" },
+  { key: "faltas",          label: "Faltas" },
+  { key: "vacaciones",      label: "Vacaciones" },
+  { key: "permisos",        label: "Permisos" },
+  { key: "incapacidades",   label: "Incapacidades" },
+  { key: "amonestaciones",  label: "Amonestaciones" },
+  { key: "historial",       label: "Historial" },
+  { key: "documentos",      label: "Documentos" },
+  { key: "reporte",         label: "Reporte Individual" },
 ];
 
 function formatDate(iso: string) {
@@ -124,11 +140,30 @@ export function EmpleadoDetailPage() {
   const [bajaModal, setBajaModal] = useState<{ open: boolean; item: Baja | null }>({ open: false, item: null });
   const [deleteBajaModal, setDeleteBajaModal] = useState<{ open: boolean; item: Baja | null }>({ open: false, item: null });
 
+  // Amonestaciones state
+  const [amonestaciones, setAmonestaciones] = useState<Amonestacion[]>([]);
+  const [loadingAmonestaciones, setLoadingAmonestaciones] = useState(true);
+  const [amonestacionModal, setAmonestacionModal] = useState<{ open: boolean; item: Amonestacion | null }>({ open: false, item: null });
+  const [deleteAmonestacionModal, setDeleteAmonestacionModal] = useState<{ open: boolean; item: Amonestacion | null }>({ open: false, item: null });
+
+  // Historial ingresos state
+  const [historialIngresos, setHistorialIngresos] = useState<HistorialIngreso[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(true);
+  const [reactivando, setReactivando] = useState(false);
+  const [reactivarModal, setReactivarModal] = useState(false);
+  const [fechaReingreso, setFechaReingreso] = useState("");
+
   // Documentos state
   const [documentos, setDocumentos] = useState<DocumentoEmpleado[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [uploadingTipo, setUploadingTipo] = useState<string | null>(null);
   const [deletingDocId, setDeletingDocId] = useState<number | null>(null);
+  const [psicModal, setPsicModal] = useState(false);
+  const [psicNombre, setPsicNombre] = useState("");
+  const [psicFile, setPsicFile] = useState<File | null>(null);
+  const [examenModal, setExamenModal] = useState(false);
+  const [examenNombre, setExamenNombre] = useState("");
+  const [examenFile, setExamenFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!empleadoId) return;
@@ -241,7 +276,18 @@ export function EmpleadoDetailPage() {
     finally { setLoadingBajas(false); }
   };
 
-  useEffect(() => { if (empleadoId) loadBajas(); }, [empleadoId]);
+  const loadHistorial = async () => {
+    setLoadingHistorial(true);
+    try { setHistorialIngresos(await getHistorialIngresos(empleadoId)); }
+    finally { setLoadingHistorial(false); }
+  };
+
+  useEffect(() => {
+    if (empleadoId) {
+      void loadBajas();
+      void loadHistorial();
+    }
+  }, [empleadoId]);
 
   const handleSaveBaja = async (data: CreateBajaPayload | UpdateBajaPayload) => {
     if (bajaModal.item) {
@@ -250,6 +296,8 @@ export function EmpleadoDetailPage() {
     } else {
       await createBaja(data as CreateBajaPayload);
       toast.success("Baja registrada");
+      // Refresca el empleado para que el estatus se actualice en el header
+      getEmpleado(empleadoId).then(setEmpleado).catch(() => null);
     }
     await loadBajas();
   };
@@ -265,6 +313,53 @@ export function EmpleadoDetailPage() {
     }
   };
 
+  const loadAmonestaciones = async () => {
+    setLoadingAmonestaciones(true);
+    try { setAmonestaciones(await getAmonestacionesByEmpleado(empleadoId)); }
+    finally { setLoadingAmonestaciones(false); }
+  };
+
+  useEffect(() => { if (empleadoId) loadAmonestaciones(); }, [empleadoId]);
+
+  const handleSaveAmonestacion = async (data: CreateAmonestacionPayload | UpdateAmonestacionPayload) => {
+    if (amonestacionModal.item) {
+      await updateAmonestacion(amonestacionModal.item.id, data as UpdateAmonestacionPayload);
+      toast.success("Amonestación actualizada");
+    } else {
+      await createAmonestacion(data as CreateAmonestacionPayload);
+      toast.success("Amonestación registrada");
+    }
+    await loadAmonestaciones();
+  };
+
+  const handleDeleteAmonestacion = async (id: number): Promise<string | null> => {
+    try {
+      await deleteAmonestacion(id);
+      await loadAmonestaciones();
+      toast.success("Amonestación eliminada");
+      return null;
+    } catch (err) {
+      return err instanceof Error ? err.message : "No se pudo eliminar.";
+    }
+  };
+
+  const handleReactivar = async () => {
+    if (!fechaReingreso) return;
+    setReactivando(true);
+    try {
+      await reactivarEmpleado(empleadoId, fechaReingreso);
+      toast.success("Empleado reactivado");
+      setReactivarModal(false);
+      setFechaReingreso("");
+      getEmpleado(empleadoId).then(setEmpleado).catch(() => null);
+      await loadHistorial();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo reactivar.");
+    } finally {
+      setReactivando(false);
+    }
+  };
+
   const loadDocumentos = async () => {
     setLoadingDocs(true);
     try { setDocumentos(await getDocumentosByEmpleado(empleadoId)); }
@@ -273,10 +368,10 @@ export function EmpleadoDetailPage() {
 
   useEffect(() => { if (empleadoId) loadDocumentos(); }, [empleadoId]);
 
-  const handleUploadDocumento = async (tipo: string, file: File) => {
+  const handleUploadDocumento = async (tipo: string, file: File, descripcion?: string) => {
     setUploadingTipo(tipo);
     try {
-      await uploadDocumento(empleadoId, tipo, file);
+      await uploadDocumento(empleadoId, tipo, file, descripcion);
       await loadDocumentos();
       toast.success("Documento subido");
     } catch (err) {
@@ -623,52 +718,184 @@ export function EmpleadoDetailPage() {
         </div>
       )}
 
-      {tab === "bajas" && (
+      {tab === "amonestaciones" && (
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-[var(--crm-text-muted)]">
-              {bajas.length} {bajas.length === 1 ? "baja registrada" : "bajas registradas"}
+              {amonestaciones.length} {amonestaciones.length === 1 ? "amonestación registrada" : "amonestaciones registradas"}
             </p>
             {canEdit && (
               <button
                 type="button"
-                onClick={() => setBajaModal({ open: true, item: null })}
+                onClick={() => setAmonestacionModal({ open: true, item: null })}
                 className="flex items-center gap-2 rounded-xl bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1e293b]"
               >
                 <img src={agregarIcon} alt="" className="h-4 w-4" />
-                Registrar baja
+                Registrar amonestación
               </button>
             )}
           </div>
 
           <BaseTable
-            data={bajas}
+            data={amonestaciones}
             columns={[
-              { header: "Fecha de baja", render: (b: Baja) => formatDate(b.fecha_baja) },
+              { header: "Fecha", render: (a: Amonestacion) => formatDate(a.fecha) },
               {
                 header: "Tipo",
-                render: (b: Baja) => (
+                render: (a: Amonestacion) => (
                   <span className={[
                     "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                    b.tipo === "Renuncia"         ? "bg-amber-100 text-amber-700"  :
-                    b.tipo === "Despido"           ? "bg-red-100 text-red-700"      :
-                                                    "bg-slate-100 text-slate-600",
+                    a.tipo === "Verbal"      ? "bg-amber-100 text-amber-700"   :
+                    a.tipo === "Escrita"     ? "bg-orange-100 text-orange-700" :
+                                              "bg-red-100 text-red-700",
                   ].join(" ")}>
-                    {b.tipo}
+                    {a.tipo}
                   </span>
                 ),
               },
-              { header: "Motivo", render: (b: Baja) => b.descripcion ?? <span className="text-slate-300">—</span> },
+              { header: "Descripción", render: (a: Amonestacion) => a.descripcion ?? <span className="text-slate-300">—</span> },
             ]}
-            isLoading={loadingBajas}
-            emptyMessage="No hay bajas registradas"
-            onEdit={canEdit ? (b) => setBajaModal({ open: true, item: b }) : undefined}
-            onDelete={canEdit ? (b) => setDeleteBajaModal({ open: true, item: b }) : undefined}
+            isLoading={loadingAmonestaciones}
+            emptyMessage="No hay amonestaciones registradas"
+            onEdit={canEdit ? (a) => setAmonestacionModal({ open: true, item: a }) : undefined}
+            onDelete={canEdit ? (a) => setDeleteAmonestacionModal({ open: true, item: a }) : undefined}
             canEdit={canEdit}
             canDelete={canEdit}
           />
         </div>
       )}
+
+      {tab === "historial" && (() => {
+        type TimelineItem =
+          | { kind: "ingreso"; fecha: string; item: HistorialIngreso }
+          | { kind: "baja";    fecha: string; item: Baja };
+
+        const timeline: TimelineItem[] = [
+          ...historialIngresos.map((h) => ({ kind: "ingreso" as const, fecha: h.fecha, item: h })),
+          ...bajas.map((b) => ({ kind: "baja" as const, fecha: b.fecha_baja, item: b })),
+        ].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+        return (
+          <div className="flex flex-col gap-4">
+            {/* Acciones */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-[var(--crm-text-muted)]">
+                {timeline.length} {timeline.length === 1 ? "evento registrado" : "eventos registrados"}
+              </p>
+              <div className="flex items-center gap-2">
+                {canEdit && empleado?.estatus === "Baja" && (
+                  <button
+                    type="button"
+                    onClick={() => { setFechaReingreso(""); setReactivarModal(true); }}
+                    className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                  >
+                    Reactivar empleado
+                  </button>
+                )}
+                {canEdit && empleado?.estatus === "Activo" && (
+                  <button
+                    type="button"
+                    onClick={() => setBajaModal({ open: true, item: null })}
+                    className="flex items-center gap-2 rounded-xl bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1e293b]"
+                  >
+                    <img src={agregarIcon} alt="" className="h-4 w-4" />
+                    Registrar baja
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Timeline */}
+            {(loadingHistorial || loadingBajas) ? (
+              <p className="text-sm text-[var(--crm-text-muted)]">Cargando historial...</p>
+            ) : timeline.length === 0 ? (
+              <p className="text-sm text-[var(--crm-text-muted)]">Sin eventos registrados.</p>
+            ) : (
+              <ol className="relative border-l border-[var(--crm-border)] ml-3">
+                {timeline.map((entry, i) => {
+                  if (entry.kind === "ingreso") {
+                    const h = entry.item as HistorialIngreso;
+                    return (
+                      <li key={`ingreso-${h.id}-${i}`} className="mb-6 ml-6">
+                        <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-white dark:ring-gray-900">
+                          <svg className="h-3 w-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-emerald-800">{h.tipo}</span>
+                            <time className="text-xs text-emerald-600">{formatDate(h.fecha)}</time>
+                          </div>
+                          {h.descripcion && (
+                            <p className="mt-1 text-xs text-emerald-700">{h.descripcion}</p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  } else {
+                    const b = entry.item as Baja;
+                    return (
+                      <li key={`baja-${b.id}-${i}`} className="mb-6 ml-6">
+                        <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-red-100 ring-4 ring-white dark:ring-gray-900">
+                          <svg className="h-3 w-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                        <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-red-800">Baja</span>
+                              <span className={[
+                                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                                b.tipo === "Renuncia" ? "bg-amber-100 text-amber-700" :
+                                b.tipo === "Despido"  ? "bg-red-100 text-red-700"     :
+                                                        "bg-slate-100 text-slate-600",
+                              ].join(" ")}>
+                                {b.tipo}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <time className="text-xs text-red-600">{formatDate(b.fecha_baja)}</time>
+                              {canEdit && (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setBajaModal({ open: true, item: b })}
+                                    className="rounded p-1 text-slate-400 hover:text-slate-600"
+                                    title="Editar"
+                                  >
+                                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteBajaModal({ open: true, item: b })}
+                                    className="rounded p-1 text-slate-400 hover:text-red-500"
+                                    title="Eliminar"
+                                  >
+                                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {b.descripcion && (
+                            <p className="mt-1 text-xs text-red-700">{b.descripcion}</p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  }
+                })}
+              </ol>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Modales faltas */}
       {faltaModal.open && (
@@ -744,20 +971,54 @@ export function EmpleadoDetailPage() {
 
       {tab === "documentos" && (() => {
         const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-        const subidos = TIPOS_DOCUMENTO.length;
-        const entregados = documentos.length;
+        const TIPOS_MULTI = ["Exámenes médicos", "Pruebas psicométricas"] as const;
+        const tiposConDoc = new Set(TIPOS_DOCUMENTO.filter((t) => documentos.some((d) => d.tipo === t)));
+        const entregados = tiposConDoc.size;
+        const total = TIPOS_DOCUMENTO.length;
+
+        const DocItem = ({ doc }: { doc: typeof documentos[number] }) => (
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5">
+            <svg className="h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-slate-700">
+                {doc.descripcion ?? doc.nombre_archivo}
+              </p>
+            </div>
+            <a
+              href={`${API_BASE}${doc.archivo_url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-xs font-semibold text-[#312C85] hover:underline"
+            >
+              Ver
+            </a>
+            {canEdit && (
+              <button
+                type="button"
+                disabled={deletingDocId === doc.id}
+                onClick={() => handleDeleteDocumento(doc.id)}
+                className="shrink-0 text-xs font-semibold text-red-500 hover:underline disabled:opacity-50"
+              >
+                {deletingDocId === doc.id ? "..." : "✕"}
+              </button>
+            )}
+          </div>
+        );
 
         return (
           <div className="flex flex-col gap-4">
+            {/* Encabezado */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-[var(--crm-text-muted)]">
-                {entregados} de {subidos} documentos entregados
+                {entregados} de {total} tipos de documento entregados
               </p>
               <span className={[
                 "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-                entregados === subidos ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700",
+                entregados === total ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700",
               ].join(" ")}>
-                {entregados === subidos ? "Expediente completo" : `Faltan ${subidos - entregados} documentos`}
+                {entregados === total ? "Expediente completo" : `Faltan ${total - entregados} tipos`}
               </span>
             </div>
 
@@ -766,80 +1027,244 @@ export function EmpleadoDetailPage() {
                 <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-[#312C85]" />
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {TIPOS_DOCUMENTO.map((tipo) => {
-                  const doc = documentos.find((d) => d.tipo === tipo);
-                  const isUploading = uploadingTipo === tipo;
-                  const isDeleting  = doc ? deletingDocId === doc.id : false;
-
-                  return (
-                    <div key={tipo} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold text-slate-700 leading-tight">{tipo}</p>
-                        <span className={[
-                          "shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
-                          doc ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500",
-                        ].join(" ")}>
-                          {doc ? "Subido" : "Pendiente"}
-                        </span>
-                      </div>
-
-                      {doc && (
-                        <p className="truncate text-xs text-slate-400">{doc.nombre_archivo}</p>
-                      )}
-
-                      <div className="mt-auto flex gap-2 pt-1">
-                        {doc ? (
-                          <>
-                            <a
-                              href={`${API_BASE}${doc.archivo_url}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 py-1.5 text-center text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
-                            >
-                              Ver
-                            </a>
-                            {canEdit && (
-                              <button
-                                type="button"
-                                disabled={isDeleting}
-                                onClick={() => handleDeleteDocumento(doc.id)}
-                                className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
-                              >
-                                {isDeleting ? "..." : "Eliminar"}
-                              </button>
-                            )}
-                          </>
-                        ) : canEdit ? (
-                          <label className={[
-                            "flex-1 cursor-pointer rounded-lg py-1.5 text-center text-xs font-semibold text-white transition",
-                            isUploading ? "bg-[#312C85]/60 cursor-not-allowed" : "bg-[#312C85] hover:bg-[#4338ca]",
+              <div className="flex flex-col gap-6">
+                {/* Tipos normales (1 archivo) */}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {TIPOS_DOCUMENTO.filter((t) => !(TIPOS_MULTI as readonly string[]).includes(t)).map((tipo) => {
+                    const doc = documentos.find((d) => d.tipo === tipo);
+                    const isUploading = uploadingTipo === tipo;
+                    return (
+                      <div key={tipo} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-700 leading-tight">{tipo}</p>
+                          <span className={[
+                            "shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                            doc ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500",
                           ].join(" ")}>
-                            {isUploading ? "Subiendo..." : "Subir archivo"}
-                            <input
-                              type="file"
-                              accept=".pdf,.jpg,.jpeg,.png,.webp"
-                              className="hidden"
+                            {doc ? "Subido" : "Pendiente"}
+                          </span>
+                        </div>
+                        {doc && <p className="truncate text-xs text-slate-400">{doc.nombre_archivo}</p>}
+                        <div className="mt-auto flex gap-2 pt-1">
+                          {doc ? (
+                            <>
+                              <a
+                                href={`${API_BASE}${doc.archivo_url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 rounded-lg border border-slate-200 bg-slate-50 py-1.5 text-center text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                              >
+                                Ver
+                              </a>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  disabled={deletingDocId === doc.id}
+                                  onClick={() => handleDeleteDocumento(doc.id)}
+                                  className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                                >
+                                  {deletingDocId === doc.id ? "..." : "Eliminar"}
+                                </button>
+                              )}
+                            </>
+                          ) : canEdit ? (
+                            <label className={[
+                              "flex-1 cursor-pointer rounded-lg py-1.5 text-center text-xs font-semibold text-white transition",
+                              isUploading ? "bg-[#312C85]/60 cursor-not-allowed" : "bg-[#312C85] hover:bg-[#4338ca]",
+                            ].join(" ")}>
+                              {isUploading ? "Subiendo..." : "Subir archivo"}
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                className="hidden"
+                                disabled={isUploading}
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) handleUploadDocumento(tipo, f);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                          ) : (
+                            <span className="flex-1 py-1.5 text-center text-xs text-slate-400">Sin permiso</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Tipos multi (varios archivos) */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(TIPOS_MULTI as readonly string[]).map((tipo) => {
+                    const isPsic = tipo === "Pruebas psicométricas";
+                    const docs = documentos.filter((d) => d.tipo === tipo);
+                    const isUploading = uploadingTipo === tipo;
+                    return (
+                      <div key={tipo} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-700 leading-tight">{tipo}</p>
+                          <span className={[
+                            "shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                            docs.length > 0 ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500",
+                          ].join(" ")}>
+                            {docs.length} archivo{docs.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        {docs.length > 0 && (
+                          <div className="flex flex-col gap-1.5">
+                            {docs.map((d) => <DocItem key={d.id} doc={d} />)}
+                          </div>
+                        )}
+                        {canEdit && (
+                          <div className="mt-auto pt-1">
+                            <button
+                              type="button"
                               disabled={isUploading}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleUploadDocumento(tipo, file);
-                                e.target.value = "";
+                              onClick={() => {
+                                if (isPsic) { setPsicNombre(""); setPsicFile(null); setPsicModal(true); }
+                                else        { setExamenNombre(""); setExamenFile(null); setExamenModal(true); }
                               }}
-                            />
-                          </label>
-                        ) : (
-                          <span className="flex-1 py-1.5 text-center text-xs text-slate-400">Sin permiso</span>
+                              className={[
+                                "w-full rounded-lg py-1.5 text-center text-xs font-semibold text-white transition",
+                                isUploading ? "bg-[#312C85]/60 cursor-not-allowed" : "bg-[#312C85] hover:bg-[#4338ca]",
+                              ].join(" ")}
+                            >
+                              {isUploading ? "Subiendo..." : isPsic ? "Agregar prueba" : "Agregar examen"}
+                            </button>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
         );
       })()}
+
+      {/* Modal examen médico */}
+      {examenModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="mb-1 text-base font-semibold text-[var(--crm-text)]">Agregar examen médico</h2>
+            <p className="mb-4 text-sm text-[var(--crm-text-muted)]">Indica el tipo de examen y sube el archivo.</p>
+
+            <label className="mb-1 block text-xs font-medium text-[var(--crm-text-muted)]">
+              Tipo de examen <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Ej. General, Toxicológico, Audiometría…"
+              value={examenNombre}
+              onChange={(e) => setExamenNombre(e.target.value)}
+              className="mb-4 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] focus:outline-none focus:ring-2 focus:ring-[#312C85]/30"
+            />
+
+            <label className="mb-1 block text-xs font-medium text-[var(--crm-text-muted)]">
+              Archivo <span className="text-red-500">*</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2.5 text-sm text-[var(--crm-text-muted)] hover:bg-slate-100">
+              <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span className="truncate">{examenFile ? examenFile.name : "Seleccionar archivo…"}</span>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) setExamenFile(f); e.target.value = ""; }}
+              />
+            </label>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setExamenModal(false)}
+                className="rounded-xl px-4 py-2 text-sm font-medium text-[var(--crm-text-muted)] hover:bg-[var(--crm-hover)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={!examenNombre.trim() || !examenFile || uploadingTipo === "Exámenes médicos"}
+                onClick={async () => {
+                  if (!examenFile) return;
+                  setExamenModal(false);
+                  await handleUploadDocumento("Exámenes médicos", examenFile, examenNombre.trim());
+                  setExamenFile(null);
+                  setExamenNombre("");
+                }}
+                className="rounded-xl bg-[#312C85] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4338ca] disabled:opacity-50"
+              >
+                Subir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal prueba psicométrica */}
+      {psicModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="mb-1 text-base font-semibold text-[var(--crm-text)]">Agregar prueba psicométrica</h2>
+            <p className="mb-4 text-sm text-[var(--crm-text-muted)]">Indica el nombre de la prueba y sube el archivo.</p>
+
+            <label className="mb-1 block text-xs font-medium text-[var(--crm-text-muted)]">
+              Nombre de la prueba <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Ej. DISC, 16PF, Wonderlic…"
+              value={psicNombre}
+              onChange={(e) => setPsicNombre(e.target.value)}
+              className="mb-4 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] focus:outline-none focus:ring-2 focus:ring-[#312C85]/30"
+            />
+
+            <label className="mb-1 block text-xs font-medium text-[var(--crm-text-muted)]">
+              Archivo <span className="text-red-500">*</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2.5 text-sm text-[var(--crm-text-muted)] hover:bg-slate-100">
+              <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span className="truncate">{psicFile ? psicFile.name : "Seleccionar archivo…"}</span>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) setPsicFile(f); e.target.value = ""; }}
+              />
+            </label>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPsicModal(false)}
+                className="rounded-xl px-4 py-2 text-sm font-medium text-[var(--crm-text-muted)] hover:bg-[var(--crm-hover)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={!psicNombre.trim() || !psicFile || uploadingTipo === "Pruebas psicométricas"}
+                onClick={async () => {
+                  if (!psicFile) return;
+                  setPsicModal(false);
+                  await handleUploadDocumento("Pruebas psicométricas", psicFile, psicNombre.trim());
+                  setPsicFile(null);
+                  setPsicNombre("");
+                }}
+                className="rounded-xl bg-[#312C85] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4338ca] disabled:opacity-50"
+              >
+                Subir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {tab === "reporte" && empleado && (() => {
         const antiguedad     = calcularAntigüedad(empleado.fecha_ingreso);
@@ -861,6 +1286,10 @@ export function EmpleadoDetailPage() {
           ? bajas.sort((a, b) => new Date(b.fecha_baja).getTime() - new Date(a.fecha_baja).getTime())[0]
           : null;
 
+        const amonVerbales    = amonestaciones.filter((a) => a.tipo === "Verbal").length;
+        const amonEscritas    = amonestaciones.filter((a) => a.tipo === "Escrita").length;
+        const amonSuspensiones = amonestaciones.filter((a) => a.tipo === "Suspensión").length;
+
         const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">{title}</h3>
@@ -875,13 +1304,106 @@ export function EmpleadoDetailPage() {
           </div>
         );
 
+        const handlePrint = () => {
+          const fecha = new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric" });
+          const nombreCompleto = `${empleado.nombre} ${empleado.apellido_paterno} ${empleado.apellido_materno}`;
+
+          const row = (label: string, value: string | number) =>
+            `<tr><td class="label">${label}</td><td class="value">${value}</td></tr>`;
+
+          const card = (title: string, rows: string) =>
+            `<div class="card"><h3>${title}</h3><table>${rows}</table></div>`;
+
+          const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Reporte Individual – ${nombreCompleto}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1e293b; padding: 32px; }
+    h1 { font-size: 18px; font-weight: 700; color: #0f172a; }
+    .meta { font-size: 11px; color: #64748b; margin-top: 4px; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media print { .grid { grid-template-columns: repeat(3, 1fr); } }
+    .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; }
+    .card h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 4px 0; vertical-align: top; }
+    td.label { color: #64748b; width: 55%; }
+    td.value { font-weight: 600; color: #0f172a; text-align: right; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <h1>${nombreCompleto}</h1>
+  <p class="meta">Reporte al ${fecha} · ${empleado.puesto} · ${empleado.area}</p>
+  <div class="grid">
+    ${card("Datos generales", [
+      row("Fecha de ingreso", formatDate(empleado.fecha_ingreso)),
+      row("Antigüedad", `${antiguedad} año${antiguedad !== 1 ? "s" : ""}`),
+      row("Estatus", empleado.estatus),
+    ].join(""))}
+    ${card("Vacaciones", [
+      row("Derecho LFT", `${derechoVac} días`),
+      row("Días tomados", `${vacAprobadas} días`),
+      row("Días disponibles", `${vacDisponibles} días`),
+      row("Períodos registrados", vacaciones.length),
+    ].join(""))}
+    ${card("Faltas", [
+      row("Total de faltas", faltas.length),
+      row("Justificadas", faltasJust),
+      row("Injustificadas", faltasInjust),
+    ].join(""))}
+    ${card("Permisos", [
+      row("Total de permisos", permisos.length),
+      row("Con goce de sueldo", permisosConGoce),
+      row("Sin goce de sueldo", permisosSinGoce),
+      row("Aprobados", permisos.filter((p) => p.estatus === "Aprobado").length),
+      row("Pendientes", permisos.filter((p) => p.estatus === "Pendiente").length),
+    ].join(""))}
+    ${card("Incapacidades", [
+      row("Total", incapacidades.length),
+      row("Días totales", `${diasIncap} días`),
+      row("IMSS", incIMSS),
+      row("Particulares", incPart),
+      row("Aprobadas", incapacidades.filter((i) => i.estatus === "Aprobada").length),
+    ].join(""))}
+    ${card("Bajas", bajas.length === 0
+      ? row("Bajas registradas", "Ninguna")
+      : [
+          row("Total de bajas", bajas.length),
+          ...(ultimaBaja ? [
+            row("Última baja", formatDate(ultimaBaja.fecha_baja)),
+            row("Tipo", ultimaBaja.tipo),
+          ] : []),
+        ].join("")
+    )}
+    ${card("Amonestaciones", amonestaciones.length === 0
+      ? row("Amonestaciones", "Ninguna")
+      : [
+          row("Total", amonestaciones.length),
+          row("Verbales", amonVerbales),
+          row("Escritas", amonEscritas),
+          row("Suspensiones", amonSuspensiones),
+        ].join("")
+    )}
+  </div>
+  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };<\/script>
+</body>
+</html>`;
+
+          const win = window.open("", "_blank", "width=900,height=700");
+          if (win) { win.document.write(html); win.document.close(); }
+        };
+
         return (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-[var(--crm-text)]">Reporte al {new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric" })}</p>
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50"
               >
                 Imprimir
@@ -963,10 +1485,87 @@ export function EmpleadoDetailPage() {
                   </>
                 )}
               </Section>
+
+              <Section title="Amonestaciones">
+                {amonestaciones.length === 0 ? (
+                  <p className="py-2 text-sm text-slate-400">Sin amonestaciones registradas</p>
+                ) : (
+                  <>
+                    <StatRow label="Total" value={amonestaciones.length} color="text-orange-600" />
+                    <StatRow label="Verbales"    value={amonVerbales}     color={amonVerbales    > 0 ? "text-amber-600"  : "text-slate-800"} />
+                    <StatRow label="Escritas"    value={amonEscritas}     color={amonEscritas    > 0 ? "text-orange-600" : "text-slate-800"} />
+                    <StatRow label="Suspensiones" value={amonSuspensiones} color={amonSuspensiones > 0 ? "text-red-600"   : "text-slate-800"} />
+                  </>
+                )}
+              </Section>
             </div>
           </div>
         );
       })()}
+
+      {/* Modal reactivar empleado */}
+      {reactivarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="mb-1 text-base font-semibold text-[var(--crm-text)]">
+              Reactivar empleado
+            </h2>
+            <p className="mb-4 text-sm text-[var(--crm-text-muted)]">
+              Ingresa la fecha de reingreso del empleado.
+            </p>
+            <label className="mb-1 block text-xs font-medium text-[var(--crm-text-muted)]">
+              Fecha de reingreso
+            </label>
+            <input
+              type="date"
+              value={fechaReingreso}
+              onChange={(e) => setFechaReingreso(e.target.value)}
+              className="w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setReactivarModal(false)}
+                className="rounded-xl px-4 py-2 text-sm font-medium text-[var(--crm-text-muted)] hover:bg-[var(--crm-hover)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleReactivar}
+                disabled={!fechaReingreso || reactivando}
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {reactivando ? "Reactivando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modales amonestaciones */}
+      {amonestacionModal.open && (
+        <AmonestacionModal
+          empleadoId={empleadoId}
+          initial={amonestacionModal.item}
+          onSave={handleSaveAmonestacion}
+          onClose={() => setAmonestacionModal({ open: false, item: null })}
+        />
+      )}
+
+      {deleteAmonestacionModal.open && deleteAmonestacionModal.item && (
+        <DeleteConfirmModal
+          isOpen
+          title="Eliminar amonestación"
+          subtitle="Esta acción no se puede deshacer."
+          entityId={deleteAmonestacionModal.item.id}
+          entityLabel={`Amonestación del ${formatDate(deleteAmonestacionModal.item.fecha)}`}
+          descriptionPrefix="Estás a punto de eliminar la"
+          fallbackLabel="esta amonestación"
+          onConfirm={handleDeleteAmonestacion}
+          onClose={() => setDeleteAmonestacionModal({ open: false, item: null })}
+        />
+      )}
 
       {/* Modales bajas */}
       {bajaModal.open && (

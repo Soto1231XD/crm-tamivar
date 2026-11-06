@@ -47,6 +47,7 @@ export function CarteraClientesPage() {
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [bdayModal, setBdayModal]     = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [festividadOpen, setFestividadOpen] = useState(false);
+  const [sentBirthdayIds, setSentBirthdayIds] = useState<Set<number>>(new Set());
 
   const [search, setSearch]       = useState("");
   const [filterTipo, setFilterTipo] = useState("");
@@ -124,7 +125,7 @@ export function CarteraClientesPage() {
   const hoy = new Date();
   const cumplePróximos = useMemo(() => {
     return clientes
-      .filter((c) => c.cumple_mes && c.cumple_dia)
+      .filter((c) => c.cumple_mes && c.cumple_dia && !sentBirthdayIds.has(c.id))
       .filter((c) => {
         const dia = c.cumple_dia!;
         const mes = c.cumple_mes!;
@@ -142,7 +143,7 @@ export function CarteraClientesPage() {
         if (fb < new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) fb.setFullYear(hoy.getFullYear() + 1);
         return fa.getTime() - fb.getTime();
       });
-  }, [clientes]);
+  }, [clientes, sentBirthdayIds]);
 
   const columns = [
     { header: "Nombre",              render: (c: ClienteCartera) => <span className="font-semibold">{c.nombre}</span> },
@@ -306,6 +307,7 @@ export function CarteraClientesPage() {
         <BirthdayWhatsappModal
           cliente={bdayModal.item}
           onClose={() => setBdayModal({ open: false, item: null })}
+          onSent={(id) => setSentBirthdayIds((prev) => new Set([...prev, id]))}
         />
       )}
 
