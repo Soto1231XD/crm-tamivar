@@ -451,6 +451,57 @@ function getChangedPayload(
   return changed;
 }
 
+const LOGO_URL = new URL(
+  "../../../assets/images/logo_blanco.png",
+  import.meta.url,
+).href;
+
+async function aplicarMarcaDeAgua(file: File): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d")!;
+
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(objectUrl);
+
+      const logo = new Image();
+      logo.onload = () => {
+        const lw = canvas.width * 0.22;
+        const lh = (logo.naturalHeight / logo.naturalWidth) * lw;
+        const x = (canvas.width - lw) / 2;
+        const y = (canvas.height - lh) / 2;
+
+        ctx.globalAlpha = 0.35;
+        ctx.drawImage(logo, x, y, lw, lh);
+        ctx.globalAlpha = 1;
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: file.type }));
+            } else {
+              resolve(file);
+            }
+          },
+          file.type,
+          0.92,
+        );
+      };
+      logo.onerror = () => resolve(file);
+      logo.src = LOGO_URL;
+    };
+
+    img.onerror = () => resolve(file);
+    img.src = objectUrl;
+  });
+}
+
 export function usePropertyForm(
   property: PropertyRecord | null | undefined,
   onSubmit: (data: PropertyFormSubmitData) => Promise<string | null>,
@@ -586,7 +637,7 @@ export function usePropertyForm(
     });
   }
 
-  function handleAddImages(event: ChangeEvent<HTMLInputElement>) {
+  async function handleAddImages(event: ChangeEvent<HTMLInputElement>) {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
 
@@ -603,11 +654,15 @@ export function usePropertyForm(
         return;
       }
 
+      const watermarkedFiles = await Promise.all(
+        newFiles.map((file) => aplicarMarcaDeAgua(file)),
+      );
+
       setForm((prev) => ({
         ...prev,
         imagenes: ensureSinglePrimary([
           ...prev.imagenes,
-          ...newFiles.map((file, index) => ({
+          ...watermarkedFiles.map((file, index) => ({
             file,
             titulo: getDefaultImageTitle(file.name),
             principal:
