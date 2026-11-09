@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { BaseTable } from "@/components/ui/BaseTable";
+import { BadgeSelect } from "@/components/ui/BadgeSelect";
 import agregarIcon from "@/assets/images/Agregar.png";
 import {
   getEmpleado,
@@ -25,6 +26,7 @@ import {
   deleteVacacion,
   calcularAntigüedad,
   calcularDerechoVacaciones,
+  clasificarPeriodoVacacion,
   type Vacacion,
   type CreateVacacionPayload,
   type UpdateVacacionPayload,
@@ -73,6 +75,7 @@ import {
   reactivarEmpleado,
   type HistorialIngreso,
 } from "../services/historial-ingreso.api";
+import { generarConstanciaAnual, generarSolicitudVacaciones } from "../utils/documentos-rh";
 import {
   getAmonestacionesByEmpleado,
   createAmonestacion,
@@ -97,7 +100,8 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 export function EmpleadoDetailPage() {
@@ -394,15 +398,56 @@ export function EmpleadoDetailPage() {
     }
   };
 
-  const handleSaveVacacion = async (data: CreateVacacionPayload | UpdateVacacionPayload) => {
+  const handleSaveVacacion = async (data: CreateVacacionPayload | UpdateVacacionPayload): Promise<Vacacion> => {
+    let saved: Vacacion;
     if (vacModal.item) {
-      await updateVacacion(vacModal.item.id, data as UpdateVacacionPayload);
+      saved = await updateVacacion(vacModal.item.id, data as UpdateVacacionPayload);
       toast.success("Vacación actualizada");
     } else {
-      await createVacacion(data as CreateVacacionPayload);
+      saved = await createVacacion(data as CreateVacacionPayload);
       toast.success("Vacación registrada");
     }
+    const todasParaDoc = vacModal.item
+      ? vacaciones.map((v) => (v.id === saved.id ? saved : v))
+      : [...vacaciones, saved];
+    if (empleado) generarSolicitudVacaciones(empleado, saved, todasParaDoc, saved.tipo === "Adelanto").catch(() => {});
     await loadVacaciones();
+    return saved;
+  };
+
+  const [updatingEstatusVacId, setUpdatingEstatusVacId] = useState<number | null>(null);
+  const [rechazoModal, setRechazoModal] = useState<{ vacId: number } | null>(null);
+  const [rechazoMotivo, setRechazoMotivo] = useState("");
+
+  const handleVacacionEstatusChange = async (vacId: number, estatus: string) => {
+    if (estatus === "Rechazada") {
+      setRechazoMotivo("");
+      setRechazoModal({ vacId });
+      return;
+    }
+    setUpdatingEstatusVacId(vacId);
+    try {
+      await updateVacacion(vacId, { estatus: estatus as "Pendiente" | "Aprobada" | "Rechazada", motivo_rechazo: null });
+      await loadVacaciones();
+    } catch {
+      toast.error("No se pudo actualizar el estatus");
+    } finally {
+      setUpdatingEstatusVacId(null);
+    }
+  };
+
+  const handleConfirmarRechazo = async () => {
+    if (!rechazoModal) return;
+    setUpdatingEstatusVacId(rechazoModal.vacId);
+    try {
+      await updateVacacion(rechazoModal.vacId, { estatus: "Rechazada", motivo_rechazo: rechazoMotivo.trim() || null, prima_vacacional: null });
+      await loadVacaciones();
+      setRechazoModal(null);
+    } catch {
+      toast.error("No se pudo actualizar el estatus");
+    } finally {
+      setUpdatingEstatusVacId(null);
+    }
   };
 
   const handleDeleteVacacion = async (vacId: number): Promise<string | null> => {
@@ -531,16 +576,104 @@ export function EmpleadoDetailPage() {
           { header: "Fin",     render: (v: Vacacion) => formatDate(v.fecha_fin) },
           { header: "Días",    render: (v: Vacacion) => <span className="font-semibold">{v.dias}</span> },
           {
+            header: "Tipo",
+            render: (v: Vacacion) => {
+              const periodo = clasificarPeriodoVacacion(empleado.fecha_ingreso, v.fecha_inicio);
+              return (
+                <div className="flex flex-col items-center gap-1">
+                  <span className={[
+                    "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                    v.tipo === "Adelanto" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700",
+                  ].join(" ")}>
+                    {v.tipo ?? "Solicitud"}
+                  </span>
+                  <span className={[
+                    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                    periodo === "Anticipada" ? "bg-orange-100 text-orange-700" : "bg-teal-100 text-teal-700",
+                  ].join(" ")}>
+                    {periodo === "Anticipada" ? "Anticipada" : "En periodo"}
+                  </span>
+                </div>
+              );
+            },
+          },
+          {
             header: "Estatus",
             render: (v: Vacacion) => (
-              <span className={[
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                v.estatus === "Aprobada"  ? "bg-green-100 text-green-700"  :
-                v.estatus === "Rechazada" ? "bg-red-100 text-red-700"      :
-                                            "bg-amber-100 text-amber-700",
-              ].join(" ")}>
-                {v.estatus}
-              </span>
+              <div className="flex items-center justify-center gap-1.5">
+                <BadgeSelect
+                  value={v.estatus}
+                  options={["Pendiente", "Aprobada", "Rechazada"]}
+                  onChange={(val) => handleVacacionEstatusChange(v.id, val)}
+                  disabled={updatingEstatusVacId === v.id}
+                  canEdit={canEdit}
+                  getStyles={(val) => ({
+                    backgroundColor:
+                      val === "Aprobada"  ? "#dcfce7" :
+                      val === "Rechazada" ? "#fee2e2" : "#fef3c7",
+                    color:
+                      val === "Aprobada"  ? "#15803d" :
+                      val === "Rechazada" ? "#b91c1c" : "#b45309",
+                  })}
+                />
+                {v.estatus === "Rechazada" && v.motivo_rechazo && (
+                  <div className="group relative flex shrink-0 items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 cursor-pointer text-red-400 hover:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+                    </svg>
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-52 -translate-x-1/2 scale-95 rounded-xl bg-slate-800 px-3 py-2 text-xs text-white opacity-0 shadow-lg transition-all group-hover:scale-100 group-hover:opacity-100">
+                      <p className="mb-0.5 font-semibold text-slate-300">Motivo de rechazo</p>
+                      <p className="leading-relaxed">{v.motivo_rechazo}</p>
+                      <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            header: "Prima",
+            render: (v: Vacacion) => {
+              if (!v.prima_vacacional) return <span className="text-slate-400">—</span>;
+              const monto = parseFloat(v.prima_vacacional);
+              const tipoPrima = derecho > 0 && v.dias >= derecho ? "Completa" : "Parcial";
+              return (
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="font-semibold text-emerald-700 text-xs">
+                    {monto.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}
+                  </span>
+                  <span className={[
+                    "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                    tipoPrima === "Completa" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700",
+                  ].join(" ")}>
+                    {tipoPrima}
+                  </span>
+                </div>
+              );
+            },
+          },
+          {
+            header: "Documentos",
+            render: (v: Vacacion) => (
+              <div className="flex justify-center gap-1.5">
+                {(v.tipo ?? "Solicitud") === "Solicitud" ? (
+                  <button
+                    type="button"
+                    onClick={() => generarSolicitudVacaciones(empleado, v, vacaciones, false)}
+                    className="rounded-lg bg-[#312C85] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#4338ca]"
+                  >
+                    Solicitud
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => generarSolicitudVacaciones(empleado, v, vacaciones, true)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                  >
+                    Adelanto
+                  </button>
+                )}
+              </div>
             ),
           },
         ];
@@ -562,20 +695,29 @@ export function EmpleadoDetailPage() {
               ))}
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <p className="text-sm text-[var(--crm-text-muted)]">
                 {vacaciones.length} {vacaciones.length === 1 ? "período registrado" : "períodos registrados"}
               </p>
-              {canEdit && (
+              <div className="flex gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => setVacModal({ open: true, item: null })}
-                  className="flex items-center gap-2 rounded-xl bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1e293b]"
+                  onClick={() => generarConstanciaAnual(empleado)}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
                 >
-                  <img src={agregarIcon} alt="" className="h-4 w-4" />
-                  Registrar vacación
+                  📄 Constancia Anual
                 </button>
-              )}
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => setVacModal({ open: true, item: null })}
+                    className="flex items-center gap-2 rounded-xl bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1e293b]"
+                  >
+                    <img src={agregarIcon} alt="" className="h-4 w-4" />
+                    Registrar vacación
+                  </button>
+                )}
+              </div>
             </div>
 
             <BaseTable
@@ -1343,6 +1485,9 @@ export function EmpleadoDetailPage() {
       row("Fecha de ingreso", formatDate(empleado.fecha_ingreso)),
       row("Antigüedad", `${antiguedad} año${antiguedad !== 1 ? "s" : ""}`),
       row("Estatus", empleado.estatus),
+      ...(empleado.tipo_sangre ? [row("Tipo de sangre", empleado.tipo_sangre)] : []),
+      ...(empleado.contacto_emergencia_nombre ? [row("Contacto emergencia", empleado.contacto_emergencia_nombre)] : []),
+      ...(empleado.contacto_emergencia_telefono ? [row("Tel. emergencia", empleado.contacto_emergencia_telefono)] : []),
     ].join(""))}
     ${card("Vacaciones", [
       row("Derecho LFT", `${derechoVac} días`),
@@ -1423,6 +1568,9 @@ export function EmpleadoDetailPage() {
                   value={empleado.estatus}
                   color={empleado.estatus === "Activo" ? "text-green-600" : "text-red-600"}
                 />
+                {empleado.tipo_sangre && <StatRow label="Tipo de sangre" value={empleado.tipo_sangre} color="text-red-600" />}
+                {empleado.contacto_emergencia_nombre && <StatRow label="Contacto emergencia" value={empleado.contacto_emergencia_nombre} />}
+                {empleado.contacto_emergencia_telefono && <StatRow label="Tel. emergencia" value={empleado.contacto_emergencia_telefono} />}
               </Section>
 
               {/* Vacaciones */}
@@ -1592,13 +1740,63 @@ export function EmpleadoDetailPage() {
       )}
 
       {/* Modales vacaciones */}
-      {vacModal.open && (
-        <VacacionModal
-          empleadoId={empleadoId}
-          initial={vacModal.item}
-          onSave={handleSaveVacacion}
-          onClose={() => setVacModal({ open: false, item: null })}
-        />
+      {vacModal.open && empleado && (() => {
+        const ant = calcularAntigüedad(empleado.fecha_ingreso);
+        const der = calcularDerechoVacaciones(ant);
+        const derProximo = calcularDerechoVacaciones(ant + 1);
+        const ocup = vacaciones
+          .filter((v) => (v.estatus === "Aprobada" || v.estatus === "Pendiente") && v.id !== vacModal.item?.id)
+          .reduce((s, v) => s + v.dias, 0);
+        const disp = Math.max(0, der - ocup);
+        const dispAnticipado = Math.max(0, derProximo - ocup);
+        return (
+          <VacacionModal
+            empleadoId={empleadoId}
+            fechaIngreso={empleado.fecha_ingreso}
+            sueldoMensual={parseFloat(empleado.sueldo)}
+            diasCorresponden={der}
+            diasDisponibles={disp}
+            diasDisponiblesAnticipado={dispAnticipado}
+            initial={vacModal.item}
+            onSave={handleSaveVacacion}
+            onClose={() => setVacModal({ open: false, item: null })}
+          />
+        );
+      })()}
+
+      {/* Modal motivo de rechazo */}
+      {rechazoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-1 text-base font-bold text-slate-800">Motivo de rechazo</h3>
+            <p className="mb-4 text-sm text-slate-500">Indica la razón por la que se rechazan las vacaciones (opcional).</p>
+            <textarea
+              className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#312C85] focus:bg-white focus:ring-2 focus:ring-[#312C85]/10 resize-none"
+              rows={3}
+              placeholder="Ej. No hay cobertura en esas fechas..."
+              value={rechazoMotivo}
+              onChange={(e) => setRechazoMotivo(e.target.value)}
+              autoFocus
+            />
+            <div className="mt-4 flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setRechazoModal(null)}
+                className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarRechazo}
+                disabled={updatingEstatusVacId !== null}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {updatingEstatusVacId !== null ? "Guardando..." : "Confirmar rechazo"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {deleteVacModal.open && deleteVacModal.item && (

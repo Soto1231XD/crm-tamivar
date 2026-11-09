@@ -17,6 +17,9 @@ export interface Empleado {
   genero: string | null;
   nss: string | null;
   direccion: string | null;
+  tipo_sangre: string | null;
+  contacto_emergencia_nombre: string | null;
+  contacto_emergencia_telefono: string | null;
   estatus: "Activo" | "Baja";
   creado_en: string;
   actualizado_en: string;
@@ -37,6 +40,9 @@ export type CreateEmpleadoPayload = {
   genero?: string;
   nss?: string;
   direccion?: string;
+  tipo_sangre?: string;
+  contacto_emergencia_nombre?: string;
+  contacto_emergencia_telefono?: string;
 };
 
 export type UpdateEmpleadoPayload = Partial<CreateEmpleadoPayload> & {

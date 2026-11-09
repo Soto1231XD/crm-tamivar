@@ -6,7 +6,10 @@ export interface Vacacion {
   fecha_inicio: string;
   fecha_fin: string;
   dias: number;
+  tipo: "Solicitud" | "Adelanto";
   estatus: "Pendiente" | "Aprobada" | "Rechazada";
+  motivo_rechazo?: string | null;
+  prima_vacacional?: string | null;
   creado_en: string;
   actualizado_en: string;
 }
@@ -16,7 +19,10 @@ export type CreateVacacionPayload = {
   fecha_inicio: string;
   fecha_fin: string;
   dias: number;
+  tipo?: "Solicitud" | "Adelanto";
   estatus?: "Pendiente" | "Aprobada" | "Rechazada";
+  motivo_rechazo?: string | null;
+  prima_vacacional?: number | null;
 };
 
 export type UpdateVacacionPayload = Partial<Omit<CreateVacacionPayload, "empleado_id">>;
@@ -64,4 +70,29 @@ export function calcularDias(fechaInicio: string, fechaFin: string): number {
   const fin = new Date(fechaFin);
   const diff = fin.getTime() - inicio.getTime();
   return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
+}
+
+// Determina si una vacación es dentro del periodo laboral o anticipada
+// "Anticipada" = se toma antes de completar el año de trabajo correspondiente
+export function clasificarPeriodoVacacion(
+  fechaIngreso: string,
+  fechaInicioVacacion: string,
+): "Dentro del periodo" | "Anticipada" {
+  const [iy, im, id] = fechaIngreso.slice(0, 10).split("-").map(Number);
+  const [vy, vm, vd] = fechaInicioVacacion.slice(0, 10).split("-").map(Number);
+  const ingreso = new Date(iy, im - 1, id);
+  const vacacion = new Date(vy, vm - 1, vd);
+
+  // Años de diferencia entre fecha de vacación e ingreso
+  let años = vy - iy;
+  // Verificar si el aniversario de ese año ya pasó
+  const aniversarioCandidato = new Date(iy + años, im - 1, id);
+  if (aniversarioCandidato > vacacion) años--;
+
+  // Si no ha completado ni un año completo → anticipada
+  if (años < 1) return "Anticipada";
+
+  // Si ha completado al menos un año → dentro del periodo
+  void ingreso;
+  return "Dentro del periodo";
 }

@@ -24,6 +24,9 @@ type Form = {
   genero: string;
   nss: string;
   direccion: string;
+  tipo_sangre: string;
+  contacto_emergencia_nombre: string;
+  contacto_emergencia_telefono: string;
   estatus: "Activo" | "Baja";
 };
 
@@ -31,7 +34,9 @@ const EMPTY: Form = {
   nombre: "", apellido_paterno: "", apellido_materno: "",
   area: "", puesto: "", fecha_ingreso: "", sueldo: "",
   telefono: "", correo: "", curp: "", rfc: "",
-  genero: "", nss: "", direccion: "", estatus: "Activo",
+  genero: "", nss: "", direccion: "",
+  tipo_sangre: "", contacto_emergencia_nombre: "", contacto_emergencia_telefono: "",
+  estatus: "Activo",
 };
 
 interface Props {
@@ -66,6 +71,9 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
         genero: initial.genero ?? "",
         nss: initial.nss ?? "",
         direccion: initial.direccion ?? "",
+        tipo_sangre: initial.tipo_sangre ?? "",
+        contacto_emergencia_nombre: initial.contacto_emergencia_nombre ?? "",
+        contacto_emergencia_telefono: initial.contacto_emergencia_telefono ?? "",
         estatus: initial.estatus,
       });
       setFotoPreview(initial.foto_url ? (initial.foto_url.startsWith("/uploads") ? `${API_BASE}${initial.foto_url}` : initial.foto_url) : null);
@@ -114,6 +122,9 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
         ...(form.genero && { genero: form.genero }),
         ...(form.nss.trim() && { nss: form.nss.trim() }),
         ...(form.direccion.trim() && { direccion: form.direccion.trim() }),
+        ...(form.tipo_sangre && { tipo_sangre: form.tipo_sangre }),
+        ...(form.contacto_emergencia_nombre.trim() && { contacto_emergencia_nombre: form.contacto_emergencia_nombre.trim() }),
+        ...(form.contacto_emergencia_telefono.trim() && { contacto_emergencia_telefono: form.contacto_emergencia_telefono.trim() }),
         ...(isEdit && { estatus: form.estatus }),
       };
       await onSave(payload, fotoFile ?? undefined);
@@ -214,6 +225,20 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
                 maxLength={11} />
             </div>
             <div>
+              <label className={LABEL}>Tipo de sangre</label>
+              <select className={INPUT} value={form.tipo_sangre} onChange={(e) => set("tipo_sangre", e.target.value)}>
+                <option value="">— Sin especificar —</option>
+                <option>O+</option>
+                <option>O-</option>
+                <option>A+</option>
+                <option>A-</option>
+                <option>B+</option>
+                <option>B-</option>
+                <option>AB+</option>
+                <option>AB-</option>
+              </select>
+            </div>
+            <div>
               <label className={LABEL}>Teléfono</label>
               <input type="text" className={INPUT} value={form.telefono}
                 onChange={(e) => set("telefono", e.target.value)} placeholder="998 000 0000" />
@@ -265,6 +290,25 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
                 </select>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Contacto de emergencia */}
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Contacto de emergencia</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className={LABEL}>Nombre del contacto</label>
+              <input type="text" className={INPUT} value={form.contacto_emergencia_nombre}
+                onChange={(e) => set("contacto_emergencia_nombre", e.target.value)}
+                placeholder="Nombre completo" />
+            </div>
+            <div>
+              <label className={LABEL}>Teléfono del contacto</label>
+              <input type="text" className={INPUT} value={form.contacto_emergencia_telefono}
+                onChange={(e) => set("contacto_emergencia_telefono", e.target.value)}
+                placeholder="998 000 0000" />
+            </div>
           </div>
         </div>
 
