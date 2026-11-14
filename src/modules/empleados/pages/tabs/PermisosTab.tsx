@@ -3,14 +3,8 @@ import { BaseTable } from "@/components/ui/BaseTable";
 import agregarIcon from "@/assets/images/Agregar.png";
 import type { Empleado } from "../../services/empleados.api";
 import type { PermisoEmpleado } from "../../services/permisos.api";
-import {
-  generarAvisoTardanza,
-  generarPermisoEntradaTarde,
-  generarConstanciaInasistencia,
-  generarPermisoLactancia,
-  generarConstanciaFaltaJustificada,
-  generarPermisoLlegarTarde,
-} from "../../utils/documentos-rh";
+import { generarAvisoTardanza, generarPermisoEntradaTarde, generarPermisoLlegarTarde } from "../../utils/documentos-rh/doc-tardanzas";
+import { generarConstanciaInasistencia, generarPermisoLactancia, generarConstanciaFaltaJustificada } from "../../utils/documentos-rh/doc-permisos-faltas";
 
 function formatDate(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);

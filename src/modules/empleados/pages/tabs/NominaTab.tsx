@@ -6,7 +6,7 @@ import agregarIcon from "@/assets/images/Agregar.png";
 import type { Empleado } from "../../services/empleados.api";
 import type { NominaEmpleado } from "../../services/nominas.api";
 import type { AdelantoEmpleado, CreateAdelantoPayload, UpdateAdelantoPayload } from "../../services/adelantos.api";
-import { generarReciboNomina, generarSolicitudAdelanto } from "../../utils/documentos-rh";
+import { generarReciboNomina, generarSolicitudAdelanto } from "../../utils/documentos-rh/doc-nominas";
 import { AdelantoNominaModal } from "../../components/AdelantoNominaModal";
 
 type NominaRow =

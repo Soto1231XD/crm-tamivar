@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import {
   getEvento, addParticipante, removeParticipante, addGasto, removeGasto,
-  type EventoRH, type EventoParticipante, type EventoGasto,
+  type EventoRH, type EventoParticipante,
 } from "../services/eventos.api";
 import { exportarEventoDetalle } from "../utils/export-excel";
 import { getEmpleados, type Empleado } from "@/modules/empleados/services/empleados.api";

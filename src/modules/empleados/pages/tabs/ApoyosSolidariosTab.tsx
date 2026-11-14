@@ -3,7 +3,7 @@ import { BadgeSelect } from "@/components/ui/BadgeSelect";
 import agregarIcon from "@/assets/images/Agregar.png";
 import type { Empleado } from "../../services/empleados.api";
 import type { ApoSolidario } from "../../services/apoyos-solidarios.api";
-import { generarApoSolidario } from "../../utils/documentos-rh";
+import { generarApoSolidario } from "../../utils/documentos-rh/doc-apoyo-solidario";
 
 function formatDate(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);

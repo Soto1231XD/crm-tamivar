@@ -2,7 +2,7 @@ import {
   Document, Paragraph, TextRun, AlignmentType, UnderlineType, TabStopType,
   FONT, SIZE_BODY, SIZE_TITLE, SIZE_HEAD, MESES_UP,
   run, para, blank, descargar,
-  parseLocalDate, calcAntiguedadExacta, formatMonto, montoALetras, enteroALetras,
+  parseLocalDate, calcAntiguedadExacta, formatMonto, montoALetras,
 } from "./_shared";
 import type { Empleado } from "./_shared";
 import { calcularDerechoVacaciones } from "./_shared";
