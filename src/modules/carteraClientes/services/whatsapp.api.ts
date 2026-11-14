@@ -38,3 +38,11 @@ export const sendFestividadCampaign = (
     method: "POST",
     data: { recipients },
   });
+
+export const sendRevolucionCampaign = (
+  recipients: { telefono: string; nombre: string }[],
+) =>
+  apiRequest<FestividadCampaignResult>("/whatsapp/campaign-revolucion", {
+    method: "POST",
+    data: { recipients },
+  });

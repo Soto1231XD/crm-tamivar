@@ -10,6 +10,8 @@ const LABEL =
   "block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1.5";
 
 type Form = {
+  tipo: "Empleado" | "Becario";
+  periodicidad_sueldo: string;
   nombre: string;
   apellido_paterno: string;
   apellido_materno: string;
@@ -31,6 +33,8 @@ type Form = {
 };
 
 const EMPTY: Form = {
+  tipo: "Empleado",
+  periodicidad_sueldo: "Quincenal",
   nombre: "", apellido_paterno: "", apellido_materno: "",
   area: "", puesto: "", fecha_ingreso: "", sueldo: "",
   telefono: "", correo: "", curp: "", rfc: "",
@@ -41,13 +45,20 @@ const EMPTY: Form = {
 
 interface Props {
   initial?: Empleado | null;
+  prefillData?: Partial<Form>;
   onSave: (data: CreateEmpleadoPayload | UpdateEmpleadoPayload, fotoFile?: File) => Promise<void>;
   onClose: () => void;
 }
 
-export function EmpleadoModal({ initial, onSave, onClose }: Props) {
+export function EmpleadoModal({ initial, prefillData, onSave, onClose }: Props) {
   const isEdit = Boolean(initial);
-  const [form, setForm] = useState<Form>(EMPTY);
+  const [form, setForm] = useState<Form>(() => {
+    const base = prefillData ? { ...EMPTY, ...prefillData } : EMPTY;
+    if (!prefillData?.periodicidad_sueldo && base.tipo === "Becario") {
+      base.periodicidad_sueldo = "Semanal";
+    }
+    return base;
+  });
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -57,6 +68,8 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
   useEffect(() => {
     if (initial) {
       setForm({
+        tipo: initial.tipo ?? "Empleado",
+        periodicidad_sueldo: initial.periodicidad_sueldo ?? (initial.tipo === "Becario" ? "Semanal" : "Quincenal"),
         nombre: initial.nombre,
         apellido_paterno: initial.apellido_paterno,
         apellido_materno: initial.apellido_materno ?? "",
@@ -78,7 +91,11 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
       });
       setFotoPreview(initial.foto_url ? (initial.foto_url.startsWith("/uploads") ? `${API_BASE}${initial.foto_url}` : initial.foto_url) : null);
     } else {
-      setForm(EMPTY);
+      const base = prefillData ? { ...EMPTY, ...prefillData } : EMPTY;
+      if (!prefillData?.periodicidad_sueldo && base.tipo === "Becario") {
+        base.periodicidad_sueldo = "Semanal";
+      }
+      setForm(base);
       setFotoFile(null);
       setFotoPreview(null);
     }
@@ -108,6 +125,8 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
     setError("");
     try {
       const payload: CreateEmpleadoPayload | UpdateEmpleadoPayload = {
+        tipo: form.tipo,
+        periodicidad_sueldo: form.periodicidad_sueldo,
         nombre: form.nombre.trim(),
         apellido_paterno: form.apellido_paterno.trim(),
         apellido_materno: form.apellido_materno.trim(),
@@ -147,6 +166,30 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
 
+        {/* Tipo */}
+        {!isEdit && (
+          <div>
+            <label className={LABEL}>Tipo de registro</label>
+            <div className="flex gap-3">
+              {(["Empleado", "Becario"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, tipo: t, periodicidad_sueldo: t === "Becario" ? "Semanal" : "Quincenal" }))}
+                  className={[
+                    "flex-1 rounded-xl border py-2.5 text-sm font-semibold transition",
+                    form.tipo === t
+                      ? "border-[#312C85] bg-[#312C85] text-white"
+                      : "border-slate-300 bg-slate-50 text-slate-600 hover:border-[#312C85] hover:text-[#312C85]",
+                  ].join(" ")}
+                >
+                  {t === "Becario" ? "Becario / Prácticas" : "Empleado"}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Foto */}
         <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
           <div
@@ -165,7 +208,7 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
             )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-700">Foto del empleado</p>
+            <p className="text-sm font-semibold text-slate-700">{form.tipo === "Becario" ? "Foto del becario" : "Foto del empleado"}</p>
             <p className="text-xs text-slate-400 mt-0.5">JPG, PNG o WEBP · máx. 25 MB</p>
             <button
               type="button"
@@ -276,7 +319,19 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
                 onChange={(e) => set("fecha_ingreso", e.target.value)} />
             </div>
             <div>
-              <label className={LABEL}>Sueldo (MXN) <span className="text-red-500">*</span></label>
+              <label className={LABEL}>Periodicidad de pago <span className="text-red-500">*</span></label>
+              <select className={INPUT} value={form.periodicidad_sueldo}
+                onChange={(e) => set("periodicidad_sueldo", e.target.value)}>
+                <option value="Semanal">Semanal</option>
+                <option value="Quincenal">Quincenal</option>
+                <option value="Mensual">Mensual</option>
+              </select>
+            </div>
+            <div>
+              <label className={LABEL}>
+                {form.tipo === "Becario" ? "Apoyo económico semanal (MXN)" : "Sueldo (MXN)"}
+                <span className="text-red-500"> *</span>
+              </label>
               <input type="number" min="0" step="0.01" className={INPUT} value={form.sueldo}
                 onChange={(e) => set("sueldo", e.target.value)} placeholder="0.00" />
             </div>
@@ -321,7 +376,7 @@ export function EmpleadoModal({ initial, onSave, onClose }: Props) {
           </button>
           <button type="submit" disabled={saving}
             className="rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70">
-            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Registrar empleado"}
+            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : form.tipo === "Becario" ? "Registrar becario" : "Registrar empleado"}
           </button>
         </div>
       </form>

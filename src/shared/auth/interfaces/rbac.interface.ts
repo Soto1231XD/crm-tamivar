@@ -17,7 +17,10 @@ export type ModuleKey =
   | 'evaluacion'
   | 'recomendaciones'
   | 'mapa'
-  | 'rh_empleados';
+  | 'rh_empleados'
+  | 'rh_candidatos'
+  | 'rh_becarios'
+  | 'rh_eventos';
 
 export type ModulePermissions = {
   ver: boolean;

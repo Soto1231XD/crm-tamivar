@@ -3,6 +3,7 @@ import { apiRequest } from "@/shared/apiRequest";
 export interface DocumentoEmpleado {
   id: number;
   empleado_id: number;
+  incapacidad_id: number | null;
   tipo: string;
   descripcion: string | null;
   archivo_url: string;
@@ -28,15 +29,31 @@ export const TIPOS_DOCUMENTO = [
   "Pruebas psicométricas",
 ] as const;
 
+export const TIPOS_DOCUMENTO_EXCLUIDOS_BECARIO: readonly string[] = [
+  "Acta de nacimiento",
+  "Carta de recomendación 1",
+  "Carta de recomendación 2",
+  "Antecedentes no penales",
+];
+
 export const getDocumentosByEmpleado = (empleadoId: number) =>
   apiRequest<DocumentoEmpleado[]>(`/documentos-empleado/empleado/${empleadoId}`);
 
-export const uploadDocumento = (empleadoId: number, tipo: string, file: File, descripcion?: string) => {
+export const getDocumentosByIncapacidad = (incapacidadId: number) =>
+  apiRequest<DocumentoEmpleado[]>(`/documentos-empleado/incapacidad/${incapacidadId}`);
+
+export const uploadDocumento = (
+  empleadoId: number,
+  tipo: string,
+  file: File,
+  opts: { descripcion?: string; incapacidad_id?: number } = {},
+) => {
   const form = new FormData();
   form.append("empleado_id", String(empleadoId));
   form.append("tipo", tipo);
   form.append("file", file);
-  if (descripcion) form.append("descripcion", descripcion);
+  if (opts.descripcion) form.append("descripcion", opts.descripcion);
+  if (opts.incapacidad_id != null) form.append("incapacidad_id", String(opts.incapacidad_id));
   return apiRequest<DocumentoEmpleado>("/documentos-empleado/upload", {
     method: "POST",
     data: form,

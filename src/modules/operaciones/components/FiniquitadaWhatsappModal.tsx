@@ -106,23 +106,16 @@ export function FiniquitadaWhatsappModal({ finiquitada, onClose, onSent }: Props
           </div>
         </div>
 
-        {/* Preview del mensaje */}
-        {nombre.trim() && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Vista previa del mensaje
+        {/* Info plantilla */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 flex items-start gap-3">
+          <span className="text-xl shrink-0">⭐</span>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-600 mb-0.5">Plantilla: v1_resena_tamivar</p>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Se enviará la plantilla aprobada de WhatsApp personalizada con el nombre del cliente.
             </p>
-            <div className="rounded-lg bg-[#DCF8C6] px-3.5 py-2.5 text-sm text-slate-800 leading-relaxed shadow-sm">
-              <p>Hola {nombre.trim()} 👋</p>
-              <p className="mt-1">Muchas gracias por confiar en Soluciones Tamivar para tu proceso inmobiliario 🏡</p>
-              <p className="mt-1">¿Nos podrías apoyar dejando una calificación y un pequeño comentario sobre nuestro servicio? Nos ayudaría muchísimo 💙</p>
-              <p className="mt-1">👉 Solo da clic aquí:<br />
-                <span className="text-blue-600 underline">facebook.com/InmueblesTamivar/reviews</span>
-              </p>
-              <p className="mt-1">¡Gracias de antemano!<br />Saludos,<br />Equipo Tamivar</p>
-            </div>
           </div>
-        )}
+        </div>
 
         {error && (
           <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">

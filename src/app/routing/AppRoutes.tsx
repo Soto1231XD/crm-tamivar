@@ -79,6 +79,18 @@ const EmpleadosPage = lazy(() =>
 const EmpleadoDetailPage = lazy(() =>
   import("@/modules/empleados/pages/EmpleadoDetailPage").then((m) => ({ default: m.EmpleadoDetailPage }))
 );
+const CandidatosPage = lazy(() =>
+  import("@/modules/candidatos/pages/CandidatosPage").then((m) => ({ default: m.CandidatosPage }))
+);
+const BecariosPage = lazy(() =>
+  import("@/modules/becarios/pages/BecariosPage").then((m) => ({ default: m.BecariosPage }))
+);
+const EventosPage = lazy(() =>
+  import("@/modules/eventos-rh/pages/EventosPage").then((m) => ({ default: m.EventosPage }))
+);
+const EventoDetailPage = lazy(() =>
+  import("@/modules/eventos-rh/pages/EventoDetailPage").then((m) => ({ default: m.EventoDetailPage }))
+);
 
 export function AppRoutes() {
   return (
@@ -172,6 +184,19 @@ export function AppRoutes() {
           <Route element={<ProtectedRoute module="rh_empleados" />}>
             <Route path="modulos/rh/empleados" element={<EmpleadosPage />} />
             <Route path="modulos/rh/empleados/:id" element={<EmpleadoDetailPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute module="rh_becarios" />}>
+            <Route path="modulos/rh/becarios" element={<BecariosPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute module="rh_candidatos" />}>
+            <Route path="modulos/rh/candidatos" element={<CandidatosPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute module="rh_eventos" />}>
+            <Route path="modulos/rh/eventos" element={<EventosPage />} />
+            <Route path="modulos/rh/eventos/:id" element={<EventoDetailPage />} />
           </Route>
         </Route>
       </Route>

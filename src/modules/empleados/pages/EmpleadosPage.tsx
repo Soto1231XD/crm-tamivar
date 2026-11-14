@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { BaseTable } from "@/components/ui/BaseTable";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
@@ -32,6 +32,7 @@ function formatSueldo(val: string) {
 
 export function EmpleadosPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { can } = useHasPermission();
   const canCreate = can("rh_empleados", "crear");
   const canEdit   = can("rh_empleados", "actualizar");
@@ -43,13 +44,15 @@ export function EmpleadosPage() {
   const [filterEstatus, setFilterEstatus] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Pre-llenado desde candidatos aprobados (sueldo se omite — el usuario lo ingresa)
+  const prefill = (location.state as { prefill?: Record<string, string> } | null)?.prefill ?? null;
   const [modal, setModal]             = useState<{ open: boolean; item: Empleado | null }>({ open: false, item: null });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; item: Empleado | null }>({ open: false, item: null });
 
   const load = async () => {
     setIsLoading(true);
     try {
-      setEmpleados(await getEmpleados());
+      setEmpleados(await getEmpleados({ tipo: "Empleado" }));
     } finally {
       setIsLoading(false);
     }
@@ -57,6 +60,14 @@ export function EmpleadosPage() {
 
   useEffect(() => { load(); }, []);
   useEffect(() => { setCurrentPage(1); }, [search, filterEstatus]);
+
+  // Abrir modal de alta tras montar el componente para no colisionar con la animación de entrada
+  useEffect(() => {
+    if (prefill) {
+      const t = setTimeout(() => setModal({ open: true, item: null }), 300);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -161,6 +172,20 @@ export function EmpleadosPage() {
         )}
       </div>
 
+      {/* Tarjetas */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {[
+          { label: "Total",   value: empleados.length,                                       color: "text-slate-700" },
+          { label: "Activos", value: empleados.filter(e => e.estatus === "Activo").length,   color: "text-emerald-700" },
+          { label: "Baja",    value: empleados.filter(e => e.estatus === "Baja").length,     color: "text-red-600" },
+        ].map((card) => (
+          <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{card.label}</p>
+            <p className={`mt-1 text-2xl font-bold ${card.color}`}>{card.value}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-3">
         <input
@@ -200,6 +225,7 @@ export function EmpleadosPage() {
       {modal.open && (
         <EmpleadoModal
           initial={modal.item}
+          prefillData={!modal.item && prefill ? prefill : undefined}
           onSave={handleSave}
           onClose={() => setModal({ open: false, item: null })}
         />

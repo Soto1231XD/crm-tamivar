@@ -4,9 +4,11 @@ export interface PermisoEmpleado {
   id: number;
   empleado_id: number;
   fecha: string;
-  tipo: "Personal" | "Médico" | "Familiar";
+  tipo: "Personal" | "Médico" | "Familiar" | "Tardanza" | "Entrada Tarde" | "Inasistencia" | "Lactancia" | "Falta Justificada" | "Permiso para llegar tarde";
   con_goce: boolean;
   descripcion?: string;
+  hora_llegada?: string | null;
+  fecha_recuperacion?: string | null;
   estatus: "Pendiente" | "Aprobado" | "Rechazado";
   creado_en: string;
   actualizado_en: string;
@@ -15,9 +17,11 @@ export interface PermisoEmpleado {
 export type CreatePermisoPayload = {
   empleado_id: number;
   fecha: string;
-  tipo: "Personal" | "Médico" | "Familiar";
+  tipo: "Personal" | "Médico" | "Familiar" | "Tardanza" | "Entrada Tarde" | "Inasistencia" | "Lactancia" | "Falta Justificada" | "Permiso para llegar tarde";
   con_goce: boolean;
   descripcion?: string;
+  hora_llegada?: string | null;
+  fecha_recuperacion?: string | null;
   estatus?: "Pendiente" | "Aprobado" | "Rechazado";
 };
 

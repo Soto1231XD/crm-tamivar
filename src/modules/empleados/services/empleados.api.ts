@@ -2,6 +2,8 @@ import { apiRequest } from "@/shared/apiRequest";
 
 export interface Empleado {
   id: number;
+  tipo: "Empleado" | "Becario";
+  periodicidad_sueldo: string;
   nombre: string;
   apellido_paterno: string;
   apellido_materno: string;
@@ -26,6 +28,8 @@ export interface Empleado {
 }
 
 export type CreateEmpleadoPayload = {
+  tipo?: "Empleado" | "Becario";
+  periodicidad_sueldo?: string;
   nombre: string;
   apellido_paterno: string;
   apellido_materno: string;
@@ -49,8 +53,16 @@ export type UpdateEmpleadoPayload = Partial<CreateEmpleadoPayload> & {
   estatus?: "Activo" | "Baja";
 };
 
-export const getEmpleados = (estatus?: string) =>
-  apiRequest<Empleado[]>("/empleados" + (estatus ? `?estatus=${estatus}` : ""));
+export const getEmpleados = (params?: { estatus?: string; tipo?: string }) => {
+  const qs = new URLSearchParams();
+  if (params?.estatus) qs.set("estatus", params.estatus);
+  if (params?.tipo)    qs.set("tipo", params.tipo);
+  const q = qs.toString();
+  return apiRequest<Empleado[]>("/empleados" + (q ? `?${q}` : ""));
+};
+
+export const convertirAEmpleado = (id: number) =>
+  apiRequest<Empleado>(`/empleados/${id}/convertir-empleado`, { method: "PATCH" });
 
 export const getEmpleado = (id: number) =>
   apiRequest<Empleado>(`/empleados/${id}`);

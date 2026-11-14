@@ -10,6 +10,8 @@ import {
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import agregarIcon from "@/assets/images/Agregar.png";
 import desArcIcon  from "@/assets/images/DesArc.png";
+import eagleIcon   from "@/assets/icons/eagle.png";
+import skullIcon   from "@/assets/icons/skull.png";
 import { downloadCarteraAsExcel } from "../utils/cartera.utils";
 import {
   getCarteraClientes,
@@ -21,6 +23,7 @@ import {
 import { ClienteModal } from "../components/ClienteModal";
 import { BirthdayWhatsappModal } from "../components/BirthdayWhatsappModal";
 import { FestividadWhatsappModal } from "../components/FestividadWhatsappModal";
+import { RevolucionWhatsappModal } from "../components/RevolucionWhatsappModal";
 
 const MESES: Record<number, string> = {
   1: "ENE", 2: "FEB", 3: "MAR", 4: "ABR", 5: "MAY", 6: "JUN",
@@ -47,6 +50,7 @@ export function CarteraClientesPage() {
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [bdayModal, setBdayModal]     = useState<{ open: boolean; item: ClienteCartera | null }>({ open: false, item: null });
   const [festividadOpen, setFestividadOpen] = useState(false);
+  const [revolucionOpen, setRevolucionOpen] = useState(false);
   const [sentBirthdayIds, setSentBirthdayIds] = useState<Set<number>>(new Set());
 
   const [search, setSearch]       = useState("");
@@ -187,14 +191,24 @@ export function CarteraClientesPage() {
             </button>
           )}
           {canMessage && clientes.some((c) => c.telefono) && (
-            <button
-              type="button"
-              onClick={() => setFestividadOpen(true)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1da851] sm:w-auto"
-            >
-              <span>🎉</span>
-              <span className="whitespace-nowrap">Festividad WhatsApp</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setRevolucionOpen(true)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1da851] sm:w-auto"
+              >
+                <img src={eagleIcon} alt="" className="h-8 w-8 shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Día de la Revolución</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFestividadOpen(true)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1da851] sm:w-auto"
+              >
+                <img src={skullIcon} alt="" className="h-8 w-8 shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Día de Muertos</span>
+              </button>
+            </>
           )}
           {canCreate && (
             <button
@@ -316,6 +330,14 @@ export function CarteraClientesPage() {
         <FestividadWhatsappModal
           clientes={filtrados}
           onClose={() => setFestividadOpen(false)}
+        />
+      )}
+
+      {/* Modal Día de la Revolución */}
+      {revolucionOpen && (
+        <RevolucionWhatsappModal
+          clientes={filtrados}
+          onClose={() => setRevolucionOpen(false)}
         />
       )}
 

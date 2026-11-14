@@ -22,6 +22,9 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   recomendaciones: "Recomendaciones",
   mapa: "Mapa",
   rh_empleados: "Empleados",
+  rh_candidatos: "Candidatos",
+  rh_becarios: "Becarios",
+  rh_eventos: "Eventos / Convivios",
 };
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
@@ -44,6 +47,9 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   recomendaciones: "/modulos/recomendaciones",
   mapa: "/modulos/mapa",
   rh_empleados: "/modulos/rh/empleados",
+  rh_candidatos: "/modulos/rh/candidatos",
+  rh_becarios: "/modulos/rh/becarios",
+  rh_eventos: "/modulos/rh/eventos",
 };
 
 const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
@@ -115,6 +121,9 @@ export function getAvailableModules(
     "CarteraClientes",
     "evaluacion",
     "rh_empleados",
+    "rh_candidatos",
+    "rh_becarios",
+    "rh_eventos",
   ];
 
   if (permissions.includes("*:*")) return allModules;
