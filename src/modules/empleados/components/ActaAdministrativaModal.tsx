@@ -73,7 +73,7 @@ export function ActaAdministrativaModal({ empleadoId, initial, onSave, onClose }
     setHoraCierre(initial.hora_cierre);
     if (initial.fecha_hechos) setFechaHechos(initial.fecha_hechos.slice(0, 10));
     setEmpleadoClaveIne(initial.empleado_clave_ine ?? "");
-    setTestigoNombre(initial.testigo_nombre ?? "" ?? "");
+    setTestigoNombre(initial.testigo_nombre ?? "");
     setTestigoClaveIne(initial.testigo_clave_ine ?? "");
     if (initial.tipo === "hechos") {
       try {

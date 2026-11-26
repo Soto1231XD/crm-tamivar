@@ -35,7 +35,7 @@ interface Props {
 export function ActasAdministrativasTab({ actas, loading, empleado, canEdit, onAdd, onEdit, onDelete }: Props) {
 
   function handleDescargar(a: ActaAdministrativa) {
-    let gen: Promise<void>;
+    let gen: Promise<unknown>;
     if (a.tipo === "hechos") {
       gen = generarActaHechos(empleado, a);
     } else if (a.tipo === "disciplinaria") {
