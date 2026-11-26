@@ -110,7 +110,7 @@ export function FiniquitadaWhatsappModal({ finiquitada, onClose, onSent }: Props
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 flex items-start gap-3">
           <span className="text-xl shrink-0">⭐</span>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-600 mb-0.5">Plantilla: v1_resena_tamivar</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-600 mb-0.5">Plantilla: v2_resena_tamivar</p>
             <p className="text-xs text-slate-500 leading-relaxed">
               Se enviará la plantilla aprobada de WhatsApp personalizada con el nombre del cliente.
             </p>

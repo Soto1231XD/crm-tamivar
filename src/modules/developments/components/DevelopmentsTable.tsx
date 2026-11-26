@@ -198,10 +198,10 @@ export function DevelopmentsTable({
             type="button"
             aria-label="Ver detalles"
             title="Ver detalles"
-            className="rounded-md border border-slate-300 p-1.5 text-slate-700 transition-colors hover:bg-slate-100"
+            className="rounded-md border border-[var(--crm-border-strong)] p-1.5 text-[var(--crm-text)] transition-colors hover:bg-[var(--crm-muted)]"
             onClick={() => navigate(`/modulos/desarrollos/${development.id}`)}
           >
-            <img src={verIcon} alt="" className="h-5 w-5" aria-hidden="true" />
+            <img src={verIcon} alt="" className="h-5 w-5 dark:invert" aria-hidden="true" />
           </button>
 
           <DownloadDevelopmentPdfButton

@@ -25,6 +25,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   rh_candidatos: "Candidatos",
   rh_becarios: "Becarios",
   rh_eventos: "Eventos / Convivios",
+  rh_archivo: "Archivo RH",
 };
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
@@ -50,6 +51,7 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   rh_candidatos: "/modulos/rh/candidatos",
   rh_becarios: "/modulos/rh/becarios",
   rh_eventos: "/modulos/rh/eventos",
+  rh_archivo: "/modulos/rh/archivo",
 };
 
 const DASHBOARD_SOURCE_MODULES: ModuleKey[] = [
@@ -124,6 +126,7 @@ export function getAvailableModules(
     "rh_candidatos",
     "rh_becarios",
     "rh_eventos",
+    "rh_archivo",
   ];
 
   if (permissions.includes("*:*")) return allModules;
@@ -133,6 +136,8 @@ export function getAvailableModules(
     if (module === "Estadísticas") return canAccessStatistics(userRoles, permissions);
     if (module === "material") return true;
     if (module === "mapa") return hasModuleReadAccess(permissions, "mapa");
+    // rh_archivo es accesible para quien tenga acceso a rh_empleados
+    if (module === "rh_archivo") return permissions.some((p) => p.startsWith("rh_empleados:") || p.startsWith("rh_archivo:"));
     return permissions.some((permission) => permission.startsWith(`${module}:`));
   });
 }

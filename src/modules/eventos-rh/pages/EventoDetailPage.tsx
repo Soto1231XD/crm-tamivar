@@ -42,7 +42,7 @@ export function EventoDetailPage() {
   const [tab, setTab]             = useState<Tab>("participantes");
 
   // Participante form
-  const [tipoP, setTipoP]         = useState<"interno" | "externo">("interno");
+  const [tipoP, setTipoP]         = useState<"empleado" | "becario" | "externo">("empleado");
   const [empSelId, setEmpSelId]   = useState("");
   const [nombreExt, setNombreExt] = useState("");
   const [savingP, setSavingP]     = useState(false);
@@ -67,11 +67,11 @@ export function EventoDetailPage() {
 
   const handleAddParticipante = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (tipoP === "interno" && !empSelId) { toast.error("Selecciona un empleado"); return; }
+    if (tipoP !== "externo" && !empSelId) { toast.error("Selecciona un colaborador"); return; }
     if (tipoP === "externo" && !nombreExt.trim()) { toast.error("Escribe el nombre del participante"); return; }
     setSavingP(true);
     try {
-      const p = await addParticipante(eventoId, tipoP === "interno"
+      const p = await addParticipante(eventoId, tipoP !== "externo"
         ? { empleado_id: Number(empSelId) }
         : { nombre_externo: nombreExt.trim() });
       setEvento((prev) => prev ? { ...prev, participantes: [...prev.participantes, p] } : prev);
@@ -122,9 +122,9 @@ export function EventoDetailPage() {
 
   if (!evento) return <p className="text-slate-500">Evento no encontrado.</p>;
 
-  // Empleados no agregados aún
+  // Empleados no agregados aún, separados por tipo
   const empIds = new Set(evento.participantes.map((p) => p.empleado_id).filter(Boolean));
-  const empDisponibles = empleados.filter((e) => !empIds.has(e.id));
+  const empDisponibles = empleados.filter((e) => !empIds.has(e.id) && e.tipo === (tipoP === "becario" ? "Becario" : "Empleado"));
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "participantes", label: `Participantes (${evento.participantes.length})` },
@@ -194,19 +194,26 @@ export function EventoDetailPage() {
               className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Agregar participante</p>
               <div className="flex gap-2">
-                {(["interno", "externo"] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => setTipoP(t)}
+                {([
+                  { value: "empleado", label: "Interno · Empleado" },
+                  { value: "becario",  label: "Interno · Becario"  },
+                  { value: "externo",  label: "Externo"            },
+                ] as const).map((t) => (
+                  <button key={t.value} type="button"
+                    onClick={() => { setTipoP(t.value); setEmpSelId(""); }}
                     className={[
                       "flex-1 rounded-xl border py-2 text-sm font-semibold transition",
-                      tipoP === t ? "border-[#312C85] bg-[#312C85] text-white" : "border-slate-300 bg-slate-50 text-slate-600 hover:border-[#312C85]",
+                      tipoP === t.value
+                        ? "border-[#312C85] bg-[#312C85] text-white"
+                        : "border-slate-300 bg-slate-50 text-slate-600 hover:border-[#312C85]",
                     ].join(" ")}>
-                    {t === "interno" ? "Empleado interno" : "Externo"}
+                    {t.label}
                   </button>
                 ))}
               </div>
-              {tipoP === "interno" ? (
+              {tipoP !== "externo" ? (
                 <select className={INPUT} value={empSelId} onChange={(e) => setEmpSelId(e.target.value)}>
-                  <option value="">— Selecciona un empleado —</option>
+                  <option value="">— Selecciona {tipoP === "becario" ? "un becario" : "un empleado"} —</option>
                   {empDisponibles.map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.nombre} {e.apellido_paterno} {e.apellido_materno} · {e.puesto}
@@ -233,7 +240,9 @@ export function EventoDetailPage() {
                   <div>
                     <p className="font-semibold text-slate-800">{nombreParticipante(p)}</p>
                     <p className="text-xs text-slate-400">
-                      {p.empleado ? `Interno · ${p.empleado.puesto}` : "Externo"}
+                      {p.empleado
+                        ? `Interno · ${p.empleado.tipo} · ${p.empleado.puesto}`
+                        : "Externo / Visitante"}
                     </p>
                   </div>
                   {canEdit && (
@@ -254,21 +263,24 @@ export function EventoDetailPage() {
         <div className="flex flex-col gap-4">
           {canEdit && (
             <form onSubmit={handleAddGasto}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Registrar gasto</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input type="text" className={INPUT} placeholder="Concepto (Ej. Pollos asados, Refrescos)"
+              className="rounded-2xl border border-indigo-100 bg-[#312C85]/[0.03] p-4 shadow-sm flex flex-col gap-3">
+              <p className="text-sm font-semibold text-[#312C85]">Registrar gasto</p>
+              <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+                <input type="text" className={`${INPUT} flex-1 min-w-0`} placeholder="Concepto (Ej. Pollos asados, Refrescos)"
                   value={concepto} onChange={(e) => setConcepto(e.target.value)} />
-                <div className="relative">
+                <div className="relative w-36 shrink-0">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">$</span>
                   <input type="number" min="0.01" step="0.01" className={`${INPUT} pl-7`}
                     placeholder="0.00" value={monto} onChange={(e) => setMonto(e.target.value)} />
                 </div>
+                <button type="submit" disabled={savingG}
+                  className="shrink-0 flex items-center gap-1.5 rounded-xl bg-[#312C85] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4338ca] disabled:opacity-50">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  {savingG ? "Registrando..." : "Agregar gasto"}
+                </button>
               </div>
-              <button type="submit" disabled={savingG}
-                className="self-end rounded-xl bg-[#312C85] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4338ca] disabled:opacity-50">
-                {savingG ? "Registrando..." : "Agregar gasto"}
-              </button>
             </form>
           )}
 

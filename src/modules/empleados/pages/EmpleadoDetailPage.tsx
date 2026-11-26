@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useHasPermission } from "@/shared/auth/permissions/useHasPermission";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
@@ -46,7 +46,17 @@ import {
   getApoyosByEmpleado, createApoSolidario, updateApoSolidario, deleteApoSolidario,
   type ApoSolidario, type CreateApoSolidarioPayload, type UpdateApoSolidarioPayload,
 } from "../services/apoyos-solidarios.api";
-import { generarSolicitudVacaciones } from "../utils/documentos-rh";
+import {
+  getResponsivasByEmpleado, createResponsiva, updateResponsiva, deleteResponsiva,
+  type ResponsivaEmpleado,
+} from "../services/responsivas.api";
+import {
+  getActasByEmpleado, createActa, updateActa, deleteActa,
+  type ActaAdministrativa, type CreateActaPayload, type UpdateActaPayload,
+} from "../services/actas-administrativas.api";
+import { generarSolicitudVacaciones, generarActaEntregaPuesto, generarAuditoriaLaboral } from "../utils/documentos-rh";
+import { ContratoModal } from "../components/ContratoModal";
+import { TerminacionContratoModal } from "../components/TerminacionContratoModal";
 import { convertirAEmpleado } from "../services/empleados.api";
 import { FaltaModal } from "../components/FaltaModal";
 import { VacacionModal } from "../components/VacacionModal";
@@ -57,6 +67,9 @@ import { BajaModal } from "../components/BajaModal";
 import { AmonestacionModal } from "../components/AmonestacionModal";
 import { NominaModal } from "../components/NominaModal";
 import { ApoSolidarioModal } from "../components/ApoSolidarioModal";
+import { ResponsivaModal } from "../components/ResponsivaModal";
+import { ActaAdministrativaModal } from "../components/ActaAdministrativaModal";
+import { FiniquitoModal } from "../components/FiniquitoModal";
 import { FaltasTab } from "./tabs/FaltasTab";
 import { VacacionesTab } from "./tabs/VacacionesTab";
 import { PermisosTab } from "./tabs/PermisosTab";
@@ -67,8 +80,9 @@ import { DocumentosTab } from "./tabs/DocumentosTab";
 import { ReporteTab } from "./tabs/ReporteTab";
 import { NominaTab } from "./tabs/NominaTab";
 import { ApoyosSolidariosTab } from "./tabs/ApoyosSolidariosTab";
+import { ResponsivasTab } from "./tabs/ResponsivasTab";
 
-type Tab = "faltas" | "vacaciones" | "permisos" | "incapacidades" | "amonestaciones" | "historial" | "documentos" | "reporte" | "nomina" | "apoyos";
+type Tab = "faltas" | "vacaciones" | "permisos" | "incapacidades" | "amonestaciones" | "historial" | "documentos" | "reporte" | "nomina" | "apoyos" | "responsivas";
 
 const TABS_EMPLEADO: { key: Tab; label: string }[] = [
   { key: "faltas",         label: "Faltas" },
@@ -80,6 +94,7 @@ const TABS_EMPLEADO: { key: Tab; label: string }[] = [
   { key: "documentos",     label: "Documentos" },
   { key: "nomina",         label: "Nómina" },
   { key: "apoyos",         label: "Apoyo Solidario" },
+  { key: "responsivas",    label: "Responsivas" },
   { key: "reporte",        label: "Reporte Individual" },
 ];
 
@@ -92,6 +107,7 @@ const TABS_BECARIO: { key: Tab; label: string }[] = [
   { key: "documentos",     label: "Documentos" },
   { key: "nomina",         label: "Apoyo económico" },
   { key: "apoyos",         label: "Apoyo Solidario" },
+  { key: "responsivas",    label: "Responsivas" },
   { key: "reporte",        label: "Reporte Individual" },
 ];
 
@@ -100,16 +116,26 @@ function formatDate(iso: string) {
   return new Date(y, m - 1, d).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+const VALID_TABS: Tab[] = ["faltas", "vacaciones", "permisos", "incapacidades", "amonestaciones", "historial", "documentos", "reporte", "nomina", "apoyos", "responsivas"];
+
 export function EmpleadoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const empleadoId = Number(id);
   const { can } = useHasPermission();
   const canEdit = can("rh_empleados", "actualizar");
 
+  const initialTab = (() => {
+    const t = searchParams.get("tab") as Tab | null;
+    return t && VALID_TABS.includes(t) ? t : "faltas";
+  })();
+
   const [empleado, setEmpleado] = useState<Empleado | null>(null);
-  const [tab, setTab] = useState<Tab>("faltas");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [convirtiendo, setConvirtiendo] = useState(false);
+  const [contratoModal,     setContratoModal]     = useState(false);
+  const [terminacionModal,  setTerminacionModal]  = useState(false);
 
   // Faltas
   const [faltas, setFaltas] = useState<Falta[]>([]);
@@ -179,6 +205,21 @@ export function EmpleadoDetailPage() {
   const [apoyoModal, setApoyoModal]       = useState<{ open: boolean; item: ApoSolidario | null }>({ open: false, item: null });
   const [deleteApoyoModal, setDeleteApoyoModal] = useState<{ open: boolean; item: ApoSolidario | null }>({ open: false, item: null });
   const [updatingEstatusApoyoId, setUpdatingEstatusApoyoId] = useState<number | null>(null);
+
+  // Responsivas
+  const [responsivas, setResponsivas]           = useState<ResponsivaEmpleado[]>([]);
+  const [loadingResponsivas, setLoadingResponsivas] = useState(true);
+  const [responsivaModal, setResponsivaModal]   = useState<{ open: boolean; item: ResponsivaEmpleado | null }>({ open: false, item: null });
+  const [deleteResponsivaModal, setDeleteResponsivaModal] = useState<{ open: boolean; item: ResponsivaEmpleado | null }>({ open: false, item: null });
+
+  // Actas administrativas
+  const [actas, setActas]               = useState<ActaAdministrativa[]>([]);
+  const [loadingActas, setLoadingActas] = useState(true);
+  const [actaModal, setActaModal]       = useState<{ open: boolean; item: ActaAdministrativa | null }>({ open: false, item: null });
+  const [deleteActaModal, setDeleteActaModal] = useState<{ open: boolean; item: ActaAdministrativa | null }>({ open: false, item: null });
+
+  // Finiquito
+  const [finiquitoModal, setFiniquitoModal] = useState<{ open: boolean; baja: Baja | null }>({ open: false, baja: null });
 
   // ── Carga inicial ────────────────────────────────────────────────────────────
 
@@ -265,6 +306,20 @@ export function EmpleadoDetailPage() {
     finally { setLoadingApoyos(false); }
   };
   useEffect(() => { if (empleadoId) loadApoyos(); }, [empleadoId]);
+
+  const loadResponsivas = async () => {
+    setLoadingResponsivas(true);
+    try { setResponsivas(await getResponsivasByEmpleado(empleadoId)); }
+    finally { setLoadingResponsivas(false); }
+  };
+  useEffect(() => { if (empleadoId) loadResponsivas(); }, [empleadoId]);
+
+  const loadActas = async () => {
+    setLoadingActas(true);
+    try { setActas(await getActasByEmpleado(empleadoId)); }
+    finally { setLoadingActas(false); }
+  };
+  useEffect(() => { if (empleadoId) loadActas(); }, [empleadoId]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -361,6 +416,9 @@ export function EmpleadoDetailPage() {
       await createBaja(data as CreateBajaPayload);
       toast.success("Baja registrada");
       getEmpleado(empleadoId).then(setEmpleado).catch(() => null);
+      if (empleado) {
+        generarActaEntregaPuesto(empleado, data as CreateBajaPayload).catch(() => null);
+      }
     }
     await loadBajas();
   };
@@ -437,6 +495,31 @@ export function EmpleadoDetailPage() {
     finally { setUpdatingEstatusApoyoId(null); }
   };
 
+  const handleSaveResponsiva = async (payload: { tipo: "Vehículo" | "Materiales" | "Herramientas"; fecha: string; datos: string }) => {
+    if (responsivaModal.item) {
+      await updateResponsiva(responsivaModal.item.id, payload);
+      toast.success("Responsiva actualizada");
+    } else {
+      await createResponsiva({ empleado_id: empleadoId, ...payload });
+      toast.success("Responsiva registrada");
+    }
+    await loadResponsivas();
+  };
+  const handleDeleteResponsiva = async (responsivaId: number): Promise<string | null> => {
+    try { await deleteResponsiva(responsivaId); await loadResponsivas(); toast.success("Responsiva eliminada"); return null; }
+    catch (err) { return err instanceof Error ? err.message : "No se pudo eliminar."; }
+  };
+
+  const handleSaveActa = async (data: CreateActaPayload | UpdateActaPayload) => {
+    if (actaModal.item) { await updateActa(actaModal.item.id, data as UpdateActaPayload); toast.success("Acta actualizada"); }
+    else { await createActa(data as CreateActaPayload); toast.success("Acta registrada"); }
+    await loadActas();
+  };
+  const handleDeleteActa = async (actaId: number): Promise<string | null> => {
+    try { await deleteActa(actaId); await loadActas(); toast.success("Acta eliminada"); return null; }
+    catch (err) { return err instanceof Error ? err.message : "No se pudo eliminar."; }
+  };
+
   const handleUploadDocumento = async (tipo: string, file: File, descripcion?: string) => {
     setUploadingTipo(tipo);
     try { await uploadDocumento(empleadoId, tipo, file, { descripcion }); await loadDocumentos(); toast.success("Documento subido"); }
@@ -499,6 +582,42 @@ export function EmpleadoDetailPage() {
           <p className="text-sm text-[var(--crm-text-muted)]">{empleado.puesto} · {empleado.area}</p>
         </div>
         <div className="flex items-center gap-2 ml-auto">
+          {!esBecario && (
+            <button
+              type="button"
+              onClick={() => generarAuditoriaLaboral(empleado)}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              Auditoría laboral
+            </button>
+          )}
+          {!esBecario && (
+            <button
+              type="button"
+              onClick={() => setContratoModal(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Generar contrato
+            </button>
+          )}
+          {!esBecario && (
+            <button
+              type="button"
+              onClick={() => setTerminacionModal(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Terminar contrato
+            </button>
+          )}
           {esBecario && canEdit && (
             <button
               type="button"
@@ -584,6 +703,7 @@ export function EmpleadoDetailPage() {
         <IncapacidadesTab
           incapacidades={incapacidades}
           loading={loadingInc}
+          empleado={empleado}
           canEdit={canEdit}
           onAdd={() => setIncModal({ open: true, item: null })}
           onEdit={(i) => setIncModal({ open: true, item: i })}
@@ -602,6 +722,12 @@ export function EmpleadoDetailPage() {
           onAdd={() => setAmonestacionModal({ open: true, item: null })}
           onEdit={(a) => setAmonestacionModal({ open: true, item: a })}
           onDelete={(a) => setDeleteAmonestacionModal({ open: true, item: a })}
+          actas={actas}
+          loadingActas={loadingActas}
+          empleado={empleado}
+          onAddActa={() => setActaModal({ open: true, item: null })}
+          onEditActa={(a) => setActaModal({ open: true, item: a })}
+          onDeleteActa={(a) => setDeleteActaModal({ open: true, item: a })}
         />
       )}
 
@@ -617,6 +743,7 @@ export function EmpleadoDetailPage() {
           onEditBaja={(b) => setBajaModal({ open: true, item: b })}
           onDeleteBaja={(b) => setDeleteBajaModal({ open: true, item: b })}
           onReactivar={() => { setFechaReingreso(""); setReactivarModal(true); }}
+          onFiniquito={(b) => setFiniquitoModal({ open: true, baja: b })}
         />
       )}
 
@@ -664,6 +791,18 @@ export function EmpleadoDetailPage() {
         />
       )}
 
+      {tab === "responsivas" && (
+        <ResponsivasTab
+          responsivas={responsivas}
+          loading={loadingResponsivas}
+          empleado={empleado}
+          canEdit={canEdit}
+          onAdd={() => setResponsivaModal({ open: true, item: null })}
+          onEdit={(r) => setResponsivaModal({ open: true, item: r })}
+          onDelete={(r) => setDeleteResponsivaModal({ open: true, item: r })}
+        />
+      )}
+
       {tab === "reporte" && (
         <ReporteTab
           empleado={empleado}
@@ -673,6 +812,8 @@ export function EmpleadoDetailPage() {
           incapacidades={incapacidades}
           bajas={bajas}
           amonestaciones={amonestaciones}
+          responsivas={responsivas}
+          actas={actas}
         />
       )}
 
@@ -850,6 +991,44 @@ export function EmpleadoDetailPage() {
           onConfirm={handleDeleteApoyo} onClose={() => setDeleteApoyoModal({ open: false, item: null })} />
       )}
 
+      {responsivaModal.open && empleado && (
+        <ResponsivaModal
+          empleado={empleado}
+          item={responsivaModal.item}
+          onSave={handleSaveResponsiva}
+          onClose={() => setResponsivaModal({ open: false, item: null })}
+        />
+      )}
+      {deleteResponsivaModal.open && deleteResponsivaModal.item && (
+        <DeleteConfirmModal isOpen title="Eliminar responsiva" subtitle="Esta acción no se puede deshacer."
+          entityId={deleteResponsivaModal.item.id} entityLabel={`Responsiva de ${deleteResponsivaModal.item.tipo}`}
+          descriptionPrefix="Estás a punto de eliminar la" fallbackLabel="esta responsiva"
+          onConfirm={handleDeleteResponsiva} onClose={() => setDeleteResponsivaModal({ open: false, item: null })} />
+      )}
+
+      {actaModal.open && (
+        <ActaAdministrativaModal
+          empleadoId={empleadoId}
+          initial={actaModal.item}
+          onSave={handleSaveActa}
+          onClose={() => setActaModal({ open: false, item: null })}
+        />
+      )}
+      {deleteActaModal.open && deleteActaModal.item && (
+        <DeleteConfirmModal isOpen title="Eliminar acta administrativa" subtitle="Esta acción no se puede deshacer."
+          entityId={deleteActaModal.item.id} entityLabel={`Acta del ${formatDate(deleteActaModal.item.fecha_acta)}`}
+          descriptionPrefix="Estás a punto de eliminar la" fallbackLabel="esta acta"
+          onConfirm={handleDeleteActa} onClose={() => setDeleteActaModal({ open: false, item: null })} />
+      )}
+
+      {finiquitoModal.open && finiquitoModal.baja && empleado && (
+        <FiniquitoModal
+          empleado={empleado}
+          baja={finiquitoModal.baja}
+          onClose={() => setFiniquitoModal({ open: false, baja: null })}
+        />
+      )}
+
       {/* Modal reactivar empleado */}
       {reactivarModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -875,6 +1054,20 @@ export function EmpleadoDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {contratoModal && (
+        <ContratoModal
+          empleado={empleado}
+          onClose={() => setContratoModal(false)}
+        />
+      )}
+
+      {terminacionModal && (
+        <TerminacionContratoModal
+          empleado={empleado}
+          onClose={() => setTerminacionModal(false)}
+        />
       )}
     </div>
   );

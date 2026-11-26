@@ -286,10 +286,10 @@ export function PropertiesTable({
             type="button"
             aria-label="Ver detalles"
             title="Ver detalles"
-            className="rounded-md border border-slate-300 p-1.5 text-slate-700 hover:bg-slate-100 transition-colors"
+            className="rounded-md border border-[var(--crm-border-strong)] p-1.5 text-[var(--crm-text)] hover:bg-[var(--crm-muted)] transition-colors"
             onClick={() => navigate(`/modulos/propiedades/${property.id}`)}
           >
-            <img src={verIcon} alt="" className="h-5 w-5" aria-hidden="true" />
+            <img src={verIcon} alt="" className="h-5 w-5 dark:invert" aria-hidden="true" />
           </button>
 
           <DownloadPdfButton

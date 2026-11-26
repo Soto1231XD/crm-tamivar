@@ -91,6 +91,9 @@ const EventosPage = lazy(() =>
 const EventoDetailPage = lazy(() =>
   import("@/modules/eventos-rh/pages/EventoDetailPage").then((m) => ({ default: m.EventoDetailPage }))
 );
+const ArchivoRHPage = lazy(() =>
+  import("@/modules/empleados/pages/ArchivoRHPage").then((m) => ({ default: m.ArchivoRHPage }))
+);
 
 export function AppRoutes() {
   return (
@@ -197,6 +200,10 @@ export function AppRoutes() {
           <Route element={<ProtectedRoute module="rh_eventos" />}>
             <Route path="modulos/rh/eventos" element={<EventosPage />} />
             <Route path="modulos/rh/eventos/:id" element={<EventoDetailPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute module="rh_archivo" />}>
+            <Route path="modulos/rh/archivo" element={<ArchivoRHPage />} />
           </Route>
         </Route>
       </Route>

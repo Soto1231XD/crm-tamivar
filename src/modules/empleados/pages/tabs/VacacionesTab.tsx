@@ -1,4 +1,6 @@
+import { useState, useMemo } from "react";
 import { BaseTable } from "@/components/ui/BaseTable";
+import { DocPreviewModal } from "../../components/DocPreviewModal";
 import { BadgeSelect } from "@/components/ui/BadgeSelect";
 import agregarIcon from "@/assets/images/Agregar.png";
 import type { Empleado } from "../../services/empleados.api";
@@ -28,6 +30,38 @@ interface Props {
 }
 
 export function VacacionesTab({ vacaciones, loading, empleado, canEdit, updatingEstatusVacId, onAdd, onEdit, onDelete, onEstatusChange }: Props) {
+  const [preview, setPreview] = useState<{ blob: Blob; filename: string } | null>(null);
+  const [filtroEstatus, setFiltroEstatus] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState("");
+  const [filtroPeriodo, setFiltroPeriodo] = useState("");
+
+  const handleVer = async (v: Vacacion) => {
+    try {
+      const esAdelanto = (v.tipo ?? "Solicitud") === "Adelanto";
+      const blob = await generarSolicitudVacaciones(empleado, v, vacaciones, esAdelanto, { onlyBlob: true });
+      const nombre = `${empleado.nombre} ${empleado.apellido_paterno}`.trim().replace(/ /g, "_");
+      const prefix = esAdelanto ? "Adelanto_Vacaciones" : "Solicitud_Vacaciones";
+      setPreview({ blob, filename: `${prefix}_${nombre}_${v.fecha_inicio.slice(0, 10)}.docx` });
+    } catch (e: unknown) {
+      alert("Error al previsualizar: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
+  const vacacionesFiltradas = useMemo(() => {
+    return vacaciones.filter((v) => {
+      if (filtroEstatus && v.estatus !== filtroEstatus) return false;
+      if (filtroTipo && (v.tipo ?? "Solicitud") !== filtroTipo) return false;
+      if (filtroPeriodo) {
+        const periodo = clasificarPeriodoVacacion(empleado.fecha_ingreso, v.fecha_inicio);
+        if (filtroPeriodo === "Anticipada" && periodo !== "Anticipada") return false;
+        if (filtroPeriodo === "En periodo" && periodo === "Anticipada") return false;
+      }
+      return true;
+    });
+  }, [vacaciones, filtroEstatus, filtroTipo, filtroPeriodo, empleado.fecha_ingreso]);
+
+  const hayFiltros = filtroEstatus || filtroTipo || filtroPeriodo;
+
   const antiguedad  = calcularAntigüedad(empleado.fecha_ingreso);
   const derecho     = calcularDerechoVacaciones(antiguedad);
   const ocupados    = vacaciones
@@ -116,30 +150,6 @@ export function VacacionesTab({ vacaciones, loading, empleado, canEdit, updating
         );
       },
     },
-    {
-      header: "Documentos",
-      render: (v: Vacacion) => (
-        <div className="flex justify-center gap-1.5">
-          {(v.tipo ?? "Solicitud") === "Solicitud" ? (
-            <button
-              type="button"
-              onClick={() => generarSolicitudVacaciones(empleado, v, vacaciones, false)}
-              className="rounded-lg bg-[#312C85] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#4338ca]"
-            >
-              Solicitud
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => generarSolicitudVacaciones(empleado, v, vacaciones, true)}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
-            >
-              Adelanto
-            </button>
-          )}
-        </div>
-      ),
-    },
   ];
 
   return (
@@ -158,9 +168,55 @@ export function VacacionesTab({ vacaciones, loading, empleado, canEdit, updating
         ))}
       </div>
 
+      {/* Filtros */}
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={filtroEstatus}
+          onChange={(e) => setFiltroEstatus(e.target.value)}
+          className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] focus:outline-none focus:ring-2 focus:ring-[#312C85]/30"
+        >
+          <option value="">Todos los estatus</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Aprobada">Aprobada</option>
+          <option value="Rechazada">Rechazada</option>
+        </select>
+
+        <select
+          value={filtroTipo}
+          onChange={(e) => setFiltroTipo(e.target.value)}
+          className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] focus:outline-none focus:ring-2 focus:ring-[#312C85]/30"
+        >
+          <option value="">Todos los tipos</option>
+          <option value="Solicitud">Solicitud</option>
+          <option value="Adelanto">Adelanto</option>
+        </select>
+
+        <select
+          value={filtroPeriodo}
+          onChange={(e) => setFiltroPeriodo(e.target.value)}
+          className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] focus:outline-none focus:ring-2 focus:ring-[#312C85]/30"
+        >
+          <option value="">Anticipada y en periodo</option>
+          <option value="Anticipada">Anticipada</option>
+          <option value="En periodo">En periodo</option>
+        </select>
+
+        {hayFiltros && (
+          <button
+            type="button"
+            onClick={() => { setFiltroEstatus(""); setFiltroTipo(""); setFiltroPeriodo(""); }}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-50"
+          >
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-[var(--crm-text-muted)]">
-          {vacaciones.length} {vacaciones.length === 1 ? "período registrado" : "períodos registrados"}
+          {hayFiltros
+            ? `${vacacionesFiltradas.length} de ${vacaciones.length} períodos`
+            : `${vacaciones.length} ${vacaciones.length === 1 ? "período registrado" : "períodos registrados"}`}
         </p>
         <div className="flex gap-2 flex-wrap">
           <button
@@ -184,15 +240,45 @@ export function VacacionesTab({ vacaciones, loading, empleado, canEdit, updating
       </div>
 
       <BaseTable
-        data={vacaciones}
+        data={vacacionesFiltradas}
         columns={columns}
         isLoading={loading}
-        emptyMessage="No hay vacaciones registradas"
+        emptyMessage={hayFiltros ? "Sin períodos con esos filtros" : "No hay vacaciones registradas"}
         onEdit={canEdit ? onEdit : undefined}
         onDelete={canEdit ? onDelete : undefined}
         canEdit={canEdit}
         canDelete={canEdit}
+        customActions={(v) => {
+          const esAdelanto = (v.tipo ?? "Solicitud") === "Adelanto";
+          return (
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => void handleVer(v)} title="Ver documento"
+                className="rounded-md border border-[var(--crm-border-strong)] p-1.5 text-[var(--crm-text)] transition-colors hover:bg-[var(--crm-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+              <button type="button"
+                title="Descargar documento"
+                onClick={() => void generarSolicitudVacaciones(empleado, v, vacaciones, esAdelanto)}
+                className="rounded-md border border-[var(--crm-border-strong)] p-1.5 text-[var(--crm-text)] transition-colors hover:bg-[var(--crm-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </button>
+            </div>
+          );
+        }}
       />
+
+      {preview && (
+        <DocPreviewModal
+          blob={preview.blob}
+          filename={preview.filename}
+          onClose={() => setPreview(null)}
+        />
+      )}
     </div>
   );
 }

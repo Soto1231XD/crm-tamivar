@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BaseTable } from "@/components/ui/BaseTable";
 import type { ColumnDef } from "@/components/ui/BaseTable";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
@@ -8,6 +8,7 @@ import type { NominaEmpleado } from "../../services/nominas.api";
 import type { AdelantoEmpleado, CreateAdelantoPayload, UpdateAdelantoPayload } from "../../services/adelantos.api";
 import { generarReciboNomina, generarSolicitudAdelanto } from "../../utils/documentos-rh/doc-nominas";
 import { AdelantoNominaModal } from "../../components/AdelantoNominaModal";
+import { DocPreviewModal } from "../../components/DocPreviewModal";
 
 type NominaRow =
   | { id: string; kind: "pago"; data: NominaEmpleado }
@@ -51,6 +52,33 @@ export function NominaTab({
   const totalPagado = nominas.reduce((s, n) => s + parseFloat(n.total_pagado), 0);
   const [adelantoModal, setAdelantoModal] = useState<{ open: boolean; item: AdelantoEmpleado | null }>({ open: false, item: null });
   const [deleteAdelantoModal, setDeleteAdelantoModal] = useState<{ open: boolean; item: AdelantoEmpleado | null }>({ open: false, item: null });
+  const [preview, setPreview] = useState<{ blob: Blob; filename: string } | null>(null);
+  const [filtroTipo, setFiltroTipo] = useState("");
+  const [filtroFecha, setFiltroFecha] = useState("");
+  const [filtroEstatus, setFiltroEstatus] = useState("");
+
+  const handleVer = async (row: NominaRow) => {
+    try {
+      let blob: Blob;
+      let filename: string;
+      const nombre = `${empleado.nombre} ${empleado.apellido_paterno}`.trim().replace(/ /g, "_");
+      if (row.kind === "pago") {
+        blob = await generarReciboNomina(empleado, row.data, { onlyBlob: true });
+        filename = `Nomina_${nombre}_${row.data.fecha_pago.slice(0, 10)}.docx`;
+      } else {
+        blob = await generarSolicitudAdelanto(empleado, {
+          monto: parseFloat(row.data.monto),
+          formaDescuento: row.data.forma_descuento as "proxima" | "parcialidades" | "otro",
+          parcialidades: row.data.parcialidades ?? undefined,
+          otro: row.data.otro_descripcion ?? undefined,
+        }, { onlyBlob: true });
+        filename = `Adelanto_Nomina_${nombre}_${row.data.fecha_solicitud.slice(0, 10)}.docx`;
+      }
+      setPreview({ blob, filename });
+    } catch (e: unknown) {
+      alert("Error al previsualizar: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
 
   const handleSaveAdelanto = async (data: CreateAdelantoPayload) => {
     await onSaveAdelanto(data);
@@ -63,7 +91,7 @@ export function NominaTab({
   };
 
   // Unificar y ordenar por fecha desc
-  const rows: NominaRow[] = [
+  const allRows: NominaRow[] = [
     ...nominas.map((n): NominaRow => ({ id: `pago-${n.id}`, kind: "pago", data: n })),
     ...adelantos.map((a): NominaRow => ({ id: `adelanto-${a.id}`, kind: "adelanto", data: a })),
   ].sort((a, b) => {
@@ -72,7 +100,32 @@ export function NominaTab({
     return dB.localeCompare(dA);
   });
 
+  const rows = useMemo(() => {
+    return allRows.filter((row) => {
+      if (filtroTipo === "pago"     && row.kind !== "pago")     return false;
+      if (filtroTipo === "adelanto" && row.kind !== "adelanto") return false;
+      if (filtroFecha) {
+        const fecha = row.kind === "pago" ? row.data.fecha_pago : row.data.fecha_solicitud;
+        if (fecha.slice(0, 10) !== filtroFecha) return false;
+      }
+      if (filtroEstatus && row.kind === "adelanto") {
+        if (row.data.estatus !== filtroEstatus) return false;
+      }
+      return true;
+    });
+  }, [allRows, filtroTipo, filtroFecha, filtroEstatus]);
+
+  const hayFiltros = filtroTipo || filtroFecha || filtroEstatus;
+  const selectClass = "rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] focus:outline-none focus:ring-2 focus:ring-[#312C85]/30";
+
   const columns: ColumnDef<NominaRow>[] = [
+    {
+      header: "Fecha",
+      render: (row) =>
+        row.kind === "pago"
+          ? formatDate(row.data.fecha_pago)
+          : formatDate(row.data.fecha_solicitud),
+    },
     {
       header: "Tipo",
       render: (row) =>
@@ -85,13 +138,6 @@ export function NominaTab({
             Adelanto
           </span>
         ),
-    },
-    {
-      header: "Fecha",
-      render: (row) =>
-        row.kind === "pago"
-          ? formatDate(row.data.fecha_pago)
-          : formatDate(row.data.fecha_solicitud),
     },
     {
       header: "Monto",
@@ -130,38 +176,6 @@ export function NominaTab({
           </span>
         ),
     },
-    {
-      header: "Documento",
-      render: (row) =>
-        row.kind === "pago" ? (
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={() => generarReciboNomina(empleado, row.data)}
-              className="rounded-lg bg-[#312C85] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#4338ca]"
-            >
-              Generar recibo
-            </button>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={() =>
-                generarSolicitudAdelanto(empleado, {
-                  monto: parseFloat(row.data.monto),
-                  formaDescuento: row.data.forma_descuento as "proxima" | "parcialidades" | "otro",
-                  parcialidades: row.data.parcialidades ?? undefined,
-                  otro: row.data.otro_descripcion ?? undefined,
-                }).catch(() => {})
-              }
-              className="rounded-lg bg-slate-700 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-slate-900"
-            >
-              Descargar
-            </button>
-          </div>
-        ),
-    },
   ];
 
   const handleEditRow = (row: NominaRow) => {
@@ -198,6 +212,49 @@ export function NominaTab({
         </div>
       </div>
 
+      {/* ── Filtros ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className={selectClass}>
+          <option value="">Todos los tipos</option>
+          <option value="pago">Pago</option>
+          <option value="adelanto">Adelanto</option>
+        </select>
+
+        <input
+          type="date"
+          value={filtroFecha}
+          onChange={(e) => setFiltroFecha(e.target.value)}
+          title="Período"
+          placeholder="Período"
+          className={selectClass}
+        />
+
+        {filtroTipo !== "pago" && (
+          <select value={filtroEstatus} onChange={(e) => setFiltroEstatus(e.target.value)} className={selectClass}>
+            <option value="">Todos los estatus</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Aprobado">Aprobado</option>
+            <option value="Rechazado">Rechazado</option>
+          </select>
+        )}
+
+        {hayFiltros && (
+          <button
+            type="button"
+            onClick={() => { setFiltroTipo(""); setFiltroFecha(""); setFiltroEstatus(""); }}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-50"
+          >
+            Limpiar filtros
+          </button>
+        )}
+
+        {hayFiltros && (
+          <span className="ml-auto text-sm text-[var(--crm-text-muted)]">
+            {rows.length} de {allRows.length} movimientos
+          </span>
+        )}
+      </div>
+
       {/* ── Tabla unificada ── */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
@@ -226,11 +283,41 @@ export function NominaTab({
           data={rows}
           columns={columns}
           isLoading={isLoading}
-          emptyMessage="No hay movimientos de nómina registrados"
+          emptyMessage={hayFiltros ? "Sin movimientos con esos filtros" : "No hay movimientos de nómina registrados"}
           onEdit={canEdit ? handleEditRow : undefined}
           onDelete={canEdit ? handleDeleteRow : undefined}
           canEdit={canEdit}
           canDelete={canEdit}
+          customActions={(row) => (
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => void handleVer(row)} title="Ver documento"
+                className="rounded-md border border-[var(--crm-border-strong)] p-1.5 text-[var(--crm-text)] transition-colors hover:bg-[var(--crm-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+              <button type="button"
+                title="Descargar documento"
+                onClick={() => {
+                  if (row.kind === "pago") {
+                    void generarReciboNomina(empleado, row.data);
+                  } else {
+                    void generarSolicitudAdelanto(empleado, {
+                      monto: parseFloat(row.data.monto),
+                      formaDescuento: row.data.forma_descuento as "proxima" | "parcialidades" | "otro",
+                      parcialidades: row.data.parcialidades ?? undefined,
+                      otro: row.data.otro_descripcion ?? undefined,
+                    });
+                  }
+                }}
+                className="rounded-md border border-[var(--crm-border-strong)] p-1.5 text-[var(--crm-text)] transition-colors hover:bg-[var(--crm-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </button>
+            </div>
+          )}
         />
       </div>
 
@@ -255,6 +342,14 @@ export function NominaTab({
           fallbackLabel="este adelanto"
           onConfirm={onDeleteAdelanto}
           onClose={() => setDeleteAdelantoModal({ open: false, item: null })}
+        />
+      )}
+
+      {preview && (
+        <DocPreviewModal
+          blob={preview.blob}
+          filename={preview.filename}
+          onClose={() => setPreview(null)}
         />
       )}
     </div>

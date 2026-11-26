@@ -28,7 +28,8 @@ function calcularRetrasoTexto(horaEntrada: string, horaLlegada: string): string 
 export async function generarAvisoTardanza(
   empleado: Empleado,
   permiso: PermisoEmpleado,
-): Promise<void> {
+  opts?: { onlyBlob?: boolean },
+): Promise<Blob> {
   const HORA_ENTRADA = "09:00";
   const horaLlegada = permiso.hora_llegada ?? "09:00";
   const fechaPermiso = parseLocalDate(permiso.fecha.slice(0, 10));
@@ -138,16 +139,18 @@ export async function generarAvisoTardanza(
     }],
   });
 
-  await descargar(
+  return descargar(
     doc,
     `Aviso_Tardanza_${nombre.replace(/ /g, "_")}_${permiso.fecha.slice(0, 10)}.docx`,
+    opts?.onlyBlob,
   );
 }
 
 export async function generarPermisoEntradaTarde(
   empleado: Empleado,
   permiso: PermisoEmpleado,
-): Promise<void> {
+  opts?: { onlyBlob?: boolean },
+): Promise<Blob> {
   const HORA_ENTRADA = "09:00";
   const horaLlegada = permiso.hora_llegada ?? "09:00";
   const fechaPermiso = parseLocalDate(permiso.fecha.slice(0, 10));
@@ -275,16 +278,18 @@ export async function generarPermisoEntradaTarde(
     }],
   });
 
-  await descargar(
+  return descargar(
     doc,
     `Permiso_Entrada_Tarde_${nombre.replace(/ /g, "_")}_${permiso.fecha.slice(0, 10)}.docx`,
+    opts?.onlyBlob,
   );
 }
 
 export async function generarPermisoLlegarTarde(
   empleado: Empleado,
   permiso: PermisoEmpleado,
-): Promise<void> {
+  opts?: { onlyBlob?: boolean },
+): Promise<Blob> {
   const HORA_ENTRADA = "09:00";
   const horaLlegada = permiso.hora_llegada ?? "09:00";
   const fechaPermiso = parseLocalDate(permiso.fecha.slice(0, 10));
@@ -408,8 +413,9 @@ export async function generarPermisoLlegarTarde(
     }],
   });
 
-  await descargar(
+  return descargar(
     doc,
     `Permiso_Llegar_Tarde_${nombre.replace(/ /g, "_")}_${permiso.fecha.slice(0, 10)}.docx`,
+    opts?.onlyBlob,
   );
 }

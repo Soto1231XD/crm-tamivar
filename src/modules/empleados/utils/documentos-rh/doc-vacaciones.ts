@@ -12,7 +12,8 @@ export async function generarSolicitudVacaciones(
   vacacion: Vacacion,
   todasVacaciones: Vacacion[],
   adelanto = false,
-): Promise<void> {
+  opts?: { onlyBlob?: boolean },
+): Promise<Blob> {
   const hoy    = new Date();
   const ing    = parseLocalDate(empleado.fecha_ingreso);
   const inicio = parseLocalDate(vacacion.fecha_inicio);
@@ -141,5 +142,5 @@ export async function generarSolicitudVacaciones(
   });
 
   const prefix = adelanto ? "Adelanto_Vacaciones" : "Solicitud_Vacaciones";
-  await descargar(doc, `${prefix}_${nombre.replace(/ /g, "_")}_${vacacion.fecha_inicio}.docx`);
+  return descargar(doc, `${prefix}_${nombre.replace(/ /g, "_")}_${vacacion.fecha_inicio}.docx`, opts?.onlyBlob);
 }

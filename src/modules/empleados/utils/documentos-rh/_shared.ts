@@ -107,12 +107,15 @@ export function para(
 
 export const blank = () => new Paragraph({ spacing: { after: 160 } });
 
-export async function descargar(doc: Document, nombre: string) {
+export async function descargar(doc: Document, nombre: string, onlyBlob = false): Promise<Blob> {
   const blob = await Packer.toBlob(doc);
-  const url  = URL.createObjectURL(blob);
-  const a    = Object.assign(document.createElement("a"), { href: url, download: nombre });
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  if (!onlyBlob) {
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement("a"), { href: url, download: nombre });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  return blob;
 }

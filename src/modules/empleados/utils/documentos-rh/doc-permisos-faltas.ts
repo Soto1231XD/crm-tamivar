@@ -12,7 +12,8 @@ import type { Empleado, PermisoEmpleado } from "./_shared";
 export async function generarConstanciaInasistencia(
   empleado: Empleado,
   permiso: PermisoEmpleado,
-): Promise<void> {
+  opts?: { onlyBlob?: boolean },
+): Promise<Blob> {
   const fechaInicio = parseLocalDate(permiso.fecha.slice(0, 10));
   const fechaRegreso = permiso.fecha_recuperacion
     ? parseLocalDate(permiso.fecha_recuperacion)
@@ -123,9 +124,10 @@ export async function generarConstanciaInasistencia(
     }],
   });
 
-  await descargar(
+  return descargar(
     doc,
     `Constancia_Inasistencia_${nombre.replace(/ /g, "_")}_${permiso.fecha.slice(0, 10)}.docx`,
+    opts?.onlyBlob,
   );
 }
 
@@ -144,7 +146,8 @@ function to12h(t: string): string {
 export async function generarPermisoLactancia(
   empleado: Empleado,
   permiso: PermisoEmpleado,
-): Promise<void> {
+  opts?: { onlyBlob?: boolean },
+): Promise<Blob> {
   const fechaInicio = parseLocalDate(permiso.fecha.slice(0, 10));
   const fechaTermino = permiso.fecha_recuperacion
     ? parseLocalDate(permiso.fecha_recuperacion)
@@ -329,9 +332,10 @@ export async function generarPermisoLactancia(
     }],
   });
 
-  await descargar(
+  return descargar(
     doc,
     `Permiso_Lactancia_${nombre.replace(/ /g, "_")}_${permiso.fecha.slice(0, 10)}.docx`,
+    opts?.onlyBlob,
   );
 }
 
@@ -340,7 +344,8 @@ export async function generarPermisoLactancia(
 export async function generarConstanciaFaltaJustificada(
   empleado: Empleado,
   permiso: PermisoEmpleado,
-): Promise<void> {
+  opts?: { onlyBlob?: boolean },
+): Promise<Blob> {
   const fechaInicio = parseLocalDate(permiso.fecha.slice(0, 10));
   const fechaFin = permiso.hora_llegada ? parseLocalDate(permiso.hora_llegada.slice(0, 10)) : fechaInicio;
   const fechaReanudacion = permiso.fecha_recuperacion ? parseLocalDate(permiso.fecha_recuperacion) : null;
@@ -430,8 +435,9 @@ export async function generarConstanciaFaltaJustificada(
     }],
   });
 
-  await descargar(
+  return descargar(
     doc,
     `Falta_Justificada_${nombre.replace(/ /g, "_")}_${permiso.fecha.slice(0, 10)}.docx`,
+    opts?.onlyBlob,
   );
 }

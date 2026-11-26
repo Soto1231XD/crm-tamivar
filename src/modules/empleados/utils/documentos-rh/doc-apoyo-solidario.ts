@@ -73,7 +73,7 @@ const bodyP = (children: TextRun[], after = 200) =>
 const gap = (after = 60) =>
   new Paragraph({ spacing: { before: 0, after }, children: [r("")] });
 
-export async function generarApoSolidario(empleado: Empleado, apoyo: ApoSolidario) {
+export async function generarApoSolidario(empleado: Empleado, apoyo: ApoSolidario, opts?: { onlyBlob?: boolean }): Promise<Blob> {
   const nombre = `${empleado.nombre} ${empleado.apellido_paterno} ${empleado.apellido_materno}`.toUpperCase();
   const monto  = parseFloat(apoyo.monto);
   const fmtM   = fmtMXN(monto);
@@ -230,5 +230,5 @@ export async function generarApoSolidario(empleado: Empleado, apoyo: ApoSolidari
     }],
   });
 
-  descargar(doc, `Apoyo_Solidario_${nombre.split(" ")[0]}_${apoyo.fecha_incidente.slice(0, 10)}.docx`);
+  return descargar(doc, `Apoyo_Solidario_${nombre.split(" ")[0]}_${apoyo.fecha_incidente.slice(0, 10)}.docx`, opts?.onlyBlob);
 }

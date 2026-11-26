@@ -51,7 +51,7 @@ function fmtMXN(val: string | null | undefined): string {
   return parseFloat(val).toLocaleString("es-MX", { style: "currency", currency: "MXN" });
 }
 
-export async function generarReciboNomina(empleado: Empleado, nomina: NominaEmpleado) {
+export async function generarReciboNomina(empleado: Empleado, nomina: NominaEmpleado, opts?: { onlyBlob?: boolean }): Promise<Blob> {
   const nombre = `${empleado.nombre} ${empleado.apellido_paterno} ${empleado.apellido_materno}`.toUpperCase();
 
   const fmtDate = (iso: string) => {
@@ -211,7 +211,7 @@ export async function generarReciboNomina(empleado: Empleado, nomina: NominaEmpl
     }],
   });
 
-  await descargar(doc, `Nomina_${nombre.replace(/ /g, "_")}_${nomina.periodo_inicio.slice(0, 10)}.docx`);
+  return descargar(doc, `Nomina_${nombre.replace(/ /g, "_")}_${nomina.periodo_inicio.slice(0, 10)}.docx`, opts?.onlyBlob);
 }
 
 // ── SOLICITUD DE ADELANTO DE NÓMINA ──────────────────────────────────────────
@@ -223,7 +223,7 @@ export interface AdelantoNominaData {
   otro?: string;
 }
 
-export async function generarSolicitudAdelanto(empleado: Empleado, data: AdelantoNominaData): Promise<void> {
+export async function generarSolicitudAdelanto(empleado: Empleado, data: AdelantoNominaData, opts?: { onlyBlob?: boolean }): Promise<Blob> {
   const hoy    = new Date();
   const nombre = `${empleado.nombre} ${empleado.apellido_paterno} ${empleado.apellido_materno}`.trim().toUpperCase();
   const fechaStr = `CANCÚN, QUINTANA ROO A ${hoy.getDate()} DE ${MESES_UP[hoy.getMonth()]} DEL ${hoy.getFullYear()}`;
@@ -369,5 +369,5 @@ export async function generarSolicitudAdelanto(empleado: Empleado, data: Adelant
     }],
   });
 
-  await descargar(doc, `Adelanto_Nomina_${nombre.replace(/ /g, "_")}_${hoy.toISOString().slice(0, 10)}.docx`);
+  return descargar(doc, `Adelanto_Nomina_${nombre.replace(/ /g, "_")}_${hoy.toISOString().slice(0, 10)}.docx`, opts?.onlyBlob);
 }

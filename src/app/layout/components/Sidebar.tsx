@@ -4,8 +4,8 @@ import logoBlanco from "@/assets/images/logo_blanco.png";
 import MenuIcon from "@/assets/images/Menu.png";
 import LogoutIcon from "@/assets/images/Logout.png";
 
-type NavItem = { to: string; label: string; icon: string };
-type ActiveNavGroup = { label: string; icon: string; items: NavItem[] };
+type NavItem = { to: string; label: string; icon: string; iconClassName?: string };
+type ActiveNavGroup = { label: string; icon: string; iconClassName?: string; items: NavItem[] };
 
 type SidebarProps = {
   isCollapsed: boolean;
@@ -124,7 +124,7 @@ export function Sidebar({
                       <span className={["flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10",
                         isGroupActive ? "bg-white/10" : "bg-white/5",
                       ].join(" ")}>
-                        <img src={group.icon} alt="" className="h-7 w-7 shrink-0" />
+                        <img src={group.icon} alt="" className={`${group.iconClassName ?? "h-7 w-7"} shrink-0`} />
                       </span>
                       <span className="flex-1 truncate text-left font-medium">{group.label}</span>
                       <ChevronDownIcon className={["h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200",
@@ -146,7 +146,7 @@ export function Sidebar({
                             }
                           >
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5 ring-1 ring-inset ring-white/6 transition group-hover:bg-white/10">
-                              <img src={item.icon} alt="" className="h-6 w-6 shrink-0" />
+                              <img src={item.icon} alt="" className={`${item.iconClassName ?? "h-6 w-6"} shrink-0`} />
                             </span>
                             <span className="truncate font-medium">{item.label}</span>
                           </NavLink>

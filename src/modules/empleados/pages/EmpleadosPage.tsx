@@ -16,6 +16,7 @@ import {
   type UpdateEmpleadoPayload,
 } from "../services/empleados.api";
 import { EmpleadoModal } from "../components/EmpleadoModal";
+import { ContratoModal } from "../components/ContratoModal";
 
 const PAGE_SIZE = 10;
 
@@ -48,6 +49,7 @@ export function EmpleadosPage() {
   const prefill = (location.state as { prefill?: Record<string, string> } | null)?.prefill ?? null;
   const [modal, setModal]             = useState<{ open: boolean; item: Empleado | null }>({ open: false, item: null });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; item: Empleado | null }>({ open: false, item: null });
+  const [contratoModal, setContratoModal] = useState<{ open: boolean; empleado: Empleado | null }>({ open: false, empleado: null });
 
   const load = async () => {
     setIsLoading(true);
@@ -91,6 +93,7 @@ export function EmpleadosPage() {
       const created = await createEmpleado(data as CreateEmpleadoPayload);
       if (fotoFile) await uploadFotoEmpleado(created.id, fotoFile);
       toast.success("Empleado registrado");
+      setContratoModal({ open: true, empleado: created });
     }
     await load();
   };
@@ -228,6 +231,13 @@ export function EmpleadosPage() {
           prefillData={!modal.item && prefill ? prefill : undefined}
           onSave={handleSave}
           onClose={() => setModal({ open: false, item: null })}
+        />
+      )}
+
+      {contratoModal.open && contratoModal.empleado && (
+        <ContratoModal
+          empleado={contratoModal.empleado}
+          onClose={() => setContratoModal({ open: false, empleado: null })}
         />
       )}
 

@@ -6,6 +6,7 @@ export interface EmpleadoResumen {
   apellido_paterno: string;
   apellido_materno: string;
   puesto: string;
+  tipo: "Empleado" | "Becario";
 }
 
 export interface EventoParticipante {

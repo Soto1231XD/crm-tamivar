@@ -31,10 +31,13 @@ export function ProtectedRoute({ module }: ProtectedRouteProps) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const archivoPiggyback = module === "rh_archivo" && (can("rh_empleados", "leer") || can("rh_empleados", "*"));
+
   if (
     module &&
     module !== "dashboard" &&
     module !== "Estadísticas" &&
+    !archivoPiggyback &&
     !can(module, "leer") &&
     !can(module, "leer_todos") &&
     !can(module, "*")

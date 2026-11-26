@@ -5,6 +5,8 @@ import type { PermisoEmpleado } from "../../services/permisos.api";
 import type { Incapacidad } from "../../services/incapacidades.api";
 import type { Baja } from "../../services/bajas.api";
 import type { Amonestacion } from "../../services/amonestaciones.api";
+import type { ResponsivaEmpleado } from "../../services/responsivas.api";
+import type { ActaAdministrativa } from "../../services/actas-administrativas.api";
 import { calcularAntigüedad, calcularDerechoVacaciones } from "../../services/vacaciones.api";
 
 function formatDate(iso: string) {
@@ -20,6 +22,8 @@ interface Props {
   incapacidades: Incapacidad[];
   bajas: Baja[];
   amonestaciones: Amonestacion[];
+  responsivas: ResponsivaEmpleado[];
+  actas: ActaAdministrativa[];
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -40,7 +44,7 @@ function StatRow({ label, value, color = "text-slate-800" }: { label: string; va
   );
 }
 
-export function ReporteTab({ empleado, faltas, vacaciones, permisos, incapacidades, bajas, amonestaciones }: Props) {
+export function ReporteTab({ empleado, faltas, vacaciones, permisos, incapacidades, bajas, amonestaciones, responsivas, actas }: Props) {
   const antiguedad     = calcularAntigüedad(empleado.fecha_ingreso);
   const derechoVac     = calcularDerechoVacaciones(antiguedad);
   const vacAprobadas   = vacaciones.filter((v) => v.estatus === "Aprobada" || v.estatus === "Pendiente").reduce((s, v) => s + v.dias, 0);
@@ -63,6 +67,13 @@ export function ReporteTab({ empleado, faltas, vacaciones, permisos, incapacidad
   const amonVerbales     = amonestaciones.filter((a) => a.tipo === "Verbal").length;
   const amonEscritas     = amonestaciones.filter((a) => a.tipo === "Escrita").length;
   const amonSuspensiones = amonestaciones.filter((a) => a.tipo === "Suspensión").length;
+
+  const respVehiculos    = responsivas.filter((r) => r.tipo === "Vehículo").length;
+  const respMateriales   = responsivas.filter((r) => r.tipo === "Materiales").length;
+  const respHerramientas = responsivas.filter((r) => r.tipo === "Herramientas").length;
+
+  const actasVoluntarias = actas.filter((a) => a.tipo === "voluntaria").length;
+  const actasHechos      = actas.filter((a) => a.tipo === "hechos").length;
 
   const handlePrint = () => {
     const fecha = new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric" });
@@ -149,6 +160,23 @@ export function ReporteTab({ empleado, faltas, vacaciones, permisos, incapacidad
           row("Verbales", amonVerbales),
           row("Escritas", amonEscritas),
           row("Suspensiones", amonSuspensiones),
+        ].join("")
+    )}
+    ${card("Responsivas", responsivas.length === 0
+      ? row("Responsivas", "Ninguna")
+      : [
+          row("Total", responsivas.length),
+          row("Vehículo", respVehiculos),
+          row("Materiales", respMateriales),
+          row("Herramientas", respHerramientas),
+        ].join("")
+    )}
+    ${card("Actas Administrativas", actas.length === 0
+      ? row("Actas", "Ninguna")
+      : [
+          row("Total", actas.length),
+          row("Voluntarias", actasVoluntarias),
+          row("Actas de Hechos", actasHechos),
         ].join("")
     )}
   </div>
@@ -259,6 +287,31 @@ export function ReporteTab({ empleado, faltas, vacaciones, permisos, incapacidad
               <StatRow label="Verbales"     value={amonVerbales}     color={amonVerbales    > 0 ? "text-amber-600"  : "text-slate-800"} />
               <StatRow label="Escritas"     value={amonEscritas}     color={amonEscritas    > 0 ? "text-orange-600" : "text-slate-800"} />
               <StatRow label="Suspensiones" value={amonSuspensiones} color={amonSuspensiones > 0 ? "text-red-600"   : "text-slate-800"} />
+            </>
+          )}
+        </Section>
+
+        <Section title="Responsivas">
+          {responsivas.length === 0 ? (
+            <p className="py-2 text-sm text-slate-400">Sin responsivas registradas</p>
+          ) : (
+            <>
+              <StatRow label="Total"        value={responsivas.length} color="text-[#312C85]" />
+              <StatRow label="Vehículo"     value={respVehiculos}    color={respVehiculos    > 0 ? "text-blue-600"   : "text-slate-800"} />
+              <StatRow label="Materiales"   value={respMateriales}   color={respMateriales   > 0 ? "text-amber-600"  : "text-slate-800"} />
+              <StatRow label="Herramientas" value={respHerramientas} color={respHerramientas > 0 ? "text-purple-600" : "text-slate-800"} />
+            </>
+          )}
+        </Section>
+
+        <Section title="Actas Administrativas">
+          {actas.length === 0 ? (
+            <p className="py-2 text-sm text-slate-400">Sin actas administrativas registradas</p>
+          ) : (
+            <>
+              <StatRow label="Total"            value={actas.length}      color="text-slate-800" />
+              <StatRow label="Voluntarias"      value={actasVoluntarias}  color={actasVoluntarias > 0 ? "text-purple-600" : "text-slate-800"} />
+              <StatRow label="Actas de Hechos"  value={actasHechos}       color={actasHechos      > 0 ? "text-amber-600"  : "text-slate-800"} />
             </>
           )}
         </Section>

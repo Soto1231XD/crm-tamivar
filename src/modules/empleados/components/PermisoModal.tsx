@@ -30,12 +30,16 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
   const isEdit = Boolean(initial);
 
   const [fecha, setFecha] = useState("");
-  const [tipo, setTipo] = useState<"Personal" | "Médico" | "Familiar" | "Tardanza" | "Entrada Tarde" | "Inasistencia" | "Lactancia" | "Falta Justificada" | "Permiso para llegar tarde">("Personal");
+  const [tipo, setTipo] = useState<"Personal" | "Médico" | "Familiar" | "Tardanza" | "Entrada Tarde" | "Inasistencia" | "Lactancia" | "Falta Justificada" | "Permiso para llegar tarde" | "Salida Anticipada">("Personal");
   const [conGoce, setConGoce] = useState(true);
   const [descripcion, setDescripcion] = useState("");
   const [horaLlegada, setHoraLlegada] = useState("");
   const [fechaRecuperacion, setFechaRecuperacion] = useState("");
   const [opcionPLT, setOpcionPLT] = useState<"con_goce" | "sin_goce" | "reposicion">("sin_goce");
+  const [saHorario, setSaHorario] = useState("09:00-18:00");
+  const [saHoraHabSalida, setSaHoraHabSalida] = useState("18:00");
+  const [saHoraAutorizada, setSaHoraAutorizada] = useState("");
+  const [saForma, setSaForma] = useState<"reduccion_comida" | "reposicion" | "sin_goce" | "no_aplica">("no_aplica");
   const [horarioLac, setHorarioLac] = useState({
     entrada: "09:00",
     salidaHabLV: "18:00",
@@ -54,6 +58,7 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
   const esLactancia = tipo === "Lactancia";
   const esFaltaJustificada = tipo === "Falta Justificada";
   const esPermisoLlegarTarde = tipo === "Permiso para llegar tarde";
+  const esSalidaAnticipada = tipo === "Salida Anticipada";
   const retraso = (esTardanza || esEntradaTarde || esPermisoLlegarTarde) && horaLlegada ? calcularRetraso(HORA_ENTRADA, horaLlegada) : "";
 
   useEffect(() => {
@@ -71,6 +76,12 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
           salidaNuevaLV: snlv ?? "16:00",
           salidaNuevaSab: snsab ?? "13:00",
         });
+      } else if (initial.tipo === "Salida Anticipada" && initial.hora_llegada) {
+        const [horario, habSalida, autorizada, forma] = initial.hora_llegada.split("|");
+        setSaHorario(horario ?? "09:00-18:00");
+        setSaHoraHabSalida(habSalida ?? "18:00");
+        setSaHoraAutorizada(autorizada ?? "");
+        setSaForma((forma as "reduccion_comida" | "reposicion" | "sin_goce" | "no_aplica") ?? "no_aplica");
       } else {
         // Para Falta Justificada hora_llegada es una fecha (fin de ausencia)
         setHoraLlegada(initial.hora_llegada ?? "");
@@ -85,14 +96,10 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
     }
   }, [initial]);
 
-  // Estos tipos siempre son sin goce
+  // Solo estos tipos tienen goce fijo (sin goce de ley)
   useEffect(() => {
-    if (esTardanza || esEntradaTarde || esInasistencia || esFaltaJustificada) setConGoce(false);
-  }, [esTardanza, esEntradaTarde, esInasistencia, esFaltaJustificada]);
-  // Lactancia siempre con goce
-  useEffect(() => {
-    if (esLactancia) setConGoce(true);
-  }, [esLactancia]);
+    if (esTardanza || esInasistencia || esFaltaJustificada) setConGoce(false);
+  }, [esTardanza, esInasistencia, esFaltaJustificada]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +117,9 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
     if (esPermisoLlegarTarde && !horaLlegada) { setError("La hora de llegada es obligatoria."); return; }
     if (esPermisoLlegarTarde && !descripcion.trim()) { setError("El motivo es obligatorio."); return; }
     if (esPermisoLlegarTarde && opcionPLT === "reposicion" && !fechaRecuperacion) { setError("La fecha de reposición es obligatoria."); return; }
+    if (esSalidaAnticipada && !saHoraHabSalida) { setError("La hora habitual de salida es obligatoria."); return; }
+    if (esSalidaAnticipada && !saHoraAutorizada) { setError("La hora autorizada de salida es obligatoria."); return; }
+    if (esSalidaAnticipada && !descripcion.trim()) { setError("El motivo es obligatorio."); return; }
     setSaving(true);
     setError("");
     try {
@@ -117,6 +127,8 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
       const needsFechaExtra = esEntradaTarde || esInasistencia || esLactancia || esFaltaJustificada || (esPermisoLlegarTarde && opcionPLT === "reposicion");
       const horaLlegadaFinal = esLactancia
         ? `${horarioLac.entrada}|${horarioLac.salidaHabLV}|${horarioLac.salidaHabSab}|${horarioLac.salidaNuevaLV}|${horarioLac.salidaNuevaSab}`
+        : esSalidaAnticipada
+        ? `${saHorario}|${saHoraHabSalida}|${saHoraAutorizada}|${saForma}`
         : esFaltaJustificada ? horaLlegada
         : needsHora ? horaLlegada : null;
       const payload = isEdit
@@ -178,6 +190,7 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
               <option value="Lactancia">Lactancia — Ajuste de horario por periodo de lactancia</option>
               <option value="Falta Justificada">Falta Justificada — Constancia sin goce de sueldo</option>
               <option value="Permiso para llegar tarde">Permiso para llegar tarde — Con goce, sin goce o reposición</option>
+              <option value="Salida Anticipada">Salida Anticipada — Con compensación de tiempo</option>
             </select>
           </div>
         </div>
@@ -192,7 +205,7 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
               <option value="Rechazado">Rechazado</option>
             </select>
           </div>
-          {!esTardanza && !esEntradaTarde && !esInasistencia && !esLactancia && !esFaltaJustificada && !esPermisoLlegarTarde ? (
+          {(!esTardanza && !esInasistencia && !esFaltaJustificada && !esPermisoLlegarTarde) ? (
             <div>
               <label className={LABEL}>Goce de sueldo</label>
               <div className="flex h-[42px] items-center gap-4">
@@ -209,6 +222,15 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
                   </label>
                 ))}
               </div>
+            </div>
+          ) : esPermisoLlegarTarde ? (
+            <div className="flex items-end pb-1">
+              <span className={[
+                "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold",
+                conGoce ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500",
+              ].join(" ")}>
+                {conGoce ? "Con goce" : "Sin goce"}
+              </span>
             </div>
           ) : (
             <div className="flex items-end pb-1">
@@ -358,6 +380,69 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
           </div>
         )}
 
+        {/* Sección especial Salida Anticipada */}
+        {esSalidaAnticipada && (
+          <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-500">Detalle de salida anticipada</p>
+
+            {/* Horarios */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label className={LABEL}>Horario habitual</label>
+                <input
+                  type="text"
+                  className={INPUT}
+                  placeholder="09:00-18:00"
+                  value={saHorario}
+                  onChange={(e) => setSaHorario(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={LABEL}>Hora habitual de salida <span className="text-red-500">*</span></label>
+                <input
+                  type="time"
+                  className={INPUT}
+                  value={saHoraHabSalida}
+                  onChange={(e) => setSaHoraHabSalida(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={LABEL}>Hora autorizada de salida <span className="text-red-500">*</span></label>
+                <input
+                  type="time"
+                  className={INPUT}
+                  value={saHoraAutorizada}
+                  onChange={(e) => setSaHoraAutorizada(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Forma de compensación */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 mb-2">Forma de compensación</p>
+              <div className="flex flex-col gap-2">
+                {([
+                  { value: "no_aplica",        label: "No aplica" },
+                  { value: "reduccion_comida", label: "Reducción de tiempo de comida" },
+                  { value: "reposicion",       label: "Reposición de tiempo" },
+                  { value: "sin_goce",         label: "Sin goce de sueldo" },
+                ] as const).map(({ value, label }) => (
+                  <label key={value} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="radio"
+                      name="sa_forma"
+                      checked={saForma === value}
+                      onChange={() => setSaForma(value)}
+                      className="accent-[#312C85]"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Sección especial Falta Justificada */}
         {esFaltaJustificada && (
           <div className="rounded-2xl border border-orange-100 bg-orange-50/50 p-4 space-y-3">
@@ -470,6 +555,8 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
               ? <>Motivo de la falta <span className="text-red-500">*</span></>
               : esPermisoLlegarTarde
               ? <>Motivo del permiso <span className="text-red-500">*</span></>
+              : esSalidaAnticipada
+              ? <>Motivo de la salida anticipada <span className="text-red-500">*</span></>
               : esLactancia
               ? "Observaciones (opcional)"
               : "Descripción"}
@@ -485,6 +572,7 @@ export function PermisoModal({ empleadoId, initial, onSave, onClose }: Props) {
               esInasistencia ? "Describa el motivo de la inasistencia..." :
               esFaltaJustificada ? "Describa el motivo de la falta justificada..." :
               esPermisoLlegarTarde ? "Describa el motivo del permiso para llegar tarde..." :
+              esSalidaAnticipada ? "Describa el motivo de la salida anticipada..." :
               esLactancia ? "Alguna observación adicional..." :
               "Motivo o detalles del permiso..."
             }

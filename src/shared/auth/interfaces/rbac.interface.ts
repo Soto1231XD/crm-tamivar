@@ -20,7 +20,8 @@ export type ModuleKey =
   | 'rh_empleados'
   | 'rh_candidatos'
   | 'rh_becarios'
-  | 'rh_eventos';
+  | 'rh_eventos'
+  | 'rh_archivo';
 
 export type ModulePermissions = {
   ver: boolean;

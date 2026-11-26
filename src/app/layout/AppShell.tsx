@@ -23,7 +23,7 @@ import { getAvailableModules, getModuleLabelForUser, MODULE_PATHS } from "@/shar
 import type { ModuleKey } from "@/shared/auth/interfaces/rbac.interface";
 import type { AppNotification } from "@/interfaces/notification.interface";
 import MenuIcon from "@/assets/images/Menu.png";
-import { MODULE_ICONS, NAV_GROUP_CONFIGS, STANDALONE_MODULES } from "./nav.config";
+import { MODULE_ICONS, MODULE_ICON_SIZES, NAV_GROUP_CONFIGS, STANDALONE_MODULES } from "./nav.config";
 import { getPageTitle } from "./notifications.utils";
 import { BellIcon } from "./components/AppIcons";
 import { Sidebar } from "./components/Sidebar";
@@ -83,7 +83,7 @@ export function AppShell() {
     ...group,
     items: group.modules
       .filter((m) => availableModules.includes(m))
-      .map((m) => ({ to: MODULE_PATHS[m], label: getModuleLabelForUser(m, user) || m, icon: MODULE_ICONS[m] })),
+      .map((m) => ({ to: MODULE_PATHS[m], label: getModuleLabelForUser(m, user) || m, icon: MODULE_ICONS[m], iconClassName: MODULE_ICON_SIZES[m] })),
   })).filter((group) => group.items.length > 0);
 
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {

@@ -5,6 +5,8 @@ import type { Empleado } from "../../services/empleados.api";
 import type { PermisoEmpleado } from "../../services/permisos.api";
 import { generarAvisoTardanza, generarPermisoEntradaTarde, generarPermisoLlegarTarde } from "../../utils/documentos-rh/doc-tardanzas";
 import { generarConstanciaInasistencia, generarPermisoLactancia, generarConstanciaFaltaJustificada } from "../../utils/documentos-rh/doc-permisos-faltas";
+import { generarPermisoSalidaAnticipada } from "../../utils/documentos-rh/doc-permiso-salida";
+import { DocPreviewModal } from "../../components/DocPreviewModal";
 
 function formatDate(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
@@ -21,12 +23,47 @@ interface Props {
   onDelete: (p: PermisoEmpleado) => void;
 }
 
-const TIPOS = ["Personal", "Médico", "Familiar", "Tardanza", "Entrada Tarde", "Inasistencia", "Lactancia", "Falta Justificada", "Permiso para llegar tarde"] as const;
+const TIPOS = ["Personal", "Médico", "Familiar", "Tardanza", "Entrada Tarde", "Inasistencia", "Lactancia", "Falta Justificada", "Permiso para llegar tarde", "Salida Anticipada"] as const;
 
 export function PermisosTab({ permisos, loading, empleado, canEdit, onAdd, onEdit, onDelete }: Props) {
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroEstatus, setFiltroEstatus] = useState("");
   const [filtroGoce, setFiltroGoce] = useState("");
+  const [preview, setPreview] = useState<{ blob: Blob; filename: string } | null>(null);
+
+  const handleVer = async (p: PermisoEmpleado) => {
+    const nombre = `${empleado.nombre} ${empleado.apellido_paterno}`.trim().replace(/ /g, "_");
+    let gen: Promise<Blob> | null = null;
+    let filename = "documento.docx";
+    if (p.tipo === "Tardanza") {
+      gen = generarAvisoTardanza(empleado, p, { onlyBlob: true });
+      filename = `Aviso_Tardanza_${nombre}_${p.fecha.slice(0, 10)}.docx`;
+    } else if (p.tipo === "Entrada Tarde") {
+      gen = generarPermisoEntradaTarde(empleado, p, { onlyBlob: true });
+      filename = `Permiso_Entrada_Tarde_${nombre}_${p.fecha.slice(0, 10)}.docx`;
+    } else if (p.tipo === "Inasistencia") {
+      gen = generarConstanciaInasistencia(empleado, p, { onlyBlob: true });
+      filename = `Constancia_Inasistencia_${nombre}_${p.fecha.slice(0, 10)}.docx`;
+    } else if (p.tipo === "Lactancia") {
+      gen = generarPermisoLactancia(empleado, p, { onlyBlob: true });
+      filename = `Permiso_Lactancia_${nombre}_${p.fecha.slice(0, 10)}.docx`;
+    } else if (p.tipo === "Falta Justificada") {
+      gen = generarConstanciaFaltaJustificada(empleado, p, { onlyBlob: true });
+      filename = `Falta_Justificada_${nombre}_${p.fecha.slice(0, 10)}.docx`;
+    } else if (p.tipo === "Permiso para llegar tarde") {
+      gen = generarPermisoLlegarTarde(empleado, p, { onlyBlob: true });
+      filename = `Permiso_Llegar_Tarde_${nombre}_${p.fecha.slice(0, 10)}.docx`;
+    } else if (p.tipo === "Salida Anticipada") {
+      gen = generarPermisoSalidaAnticipada(empleado, p, { onlyBlob: true });
+      filename = `Permiso_Salida_Anticipada_${nombre}_${p.fecha.slice(0, 10)}.docx`;
+    }
+    if (!gen) return;
+    try {
+      setPreview({ blob: await gen, filename });
+    } catch (e: unknown) {
+      alert("Error al previsualizar: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
 
   const permisosFiltrados = useMemo(() => {
     return permisos.filter((p) => {
@@ -75,25 +112,6 @@ export function PermisosTab({ permisos, loading, empleado, canEdit, onAdd, onEdi
       ),
     },
     { header: "Descripción", render: (p: PermisoEmpleado) => p.descripcion ?? <span className="text-slate-300">—</span> },
-    {
-      header: "Documentos",
-      render: (p: PermisoEmpleado) => {
-        const btnClass = "rounded-lg bg-[#312C85] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#4338ca]";
-        if (p.tipo === "Tardanza")
-          return <div className="flex justify-center"><button type="button" onClick={() => generarAvisoTardanza(empleado, p)} className={btnClass}>Generar aviso</button></div>;
-        if (p.tipo === "Entrada Tarde")
-          return <div className="flex justify-center"><button type="button" onClick={() => generarPermisoEntradaTarde(empleado, p)} className={btnClass}>Generar permiso</button></div>;
-        if (p.tipo === "Inasistencia")
-          return <div className="flex justify-center"><button type="button" onClick={() => generarConstanciaInasistencia(empleado, p)} className={btnClass}>Generar constancia</button></div>;
-        if (p.tipo === "Lactancia")
-          return <div className="flex justify-center"><button type="button" onClick={() => generarPermisoLactancia(empleado, p)} className={btnClass}>Generar constancia</button></div>;
-        if (p.tipo === "Falta Justificada")
-          return <div className="flex justify-center"><button type="button" onClick={() => generarConstanciaFaltaJustificada(empleado, p)} className={btnClass}>Generar constancia</button></div>;
-        if (p.tipo === "Permiso para llegar tarde")
-          return <div className="flex justify-center"><button type="button" onClick={() => generarPermisoLlegarTarde(empleado, p)} className={btnClass}>Generar permiso</button></div>;
-        return <span className="text-slate-300">—</span>;
-      },
-    },
   ];
 
   const selectClass = "rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] focus:outline-none focus:ring-2 focus:ring-[#312C85]/30";
@@ -159,7 +177,45 @@ export function PermisosTab({ permisos, loading, empleado, canEdit, onAdd, onEdi
         onDelete={canEdit ? onDelete : undefined}
         canEdit={canEdit}
         canDelete={canEdit}
+        customActions={(p) => {
+          const hasDoc = ["Tardanza","Entrada Tarde","Inasistencia","Lactancia","Falta Justificada","Permiso para llegar tarde","Salida Anticipada"].includes(p.tipo);
+          if (!hasDoc) return null;
+          const handleDownload = () => {
+            if (p.tipo === "Tardanza")                      void generarAvisoTardanza(empleado, p);
+            else if (p.tipo === "Entrada Tarde")            void generarPermisoEntradaTarde(empleado, p);
+            else if (p.tipo === "Inasistencia")             void generarConstanciaInasistencia(empleado, p);
+            else if (p.tipo === "Lactancia")                void generarPermisoLactancia(empleado, p);
+            else if (p.tipo === "Falta Justificada")        void generarConstanciaFaltaJustificada(empleado, p);
+            else if (p.tipo === "Permiso para llegar tarde") void generarPermisoLlegarTarde(empleado, p);
+            else if (p.tipo === "Salida Anticipada")        void generarPermisoSalidaAnticipada(empleado, p);
+          };
+          return (
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => void handleVer(p)} title="Ver documento"
+                className="rounded-md border border-[var(--crm-border-strong)] p-1.5 text-[var(--crm-text)] transition-colors hover:bg-[var(--crm-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+              <button type="button" onClick={handleDownload} title="Descargar documento"
+                className="rounded-md border border-[var(--crm-border-strong)] p-1.5 text-[var(--crm-text)] transition-colors hover:bg-[var(--crm-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </button>
+            </div>
+          );
+        }}
       />
+
+      {preview && (
+        <DocPreviewModal
+          blob={preview.blob}
+          filename={preview.filename}
+          onClose={() => setPreview(null)}
+        />
+      )}
     </div>
   );
 }
