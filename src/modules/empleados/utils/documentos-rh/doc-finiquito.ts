@@ -49,7 +49,7 @@ function fechaCorta(d: Date) {
 
 // ── Helpers de celdas ──────────────────────────────────────────────────────
 
-function dataCell(text: string, widthDXA: number, bold = false, align: string = AlignmentType.LEFT, fill = "FFFFFF") {
+function dataCell(text: string, widthDXA: number, bold = false, align: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.LEFT, fill = "FFFFFF") {
   return new TableCell({
     width: { size: widthDXA, type: WidthType.DXA },
     borders: { top: thinB, bottom: thinB, left: thinB, right: thinB },
